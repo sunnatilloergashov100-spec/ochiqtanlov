@@ -10,7 +10,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=7; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=8; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 
@@ -196,10 +196,32 @@ function setRole(r){
   location.hash=r?(tabs().some(x=>x[0]===cur)?cur:tabs()[0][0]):"";route();
 }
 document.querySelectorAll(".rolecard").forEach(b=>b.onclick=()=>{
-  $("#gateErr").hidden=true;const r=b.dataset.role;
+  $("#gateErr").hidden=true;const r=b.dataset.role;if(isLocked()&&S.uid){route();return}
   if(S.uid)enter(r);else openAuth(r,"login");
 });
-$("#btnSwitch").onclick=async()=>{await track("logout");remember(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;try{await auth.signOut()}catch(e){}location.hash="";route()};
+$("#btnSwitch").onclick=async()=>{await track("logout");const q=getQuick();setQuick({...(q&&q.uid===S.uid?q:{}),uid:S.uid,login:S.login,name:(S.contacts[S.uid]||{}).name||(q&&q.uid===S.uid?q.name:"")||"",role:S.role});remember(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;
+  setLock(true);unsubAll();location.hash="";route()};
+// ---------- FACE ID BILAN KIRISH (shu qurilmada avval login-parol bilan kirilgan akkaunt uchun) ----------
+const QK="ot-quick",LK="ot-lock";
+function getQuick(){try{return JSON.parse(localStorage.getItem(QK)||"null")}catch(e){return null}}
+function setQuick(v){try{v?localStorage.setItem(QK,JSON.stringify(v)):localStorage.removeItem(QK)}catch(e){}}
+function isLocked(){try{return localStorage.getItem(LK)==="1"}catch(e){return false}}
+function setLock(v){try{v?localStorage.setItem(LK,"1"):localStorage.removeItem(LK)}catch(e){}}
+async function fullSignOut(){setLock(false);setQuick(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;remember(null);try{await auth.signOut()}catch(e){}location.hash="";route()}
+$("#qOther").onclick=fullSignOut;
+$("#qFace").onclick=async()=>{
+  const u=auth.currentUser;if(!u){fullSignOut();return}
+  $("#qFace").disabled=true;
+  const ok=await faceGate();
+  $("#qFace").disabled=false;
+  if(!ok){toast("Face ID tasdiqlanmadi. Qayta urinib ko'ring yoki login-parol bilan kiring");return}
+  setLock(false);afterAuth(u,true);
+};
+$("#l-face").onclick=()=>{
+  const q=getQuick(),e=$("#l-err");
+  if(q&&auth.currentUser&&auth.currentUser.uid===q.uid){closeAuth();$("#qFace").click();return}
+  e.textContent="Face ID bilan kirish uchun bu qurilmada avval bir marta login va parol bilan kiring. Keyingi safar \"Chiqish\"dan so'ng shu tugma orqali parolsiz kirasiz.";e.hidden=false;
+};
 
 // ---------- BOSH ADMIN: kirish-chiqish monitoringi ----------
 const isAdm=()=>S.role==="admin"||S.role==="chief";
@@ -441,6 +463,9 @@ function render(){
   if(t==="qoidalar"){}
 }
 function renderGate(){
+  const q=getQuick(),locked=isLocked()&&S.uid&&q&&q.uid===S.uid;
+  $("#quickBox").hidden=!locked;$("#roleStep").hidden=locked||!$("#authStep").hidden;
+  if(locked){$("#qName").textContent=q.name||q.login;$("#qMeta").textContent=" "+q.login+(q.role?" · "+(ROLE_UZ[q.role]||""):"");$("#qAva").textContent=((q.name||q.login||"?").trim()[0]||"?").toUpperCase();$("#gateBanner").innerHTML="";return}
   const b=$("#gateBanner");
   const demo="";
   if(!S.loaded){b.innerHTML=demo+`<p class="note">Serverga ulanmoqda…</p>`;return}
@@ -1437,16 +1462,26 @@ function subscribeOrg(){
 }
 auth.onAuthStateChanged(async u=>{
   unsubAll();
+  if(u&&isLocked()&&(getQuick()||{}).uid===u.uid){S.uid=u.uid;S.login=(u.email||"").split("@")[0];S.loaded=true;S.role=null;location.hash="";route();checkVersion();return}
+  if(u&&isLocked())setLock(false);
   if(!u){Object.assign(S,{uid:null,login:null,isAdmin:false,isChief:false,logins:{},failed:[],myLog:null,orgs:[],vacs:[],apps:[],contacts:{},audit:[],profile:null,loaded:true,adminDoc:null,admins:[],offers:[],appeals:[],results:{},attempts:[],myAttempt:null,face:null});
     if(S.role){S.role=null;location.hash=""}route();return}
+  afterAuth(u,false);
+});
+async function afterAuth(u,quick){
   S.uid=u.uid;S.login=(u.email||"").split("@")[0];
   try{S.isChief=(await fs.doc("chiefs/"+u.uid).get()).exists}catch(e){S.isChief=false}
   try{const ad=S.isChief?null:await fs.doc("admins/"+u.uid).get();S.adminDoc=ad&&ad.exists?ad.data():null;S.isAdmin=S.isChief||!!S.adminDoc}catch(e){S.isAdmin=S.isChief}
   try{const g=await fs.doc("logins/"+u.uid).get();S.myLog=g.exists?g.data():null}catch(e){S.myLog=null}
   S.loaded=true;subscribe();
   route();checkVersion();
-  if(!await faceGate()){S.role=null;remember(null);try{await auth.signOut()}catch(e){}location.hash="";closeAuth();route();return}
+  if(!await faceGate()){
+    if(quick||getQuick()&&getQuick().uid===S.uid){setLock(true);unsubAll();S.role=null;location.hash="";route();return}
+    S.role=null;remember(null);try{await auth.signOut()}catch(e){}location.hash="";closeAuth();route();return}
+  const c=S.contacts[S.uid]||{},prev=getQuick();
+  setQuick({uid:S.uid,login:S.login,name:c.name||(prev&&prev.uid===S.uid?prev.name:"")||"",role:prev&&prev.uid===S.uid?prev.role:null});
+  setTimeout(()=>{const q=getQuick(),cc=S.contacts[S.uid];if(q&&q.uid===S.uid&&cc&&cc.name&&q.name!==cc.name)setQuick({...q,name:cc.name})},2500);
   if(pendingRole)enter(pendingRole);
-  else{const r=recalled();if((r==="chief"&&S.isChief)||(r==="admin"&&S.isAdmin)||r==="applicant"){setRole(r);track("resume",r)}else route()}
-});
+  else{const r=recalled()||(quick&&prev&&prev.uid===S.uid?prev.role:null);if((r==="chief"&&S.isChief)||(r==="admin"&&S.isAdmin)||r==="applicant"){if(quick){remember(r);setRole(r);track("login",r)}else{setRole(r);track("resume",r)}}else route()}
+}
 })();

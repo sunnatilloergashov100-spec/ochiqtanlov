@@ -253,3 +253,9 @@ body.exam-open{overflow:hidden}
 .upd{position:fixed;inset:0;z-index:70;background:var(--paper);display:grid;place-items:center;padding:16px;overflow:auto}
 .upd .ex-card{align-items:flex-start}
 a.btn{background:var(--accent);color:var(--accent-ink);padding:12px 18px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none}
+
+.quick{max-width:420px;margin:8px 0 6px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.quick-id{display:flex;gap:12px;align-items:center}.quick-id b{display:block;font-size:17px}
+.quick-ava{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:20px;flex:none}
+.btn.faceid{display:inline-flex;gap:10px;align-items:center;justify-content:center}
+.quick .btn.faceid{padding:14px 18px;font-size:16px}
