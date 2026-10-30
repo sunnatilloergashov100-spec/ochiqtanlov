@@ -249,3 +249,7 @@ body.exam-open{overflow:hidden}
 @keyframes wait{0%{left:-35%}100%{left:100%}}
 .reqpanel{border-color:var(--gold)}
 .kpi small{display:block;margin-top:4px;font-size:11px}
+
+.upd{position:fixed;inset:0;z-index:70;background:var(--paper);display:grid;place-items:center;padding:16px;overflow:auto}
+.upd .ex-card{align-items:flex-start}
+a.btn{background:var(--accent);color:var(--accent-ink);padding:12px 18px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none}

@@ -14,3 +14,6 @@ window.OT_CONFIGURED = true;
 // Avtomatik yangilanish: ilova joylashgan internet manzili (masalan GitHub Pages).
 // To'ldirilsa, telefondagi ilova har ochilganda shu manzildan eng yangi versiyani yuklaydi.
 window.OT_APP_URL = "https://sunnatilloergashov100-spec.github.io/ochiqtanlov/";
+
+// Telefondagi APK versiyasi (har yangi APK chiqarilganda 1 ga oshiriladi). Majburiy yangilanish shu raqam bilan tekshiriladi.
+window.OT_APK_VERSION = 7;

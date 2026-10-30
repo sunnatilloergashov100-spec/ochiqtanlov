@@ -9,6 +9,10 @@ const SKILLS=["Excel","1C","Python","SQL","Web (HTML/JS)","Dars rejalash","Onlay
 const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
+// ---------- versiyalar ----------
+const WEB_VER=7; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
+  try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -207,7 +211,7 @@ function device(){
   const os=/Android/i.test(u)?"Android":/iPhone|iPad|iPod/i.test(u)?"iOS":/Windows/i.test(u)?"Windows":/Mac OS X/i.test(u)?"macOS":/CrOS/i.test(u)?"ChromeOS":/Linux/i.test(u)?"Linux":"Boshqa";
   const kind=/Mobi|Android|iPhone|iPod/i.test(u)?"Telefon":/iPad|Tablet/i.test(u)?"Planshet":"Kompyuter";
   const br=/Edg\//.test(u)?"Edge":/OPR\//.test(u)?"Opera":/YaBrowser/.test(u)?"Yandex":/Chrome\//.test(u)?"Chrome":/Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"Brauzer";
-  return {kind,os,br};
+  return {kind,os,br:APK_VER!=null?"OchiqTanlov ilova v"+(APK_VER||"6 yoki eski"):br};
 }
 let trackQ=Promise.resolve();
 function writeLog(mut){
@@ -859,6 +863,7 @@ function renderSettings(){
   $("#usersInfo").innerHTML=`<dt>Ro'yxatdan o'tganlar</dt><dd class="mono">${reg}</dd><dt>Ariza bergan foydalanuvchilar</dt><dd class="mono">${S.apps.filter(d=>Object.values(d.items||{}).some(i=>!i.withdrawn)).length}</dd><dt>Sizning loginingiz</dt><dd class="mono">${esc(S.login||"—")}</dd>`;
   $("#sampleBox").hidden=S.orgs.some(o=>o.sample);
   $("#codeChange").hidden=true;
+  renderVersion();
 }
 
 $("#btn-sample").onclick=async()=>{
@@ -1063,6 +1068,7 @@ function exCam(st,cls){const e=$("#ex-cam-st");e.textContent=st;$("#ex-cam").cla
 function stopCam(){if(EX&&EX.stream)EX.stream.getTracks().forEach(t=>t.stop());const v=$("#ex-video");if(v)v.srcObject=null}
 function exClose(){
   if(EX&&EX.reqUnsub){try{EX.reqUnsub()}catch(e){}}
+  if(pendingReload)setTimeout(checkVersion,0);
   stopCam();clearTimeout(EX&&EX.ptimer);clearInterval(EX&&EX.qtimer);
   EX=null;$("#exam").hidden=true;document.body.classList.remove("exam-open");
   try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}
@@ -1331,6 +1337,46 @@ function renderTestAdmin(){
     downloadCsv("test-reytingi.csv","﻿"+[["O'rin","Login","F.I.Sh.","Ball","To'g'ri","Jami","Holat","Sabab","Boshlagan","Davomiyligi (daq)"].map(q).join(";")].concat(rows.map(x=>[x.score!=null&&x.a.status==="done"?++k:"",x.login,x.name,x.score??"",x.r.correct??"",x.r.total??"",x.a.status==="done"?"Yakunlangan":x.a.status==="terminated"?"To'xtatilgan":"Topshiryapti",x.a.reason||"",dt(x.a.startedAt),x.dur?Math.round(x.dur/6000)/10:""].map(q).join(";"))).join("\r\n"))};
 }
 
+
+// ---------- MAJBURIY YANGILANISH ----------
+let appCfg=null,pendingReload=false;
+fs.doc("config/app").onSnapshot(sn=>{appCfg=sn.exists?sn.data():{};checkVersion()},()=>{});
+function showUpd(html){$("#updBody").innerHTML=html;$("#upd").hidden=false;document.body.classList.add("modal-open")}
+function checkVersion(){
+  const c=appCfg||{};
+  if(c.webVer&&c.webVer>WEB_VER){
+    if(EX&&EX.phase==="run"){pendingReload=true;return}
+    let done=false;try{done=sessionStorage.getItem("ot-reload-"+c.webVer)==="1";sessionStorage.setItem("ot-reload-"+c.webVer,"1")}catch(e){}
+    showUpd(`<h2>Yangi versiya o'rnatilmoqda…</h2><p>Ilova yangilandi (v${c.webVer}). Sahifa avtomatik qayta yuklanadi.</p>${done?`<div><button class="btn" type="button" onclick="location.reload()">Qayta yuklash</button></div>`:""}`);
+    if(!done)setTimeout(()=>location.reload(),2000);
+    return;
+  }
+  if(APK_VER!=null&&c.minApk&&APK_VER<c.minApk){
+    const url=c.apkUrl||SITE()+"OchiqTanlov.apk";
+    showUpd(`<img src="logo.png" alt="" width="56" height="56" style="border-radius:12px"><h2>Yangilash majburiy</h2><p>OchiqTanlov ilovasining yangi versiyasi chiqdi (v${c.minApk}). Sizda v${APK_VER||"6 yoki eski"} o'rnatilgan. Davom etish uchun yangilang — akkauntingiz va ma'lumotlaringiz saqlanib qoladi.</p>
+      ${c.note?`<div class="banner"><b>Yangiliklar:</b> ${esc(c.note)}</div>`:""}
+      <div><a class="btn" href="${esc(url)}" id="updGo" style="text-decoration:none;display:inline-block">Yangi versiyani yuklab olish</a></div>
+      <ol class="rules"><li>Fayl yuklab olingach, uni oching va <b>O'rnatish</b> ni bosing (eskisining ustidan o'rnatiladi).</li><li>Telefon "noma'lum manba" deb so'rasa, ruxsat bering.</li><li>Ilovani qayta oching.</li></ol>
+      <p class="note">Tugma ishlamasa, telefon brauzerida (Chrome) shu manzilni oching:<br><span class="mono" style="word-break:break-all">${esc(url)}</span></p>
+      <div><button class="btn ghost" type="button" id="updCopy">Manzilni nusxalash</button></div>`);
+    $("#updCopy").onclick=async()=>{try{await navigator.clipboard.writeText(url);toast("Manzil nusxalandi — brauzerga joylashtiring")}catch(e){toast(url)}};
+    return;
+  }
+  $("#upd").hidden=true;if(!$("#cert")||$("#cert").hidden)document.body.classList.remove("modal-open");
+  if(S.isChief&&(!c.webVer||c.webVer<WEB_VER))fs.doc("config/app").set({...c,webVer:WEB_VER,webAt:Date.now()}).catch(()=>{});
+}
+function renderVersion(){
+  const c=appCfg||{};
+  $("#verInfo").innerHTML=`<dt>Sayt (kod) versiyasi</dt><dd class="mono">v${WEB_VER}${c.webVer?` · tarqatilgan: v${c.webVer}`:""}</dd><dt>Eng kam APK versiyasi</dt><dd class="mono">${c.minApk?"v"+c.minApk:"cheklov yo'q"}</dd><dt>Siz hozir</dt><dd>${APK_VER==null?"brauzerdasiz":"APK v"+(APK_VER||"6 yoki eski")}</dd>`;
+  if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest("#verForm")){$("#ver-min").value=c.minApk||"";$("#ver-url").value=c.apkUrl||SITE()+"OchiqTanlov.apk";$("#ver-note").value=c.note||""}
+}
+$("#verForm").addEventListener("submit",async e=>{
+  e.preventDefault();const min=Math.max(0,+$("#ver-min").value||0),url=$("#ver-url").value.trim();
+  if(min&&!/^https:\/\/.+\.apk$/i.test(url)){toast("APK havolasi https:// bilan boshlanib, .apk bilan tugashi kerak");return}
+  try{await fs.doc("config/app").set({...(appCfg||{}),minApk:min,apkUrl:url,note:$("#ver-note").value.trim(),apkAt:Date.now()});
+    await log("test",`Majburiy yangilanish: eng kam APK v${min||"—"}`);$("#ver-saved").textContent="Saqlandi";setTimeout(()=>$("#ver-saved").textContent="",2500)}catch(e2){toast("Saqlab bo'lmadi: Firestore qoidalarini yangilang")}
+});
+
 // ---------- static selects ----------
 opts($("#f-region"),REGIONS,"Barcha hududlar");opts($("#f-sector"),SECTORS,"Barcha sohalar");
 opts($("#p-region"),REGIONS);opts($("#p-edu"),EDU.map((t,i)=>({v:i,t})));opts($("#p-spec"),Object.keys(SPECS));
@@ -1398,7 +1444,7 @@ auth.onAuthStateChanged(async u=>{
   try{const ad=S.isChief?null:await fs.doc("admins/"+u.uid).get();S.adminDoc=ad&&ad.exists?ad.data():null;S.isAdmin=S.isChief||!!S.adminDoc}catch(e){S.isAdmin=S.isChief}
   try{const g=await fs.doc("logins/"+u.uid).get();S.myLog=g.exists?g.data():null}catch(e){S.myLog=null}
   S.loaded=true;subscribe();
-  route();
+  route();checkVersion();
   if(!await faceGate()){S.role=null;remember(null);try{await auth.signOut()}catch(e){}location.hash="";closeAuth();route();return}
   if(pendingRole)enter(pendingRole);
   else{const r=recalled();if((r==="chief"&&S.isChief)||(r==="admin"&&S.isAdmin)||r==="applicant"){setRole(r);track("resume",r)}else route()}

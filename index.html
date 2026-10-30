@@ -12,7 +12,7 @@
 <script src="firebase-config.js"></script>
 <script>
 // Telefon ilovasi (file://) internetdagi manzil ko'rsatilgan bo'lsa, eng yangi versiyani o'sha yerdan ochadi.
-if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== false) location.replace(window.OT_APP_URL);
+if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== false) location.replace(window.OT_APP_URL + "?apk=" + (window.OT_APK_VERSION || 0));
 </script>
 </head>
 <body>
@@ -250,6 +250,17 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       <p class="err" id="cc-err" hidden></p>
       <div><button class="btn" type="submit">Kodni yangilash</button></div>
     </form>
+    <form class="panel stack" id="verForm">
+      <h2>Ilova versiyalari va majburiy yangilanish</h2>
+      <dl class="kv" id="verInfo"></dl>
+      <p class="note">Sayt yangilanganda (GitHub'ga yangi fayllar yuklanganda) siz ilovani ochishingiz bilan barcha ochiq telefon va kompyuterlar o'zi qayta yuklanadi. Yangi APK chiqqanda: APK faylni GitHub'ga yuklang, so'ng quyida eng kam versiyani oshiring — undan eski ilovalar "Yangilash majburiy" oynasini ko'radi.</p>
+      <div class="row2">
+        <label for="ver-min">Eng kam talab qilinadigan APK versiyasi<input id="ver-min" type="number" min="0" max="999" class="mono"></label>
+        <label for="ver-url">APK yuklab olish havolasi<input id="ver-url" class="mono"></label>
+      </div>
+      <label for="ver-note">Yangilikda nimalar bor (foydalanuvchiga ko'rinadi)<textarea id="ver-note" rows="2" maxlength="400"></textarea></label>
+      <div class="btnrow"><button class="btn" type="submit">Saqlash</button><span class="note" id="ver-saved"></span></div>
+    </form>
     <div class="panel stack" id="sampleBox">
       <h2>Namuna ma'lumotlar</h2>
       <p class="note">Ilovani tez sinab ko'rish uchun 3 ta namuna tashkilot va 4 ta vakansiya qo'shiladi. Ular nomida "(namuna)" deb belgilanadi va keyin o'chirish mumkin.</p>
@@ -478,6 +489,7 @@ C) Boshqa bo'limga yo'naltirish</pre>
     </div>
   </section>
 </main>
+<div class="upd" id="upd" hidden role="alertdialog" aria-modal="true"><div class="ex-card" id="updBody"></div></div>
 <div class="exam" id="exam" hidden>
   <div class="exam-top"><b>Kasbiy test</b><span id="ex-prog" class="note"></span><span class="spacer"></span><span id="ex-timer" class="mono ex-timer"></span></div>
   <div class="exam-cam" id="ex-cam"><video id="ex-video" autoplay muted playsinline></video><span id="ex-cam-st">Kamera</span></div>
