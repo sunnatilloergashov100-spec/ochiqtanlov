@@ -1,0 +1,57 @@
+name: Play Market uchun yig'ish (AAB)
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionCode:
+        description: "Versiya raqami (har yuklashda oldingisidan katta bo'lsin)"
+        required: true
+        default: "10"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Android SDK 36
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Imzo kaliti
+        env:
+          UPLOAD_KEYSTORE_B64: ${{ secrets.UPLOAD_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$UPLOAD_KEYSTORE_B64" ]; then echo "::error::UPLOAD_KEYSTORE_B64 secret qo'shilmagan (Settings → Secrets and variables → Actions)"; exit 1; fi
+          echo "$UPLOAD_KEYSTORE_B64" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/upload.p12"
+
+      - name: Yig'ish (AAB + APK)
+        working-directory: play
+        env:
+          VCODE: ${{ inputs.versionCode }}
+          KS_FILE: ${{ runner.temp }}/upload.p12
+          KS_PASS: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+        run: gradle --no-daemon bundleRelease assembleRelease
+
+      - name: Natijani tayyorlash
+        run: |
+          mkdir out
+          cp play/app/build/outputs/bundle/release/app-release.aab "out/OchiqTanlov-play-v${{ inputs.versionCode }}.aab"
+          cp play/app/build/outputs/apk/release/app-release.apk "out/OchiqTanlov-play-v${{ inputs.versionCode }}.apk"
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OchiqTanlov-play-v${{ inputs.versionCode }}
+          path: out/

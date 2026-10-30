@@ -1,4 +1,8 @@
 (function(){
+// Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
+{const BUILD=10,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+  if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
+  document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
 
 const REGIONS=["Toshkent sh.","Toshkent vil.","Andijon","Buxoro","Farg'ona","Jizzax","Xorazm","Namangan","Navoiy","Qashqadaryo","Qoraqalpog'iston","Samarqand","Sirdaryo","Surxondaryo"];
@@ -10,9 +14,11 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=8; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=10; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
+const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
+const PLAY_URL="https://play.google.com/store/apps/details?id=uz.ochiqtanlov.app";
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -233,7 +239,7 @@ function device(){
   const os=/Android/i.test(u)?"Android":/iPhone|iPad|iPod/i.test(u)?"iOS":/Windows/i.test(u)?"Windows":/Mac OS X/i.test(u)?"macOS":/CrOS/i.test(u)?"ChromeOS":/Linux/i.test(u)?"Linux":"Boshqa";
   const kind=/Mobi|Android|iPhone|iPod/i.test(u)?"Telefon":/iPad|Tablet/i.test(u)?"Planshet":"Kompyuter";
   const br=/Edg\//.test(u)?"Edge":/OPR\//.test(u)?"Opera":/YaBrowser/.test(u)?"Yandex":/Chrome\//.test(u)?"Chrome":/Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"Brauzer";
-  return {kind,os,br:APK_VER!=null?"OchiqTanlov ilova v"+(APK_VER||"6 yoki eski"):br};
+  return {kind,os,br:APK_VER!=null?"OchiqTanlov ilova v"+(APK_VER||"6 yoki eski")+(FROM_PLAY?" (Play)":""):br};
 }
 let trackQ=Promise.resolve();
 function writeLog(mut){
@@ -1026,7 +1032,8 @@ function renderTestPanel(){
   const box=$("#testPanel");if(!box)return;
   if(EX)return;
   const cfg=S.testCfg||{},ts=myTestStatus(),a=S.myAttempt;
-  $("#p-face").innerHTML=S.face?`<span class="pill win">Ro'yxatga olingan</span>`:`<span class="note">birinchi testda ro'yxatga olinadi</span>`;
+  const hasFace=S.face||(S.faces||[]).some(f=>f.id===S.uid);
+  $("#p-face").innerHTML=hasFace?`<span class="pill win">Ro'yxatga olingan</span>`:`<span class="note">kirishda ro'yxatga olinadi</span>`;
   if(a&&a.status==="running"&&!EX){fs.doc("attempts/"+S.uid).update({status:"terminated",reason:"Test oynasi yopildi yoki ilovadan chiqildi",finishedAt:Date.now()}).catch(()=>{})}
   let h="";
   if(ts.k==="done")h=`<div class="banner"><b>Test topshirilgan: ${ts.t} / 100.</b> ${a&&a.status==="terminated"?"Test to'xtatilgan: "+esc(a.reason||"")+". ":""}Bu ball barcha arizalaringizda ishlatiladi. Qayta topshirish faqat bosh administrator ruxsati bilan.</div>`;
@@ -1073,7 +1080,10 @@ function faceGate(){
       if(stopped)return;
       if(!desc)return fail("Yuz aniqlanmadi","Yorug'roq joyga o'tib, kameraga to'g'ri qarang va qayta urinib ko'ring.");
       if(enroll){
-        try{await fs.doc("faces/"+uid).set({desc,at:Date.now(),login:S.login||""})}catch(e){return fail("Saqlab bo'lmadi","Internet aloqasini tekshiring.")}
+        try{await fs.doc("faces/"+uid).set({desc,at:Date.now(),login:S.login||""})}
+        catch(e){let ex=null;try{const g=await fs.doc("faces/"+uid).get();ex=g.exists?g.data():null}catch(_){}
+          if(ex&&Array.isArray(ex.desc)){if(dist(desc,ex.desc)<=FACE_MATCH){S.face=ex;return done(true)}return fail("Yuz mos kelmadi","Bu akkauntga faqat uning egasi kira oladi.")}
+          return fail("Face ID saqlanmadi","Internet aloqasini tekshirib, qayta urinib ko'ring. ("+(e&&e.code||e)+")")}
         S.face={desc};toast("Yuzingiz ro'yxatga olindi");return done(true);
       }
       const d=dist(desc,face.desc);
@@ -1126,10 +1136,15 @@ async function startExam(){
   if(!EX)return;
   if(!desc){exFail("Yuz aniqlanmadi","25 soniya ichida yuzingizni aniq ko'ra olmadik. Yorug'roq joyga o'tib, kameraga to'g'ri qarab qayta urinib ko'ring.");return}
   let enrolled=false,fd=null;
-  if(S.face&&Array.isArray(S.face.desc)){fd=dist(desc,S.face.desc);
+  // Face ID izini har safar to'g'ridan-to'g'ri bazadan o'qiymiz (xotiradagi nusxaga tayanmaymiz)
+  const readFace=async()=>{try{const g=await fs.doc("faces/"+S.uid).get();return g.exists?g.data():null}catch(e){return undefined}};
+  let face=await readFace();
+  if(face===undefined){exFail("Face ID tekshirilmadi","Internet aloqasini tekshirib, qayta urinib ko'ring.");return}
+  if(!face){try{await fs.doc("faces/"+S.uid).set({desc,at:Date.now(),login:S.login||""});enrolled=true;S.face={desc}}catch(e){face=await readFace();if(!face){exFail("Face ID saqlanmadi","Internet aloqasini tekshirib, qayta urinib ko'ring. ("+(e&&e.code||e)+")");return}}}
+  if(!EX)return;
+  if(!enrolled&&face&&Array.isArray(face.desc)){S.face=face;fd=dist(desc,face.desc);
     if(fd>FACE_MATCH){exFail("Face ID: yuz mos kelmadi","Kameradagi yuz ro'yxatga olingan yuzga mos kelmadi. Test faqat akkaunt egasining o'zi topshirishi mumkin. Xatolik bo'lsa, bosh administratorga murojaat qiling.");
       log("test",`Face ID mos kelmadi: ${S.login} (masofa ${fd.toFixed(2)})`).catch(()=>{});return}}
-  else{try{await fs.doc("faces/"+S.uid).set({desc,at:Date.now(),login:S.login||""});enrolled=true}catch(e){exFail("Face ID saqlanmadi","Qayta urinib ko'ring.");return}}
   EX.ref=desc;
   let qs=[];
   try{msg("Savollar yuklanmoqda…");const g=await fs.collection("questions").get();qs=g.docs.map(d=>({id:d.id,...d.data()})).filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2)}catch(e){}
@@ -1363,6 +1378,23 @@ function renderTestAdmin(){
 }
 
 
+// ---------- AKKAUNTNI O'CHIRISH (Google Play talabi) ----------
+$("#del-btn").onclick=async()=>{
+  const err=$("#del-err"),pw=$("#del-pass").value,u=auth.currentUser;err.hidden=true;
+  if(!u)return;if(!pw){err.textContent="Parolingizni kiriting.";err.hidden=false;return}
+  if(S.isChief||S.isAdmin){err.textContent="Administrator akkauntini ilovadan o'chirib bo'lmaydi. Avval bosh administrator huquqingizni olib tashlasin.";err.hidden=false;return}
+  const b=$("#del-btn");b.disabled=true;
+  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,pw))}
+  catch(e){err.textContent="Parol noto'g'ri.";err.hidden=false;b.disabled=false;return}
+  const uid=u.uid;
+  try{
+    for(const p of ["applications/","profiles/","contacts/","faces/","logins/","testreq/"])await fs.doc(p+uid).delete().catch(()=>{});
+    unsubAll();await u.delete();
+    setQuick(null);setLock(false);remember(null);try{sessionStorage.clear()}catch(e){}
+    S.role=null;location.hash="";toast("Akkauntingiz o'chirildi");route();
+  }catch(e){err.textContent="O'chirib bo'lmadi: "+(e&&e.code||"internet aloqasini tekshiring");err.hidden=false;b.disabled=false}
+};
+
 // ---------- MAJBURIY YANGILANISH ----------
 let appCfg=null,pendingReload=false;
 fs.doc("config/app").onSnapshot(sn=>{appCfg=sn.exists?sn.data():{};checkVersion()},()=>{});
@@ -1377,11 +1409,11 @@ function checkVersion(){
     return;
   }
   if(APK_VER!=null&&c.minApk&&APK_VER<c.minApk){
-    const url=c.apkUrl||SITE()+"OchiqTanlov.apk";
+    const url=FROM_PLAY?PLAY_URL:(c.apkUrl||SITE()+"OchiqTanlov.apk");
     showUpd(`<img src="logo.png" alt="" width="56" height="56" style="border-radius:12px"><h2>Yangilash majburiy</h2><p>OchiqTanlov ilovasining yangi versiyasi chiqdi (v${c.minApk}). Sizda v${APK_VER||"6 yoki eski"} o'rnatilgan. Davom etish uchun yangilang — akkauntingiz va ma'lumotlaringiz saqlanib qoladi.</p>
       ${c.note?`<div class="banner"><b>Yangiliklar:</b> ${esc(c.note)}</div>`:""}
-      <div><a class="btn" href="${esc(url)}" id="updGo" style="text-decoration:none;display:inline-block">Yangi versiyani yuklab olish</a></div>
-      <ol class="rules"><li>Fayl yuklab olingach, uni oching va <b>O'rnatish</b> ni bosing (eskisining ustidan o'rnatiladi).</li><li>Telefon "noma'lum manba" deb so'rasa, ruxsat bering.</li><li>Ilovani qayta oching.</li></ol>
+      <div><a class="btn" href="${esc(url)}" id="updGo" style="text-decoration:none;display:inline-block">${FROM_PLAY?"Play Market'da yangilash":"Yangi versiyani yuklab olish"}</a></div>
+      ${FROM_PLAY?`<p class="note">Play Market ochiladi — <b>Yangilash</b> tugmasini bosing, so'ng ilovani qayta oching.</p>`:`<ol class="rules"><li>Fayl yuklab olingach, uni oching va <b>O'rnatish</b> ni bosing (eskisining ustidan o'rnatiladi).</li><li>Telefon "noma'lum manba" deb so'rasa, ruxsat bering.</li><li>Ilovani qayta oching.</li></ol>`}
       <p class="note">Tugma ishlamasa, telefon brauzerida (Chrome) shu manzilni oching:<br><span class="mono" style="word-break:break-all">${esc(url)}</span></p>
       <div><button class="btn ghost" type="button" id="updCopy">Manzilni nusxalash</button></div>`);
     $("#updCopy").onclick=async()=>{try{await navigator.clipboard.writeText(url);toast("Manzil nusxalandi — brauzerga joylashtiring")}catch(e){toast(url)}};

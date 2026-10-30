@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B7A62">
+<meta name="ot-build" content="10">
 <title>OchiqTanlov</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,7 +63,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       </button>
     </div>
     <p class="err" id="gateErr" hidden style="margin-top:14px"></p>
-    <p class="note gate-verify" id="gateVerify"><a href="#tekshir">Natija guvohnomasini tekshirish →</a></p>
+    <p class="note gate-verify" id="gateVerify"><a href="#tekshir">Natija guvohnomasini tekshirish →</a> · <a href="maxfiylik.html">Maxfiylik siyosati</a></p>
 
     <div class="auth" id="authStep" hidden>
       <button class="btn ghost" type="button" id="authBack">← Rolni qayta tanlash</button>
@@ -152,6 +153,13 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
           <dl class="kv"><dt>Test bali</dt><dd class="mono" id="p-test">—</dd><dt>Anonim kodingiz</dt><dd class="mono" id="p-code">—</dd><dt>Face ID</dt><dd id="p-face">—</dd></dl>
           <div id="testPanel" class="stack"></div>
         </div>
+        <details class="panel stack danger-zone">
+          <summary style="cursor:pointer;font-weight:600">Akkauntni o'chirish</summary>
+          <p class="note" style="margin-top:10px">Akkauntingiz va shaxsiy ma'lumotlaringiz (ism, telefon, profil, arizalar, Face ID izi, kirish tarixi) butunlay o'chiriladi. Yakunlangan tanlovlardagi anonim natijalar va test natijasi shaffoflik uchun saqlanadi. Bu amalni ortga qaytarib bo'lmaydi.</p>
+          <label for="del-pass">Tasdiqlash uchun parolingiz<input id="del-pass" type="password" autocomplete="current-password"></label>
+          <p class="err" id="del-err" hidden></p>
+          <div><button class="btn danger" type="button" id="del-btn">Akkauntni butunlay o'chirish</button></div>
+        </details>
       </div>
     </div>
   </section>
@@ -346,6 +354,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       <div class="devs" id="ab-devs"></div>
     </div>
     <p class="note" id="ab-meta"></p>
+    <p class="note"><a href="maxfiylik.html" style="color:var(--accent);font-weight:600">Maxfiylik siyosati</a></p>
     <div id="ab-editbar" hidden><button class="btn" type="button" id="ab-edit">Ma'lumotlarni tahrirlash</button></div>
     <form class="panel stack" id="ab-form" hidden>
       <h2>"Ilova haqida" bo'limini tahrirlash</h2>

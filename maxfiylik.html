@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OchiqTanlov — Maxfiylik siyosati</title>
+<link rel="icon" type="image/png" href="logo.png">
+<style>
+:root{--paper:#F2F5F6;--card:#fff;--ink:#13232C;--muted:#5B6D77;--line:#D6DFE3;--accent:#0B7A62}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0F171B;--card:#16232A;--ink:#E6EEF1;--muted:#93A6AF;--line:#28383F;--accent:#3FC7A3}}
+:root[data-theme="dark"]{--paper:#0F171B;--card:#16232A;--ink:#E6EEF1;--muted:#93A6AF;--line:#28383F;--accent:#3FC7A3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:780px;margin:0 auto;padding:28px 16px 64px}
+header{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+header img{border-radius:10px}
+h1{font-size:26px;margin:6px 0 4px;line-height:1.25}
+h2{font-size:19px;margin:30px 0 8px}
+p,li{margin:6px 0}
+.muted{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+a{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <header><img src="logo.png" alt="" width="40" height="40"><b>OchiqTanlov</b></header>
+  <h1>Maxfiylik siyosati</h1>
+  <p class="muted">Kuchga kirgan sana: 2026-yil 31-oktabr</p>
+
+  <div class="card">
+    <p><b>OchiqTanlov</b> — davlat tashkilotlaridagi bo'sh ish o'rinlariga ochiq formula asosida nomzod tanlash uchun mustaqil talabalar loyihasi. Ilova biror davlat organining rasmiy ilovasi emas. Ushbu siyosat ilova (Android) va sayt (sunnatilloergashov100-spec.github.io/ochiqtanlov) qaysi ma'lumotlarni yig'ishi, nima uchun ishlatishi va qanday himoya qilishini tushuntiradi.</p>
+  </div>
+
+  <h2>1. Qanday ma'lumotlar yig'iladi</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Ma'lumot</th><th>Nima uchun</th></tr></thead>
+    <tbody>
+      <tr><td>Login va parol (parol Firebase serverida shifrlangan holda saqlanadi, uni hech kim ko'ra olmaydi)</td><td>Akkauntga kirish</td></tr>
+      <tr><td>F.I.Sh. va telefon raqami</td><td>G'olib taklifni qabul qilganda ish beruvchi siz bilan bog'lanishi uchun</td></tr>
+      <tr><td>Profil: viloyat, ma'lumot darajasi, mutaxassislik, ish staji, ko'nikmalar, tillar</td><td>Vakansiya talablariga moslikni tekshirish va ball hisoblash</td></tr>
+      <tr><td>Arizalar (anonim kod bilan), shikoyat matni</td><td>Tanlovda ishtirok etish va natija ustidan shikoyat qilish</td></tr>
+      <tr><td>Kasbiy test javoblari, javob vaqti, test holati</td><td>Test balini hisoblash</td></tr>
+      <tr><td><b>Face ID izi</b> — yuzdan hisoblangan 128 ta raqam. Yuz rasmi yoki video <b>saqlanmaydi va yuborilmaydi</b></td><td>Akkauntga faqat egasining o'zi kirishi va testni o'zi topshirishini tekshirish</td></tr>
+      <tr><td>Kirish va chiqish vaqti, qurilma turi, operatsion tizim, brauzer yoki ilova versiyasi, noto'g'ri parol urinishlari</td><td>Xavfsizlik va suiiste'mollarni aniqlash</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>2. Kamera</h2>
+  <p>Kamera faqat Face ID va kasbiy test paytida, sizning ruxsatingiz bilan yoqiladi. Tasvir telefoningizning o'zida qayta ishlanadi: yuz aniqlanadi va 128 ta raqamdan iborat iz hisoblanadi. Videoyozuv qilinmaydi, rasm serverga yuborilmaydi. Test paytida yuz kamerada ko'rinmasa, boshqa tomonga qaralsa yoki boshqa odam paydo bo'lsa, test to'xtatiladi. Bu ham faqat qurilmaning o'zida aniqlanadi.</p>
+
+  <h2>3. Ma'lumotlarni kim ko'radi</h2>
+  <ul>
+    <li><b>Siz</b> — o'zingizning barcha ma'lumotlaringizni.</li>
+    <li><b>Ish beruvchi</b> — faqat o'z tashkilotiga kelgan arizalarni anonim kodlar bilan (ism va telefonsiz). Siz g'olib bo'lib, taklifni o'zingiz qabul qilsangizgina ismingiz va telefoningiz shu tashkilotga ko'rinadi.</li>
+    <li><b>Bosh administrator</b> — tizimni boshqarish, testni baholash, shikoyatlarni ko'rib chiqish va xavfsizlik uchun.</li>
+    <li><b>Hamma</b> — tanlov reytingini faqat anonim kodlar va ballar bilan ko'radi (shaffoflik uchun). Natija guvohnomasini tekshirish sahifasida ham faqat anonim kod, ball va o'rin ko'rinadi.</li>
+  </ul>
+  <p>Ma'lumotlaringiz sotilmaydi, reklama uchun ishlatilmaydi va uchinchi shaxslarga berilmaydi. Ilovada reklama va kuzatuv (tracking) vositalari yo'q.</p>
+
+  <h2>4. Saqlash va himoya</h2>
+  <p>Ma'lumotlar Google Firebase xizmatida (Firebase Authentication va Cloud Firestore, server joylashuvi — Yevropa, europe-west1) saqlanadi. Aloqa shifrlangan (HTTPS). Kim qaysi ma'lumotni o'qiy yoki o'zgartira olishini server qoidalari belgilaydi. Ilovada skrinshot va ekranni yozib olish taqiqlangan.</p>
+
+  <h2>5. Saqlash muddati</h2>
+  <p>Ma'lumotlar akkauntingiz mavjud ekan saqlanadi. Akkaunt o'chirilganda shaxsiy ma'lumotlar o'chiriladi. Yakunlangan tanlovlardagi anonim natijalar (kod va ball), test natijasi va harakatlar jurnali tanlov shaffofligini ta'minlash uchun saqlanib qoladi. Ularni ham o'chirishni so'rasangiz, bosh administrator o'chiradi.</p>
+
+  <h2 id="ochirish">6. Akkaunt va ma'lumotlarni o'chirish</h2>
+  <ol>
+    <li>Ilovada <b>Profil va test</b> bo'limini oching.</li>
+    <li>Pastdagi <b>Akkauntni o'chirish</b> bandini oching, parolingizni kiriting va <b>Akkauntni butunlay o'chirish</b> tugmasini bosing.</li>
+  </ol>
+  <p>Ilovaga kira olmasangiz, ilovadagi "Ilova haqida" bo'limida ko'rsatilgan Telegram yoki telefon orqali dasturchilarga yozing. Loginingizni ayting — akkauntingiz 7 kun ichida o'chiriladi.</p>
+
+  <h2>7. Bolalar</h2>
+  <p>Ilova ish qidiruvchi kattalar uchun mo'ljallangan. 16 yoshgacha bo'lganlar ro'yxatdan o'tmasligi kerak.</p>
+
+  <h2>8. O'zgarishlar va aloqa</h2>
+  <p>Siyosat o'zgarsa, shu sahifa yangilanadi va yuqoridagi sana o'zgaradi. Savollar bo'yicha ilovaning "Ilova haqida" bo'limidagi dasturchilar bilan bog'laning.</p>
+
+  <p style="margin-top:32px"><a href="./">← OchiqTanlov ilovasiga qaytish</a></p>
+</main>
+</body>
+</html>

@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Versiya raqami GitHub Actions'dan keladi (har yangi yuklashda oshiriladi)
+def vcode = (System.getenv('VCODE') ?: '10') as int
+
+android {
+    namespace 'uz.ochiqtanlov.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'uz.ochiqtanlov.app'
+        minSdk 24
+        targetSdk 36
+        versionCode vcode
+        versionName "${vcode}.0"
+        resValue 'string', 'ot_vcode', "${vcode}"
+    }
+
+    signingConfigs {
+        upload {
+            storeFile file(System.getenv('KS_FILE') ?: 'missing.p12')
+            storePassword System.getenv('KS_PASS') ?: ''
+            keyAlias 'upload'
+            keyPassword System.getenv('KS_PASS') ?: ''
+            storeType 'pkcs12'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.upload
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
