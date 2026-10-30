@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B7A62">
 <title>OchiqTanlov</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="style.css">
@@ -18,7 +19,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 <header id="hdr" hidden>
   <div class="wrap">
     <div class="hrow">
-      <div class="brand"><i>OT</i>OchiqTanlov</div>
+      <div class="brand"><img src="logo.png" alt="" width="28" height="28">OchiqTanlov</div>
       <span class="role" id="roleBadge"></span>
       <span class="spacer"></span>
       <span class="who" id="whoami"></span>
@@ -31,7 +32,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 <main class="wrap" id="main">
   <!-- ROLE GATE -->
   <section class="gate" id="v-gate">
-    <div class="brand" style="margin-bottom:18px"><i>OT</i>OchiqTanlov</div>
+    <div class="brand" style="margin-bottom:18px"><img src="logo.png" alt="" width="36" height="36">OchiqTanlov</div>
     <h1>Davlat tashkilotlaridagi bo'sh ish o'rinlari — tanlovni tizim o'tkazadi</h1>
     <p class="lede">Ish o'rnini rahbar emas, oldindan e'lon qilingan ochiq formula bo'yicha tizim to'ldiradi. Kim sifatida kirasiz?</p>
     <div id="gateBanner"></div>
@@ -317,6 +318,29 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
   </section>
 
   <!-- QOIDALAR (both) -->
+  <!-- HAMMA: ILOVA HAQIDA -->
+  <section id="v-haqida" class="section" hidden>
+    <div class="about-hero">
+      <img src="logo.png" alt="" width="72" height="72">
+      <div><h1>OchiqTanlov</h1><p class="lede" id="ab-desc"></p></div>
+    </div>
+    <div class="panel stack">
+      <h2>Dastur tuzuvchilari</h2>
+      <div class="devs" id="ab-devs"></div>
+    </div>
+    <p class="note" id="ab-meta"></p>
+    <div id="ab-editbar" hidden><button class="btn" type="button" id="ab-edit">Ma'lumotlarni tahrirlash</button></div>
+    <form class="panel stack" id="ab-form" hidden>
+      <h2>"Ilova haqida" bo'limini tahrirlash</h2>
+      <p class="note">Bu ma'lumotlarni barcha foydalanuvchilar ko'radi. Faqat bosh administrator o'zgartira oladi.</p>
+      <label for="ab-text">Qisqacha sharh<textarea id="ab-text" rows="5" maxlength="1500" required></textarea></label>
+      <div id="ab-rows" class="stack"></div>
+      <div><button class="btn ghost" type="button" id="ab-add">+ Dasturchi qo'shish</button></div>
+      <p class="err" id="ab-err" hidden></p>
+      <div class="btnrow"><button class="btn" type="submit" id="ab-save">Saqlash</button><button class="btn ghost" type="button" id="ab-cancel">Bekor qilish</button></div>
+    </form>
+  </section>
+
   <section id="v-qoidalar" class="section" hidden>
     <div><h1>Tanlov qanday o'tadi</h1><p class="lede">Qoidalar hamma uchun bir xil va oldindan e'lon qilinadi. Rahbar yoki administratorning ixtiyoriga qoladigan bosqich yo'q.</p></div>
     <ol class="steps">

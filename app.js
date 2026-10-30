@@ -55,9 +55,9 @@ function daysLeft(v){if(isClosed(v))return "Yakunlangan";const ms=(v.deadline||0
 const orgOf=id=>S.orgs.find(o=>o.id===id)||{name:"Noma'lum tashkilot",stir:"—"};
 
 // ---------- routing ----------
-const APP_TABS=[["vakansiyalar","Vakansiyalar"],["arizalar","Arizalarim"],["profil","Profilim"]];
-const ADM_TABS=[["boshqaruv","Boshqaruv"],["tashkilotlar","Tashkilotlar"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["jurnal","Jurnal"],["sozlamalar","Sozlamalar"],["qoidalar","Qoidalar"]];
-const ALL_VIEWS=["monitoring","kirishlar","foydalanuvchilar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","jurnal","sozlamalar","qoidalar"];
+const APP_TABS=[["vakansiyalar","Vakansiyalar"],["arizalar","Arizalarim"],["profil","Profilim"],["haqida","Ilova haqida"]];
+const ADM_TABS=[["boshqaruv","Boshqaruv"],["tashkilotlar","Tashkilotlar"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["jurnal","Jurnal"],["sozlamalar","Sozlamalar"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
+const ALL_VIEWS=["monitoring","kirishlar","foydalanuvchilar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","jurnal","sozlamalar","qoidalar","haqida"];
 const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"]];
 function tabs(){return S.role==="chief"?CHIEF_TABS.concat(ADM_TABS):S.role==="admin"?ADM_TABS:APP_TABS}
 function route(){
@@ -266,6 +266,59 @@ function renderUsers(){
 }
 ["u-q","u-role"].forEach(id=>document.getElementById(id).addEventListener("input",renderUsers));
 
+
+// ---------- ILOVA HAQIDA (hamma o'qiydi, faqat bosh administrator yozadi) ----------
+const AB_DEFAULT={
+  desc:"OchiqTanlov — davlat tashkilotlaridagi bo'sh ish o'rinlarini ochiq va adolatli to'ldirish uchun ilova. Ish o'rnini rahbar emas, oldindan e'lon qilingan ochiq formula bo'yicha tizim tanlaydi: nomzodlar anonim kod bilan ariza beradi, ball avtomatik hisoblanadi va natija hamma uchun ochiq e'lon qilinadi. Maqsad — tanish-bilishchilikka o'rin qoldirmaslik.",
+  devs:[{name:"Ergashov Sunnatillo",role:"Dastur tuzuvchi · O'zMU Jizzax filiali",tg:"",phone:""},{name:"",role:"Dastur tuzuvchi",tg:"",phone:""}]
+};
+let abEditing=false;
+const abData=()=>{const d=S.about||{};return{desc:d.desc||AB_DEFAULT.desc,devs:Array.isArray(d.devs)&&d.devs.length?d.devs:AB_DEFAULT.devs,at:d.at||null}};
+const tgUser=v=>String(v||"").trim().replace(/^https?:\/\/(www\.)?(t|telegram)\.me\//i,"").replace(/^@/,"").replace(/[^A-Za-z0-9_]/g,"");
+const telNum=v=>String(v||"").replace(/[^\d+]/g,"");
+function renderAbout(){
+  const d=abData();
+  $("#ab-desc").textContent=d.desc;
+  const shown=d.devs.filter(x=>x.name||x.tg||x.phone);
+  $("#ab-devs").innerHTML=shown.length?shown.map(x=>{
+    const tg=tgUser(x.tg),ph=telNum(x.phone);
+    return `<div class="dev"><b>${esc(x.name||"—")}</b>${x.role?`<span class="rl">${esc(x.role)}</span>`:""}`+
+      (tg?`<a href="https://t.me/${tg}" target="_blank" rel="noopener"><span>Telegram</span>@${esc(tg)}</a>`:"")+
+      (ph?`<a href="tel:${esc(ph)}"><span>Telefon</span>${esc(x.phone)}</a>`:"")+`</div>`}).join("")
+    :`<div class="empty">Ma'lumot hali kiritilmagan.</div>`;
+  $("#ab-meta").textContent=d.at?("Oxirgi yangilanish: "+new Date(d.at).toLocaleString("uz-UZ")):"";
+  $("#ab-editbar").hidden=!(S.role==="chief"&&S.isChief)||abEditing;
+  $("#ab-form").hidden=!abEditing;
+}
+function abRow(x,i){
+  return `<div class="devrow" data-i="${i}">
+    <label>Ism-familiya<input class="ab-name" maxlength="80" value="${esc(x.name||"")}"></label>
+    <label>Vazifasi<input class="ab-role" maxlength="80" value="${esc(x.role||"")}" placeholder="Dastur tuzuvchi"></label>
+    <label>Telegram<input class="ab-tg" maxlength="64" value="${esc(x.tg||"")}" placeholder="@username"></label>
+    <label>Telefon<input class="ab-ph" type="tel" maxlength="24" value="${esc(x.phone||"")}" placeholder="+998 90 123 45 67"></label>
+    <button class="btn ghost x" type="button" data-del="${i}">O'chirish</button></div>`;
+}
+function abCollect(){return [...document.querySelectorAll("#ab-rows .devrow")].map(r=>({name:r.querySelector(".ab-name").value.trim(),role:r.querySelector(".ab-role").value.trim(),tg:r.querySelector(".ab-tg").value.trim(),phone:r.querySelector(".ab-ph").value.trim()}))}
+function abFill(devs){$("#ab-rows").innerHTML=devs.map(abRow).join("")}
+$("#ab-edit").onclick=()=>{const d=abData();abEditing=true;$("#ab-text").value=d.desc;abFill(d.devs.map(x=>({...x})));$("#ab-err").hidden=true;renderAbout()};
+$("#ab-cancel").onclick=()=>{abEditing=false;renderAbout()};
+$("#ab-add").onclick=()=>{const v=abCollect();if(v.length>=8)return;v.push({name:"",role:"Dastur tuzuvchi",tg:"",phone:""});abFill(v)};
+$("#ab-rows").addEventListener("click",e=>{const i=e.target.getAttribute&&e.target.getAttribute("data-del");if(i==null)return;const v=abCollect();v.splice(+i,1);abFill(v)});
+$("#ab-form").onsubmit=async e=>{
+  e.preventDefault();
+  const err=$("#ab-err");err.hidden=true;
+  const desc=$("#ab-text").value.trim(),devs=abCollect().filter(x=>x.name||x.tg||x.phone);
+  if(!desc){err.textContent="Qisqacha sharhni yozing.";err.hidden=false;return}
+  const bad=devs.find(x=>x.phone&&telNum(x.phone).replace("+","").length<7);
+  if(bad){err.textContent="Telefon raqami noto'g'ri: "+bad.phone;err.hidden=false;return}
+  const b=$("#ab-save");b.disabled=true;
+  try{
+    await fs.doc("about/info").set({desc,devs:devs.map(x=>({...x,tg:tgUser(x.tg)})),at:Date.now(),by:S.uid});
+    abEditing=false;toast("Ilova haqidagi ma'lumot saqlandi");renderAbout();
+  }catch(ex){err.textContent=String(ex&&ex.code||"").includes("permission")?"Ruxsat yo'q: Firestore qoidalariga \"about\" bo'limi qo'shilmagan yoki siz bosh administrator emassiz.":"Saqlab bo'lmadi: "+(ex&&ex.message||ex);err.hidden=false}
+  finally{b.disabled=false}
+};
+
 // ---------- render dispatcher ----------
 function render(){
   const t=location.hash.slice(1);
@@ -283,6 +336,7 @@ function render(){
   if(t==="monitoring")renderMonitoring();
   if(t==="kirishlar")renderKirishlar();
   if(t==="foydalanuvchilar")renderUsers();
+  if(t==="haqida")renderAbout();
 }
 function renderGate(){
   const b=$("#gateBanner");
@@ -687,6 +741,7 @@ function subscribe(){
   unsubs.push(fs.collection("orgs").onSnapshot(s=>{S.orgs=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.orgs=true;render()},err));
   unsubs.push(fs.collection("vacancies").onSnapshot(s=>{S.vacs=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.vacs=true;render()},err));
   unsubs.push(fs.collection("applications").onSnapshot(s=>{S.apps=s.docs.map(d=>({uid:d.id,...d.data()}));S.ready.apps=true;render()},err));
+  unsubs.push(fs.doc("about/info").onSnapshot(s=>{S.about=s.exists?s.data():null;if(!abEditing)render()},err));
   unsubs.push(fs.doc("profiles/"+S.uid).onSnapshot(s=>{S.profile=s.exists?s.data():null;draftP.skills=null;draftP.langs=null;render()},err));
   if(S.isChief){
     unsubs.push(fs.collection("logins").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]={uid:d.id,...d.data()});S.logins=m;render()},err));
