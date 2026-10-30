@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B7A62">
+<title>OchiqTanlov</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<script src="firebase-config.js"></script>
+<script>
+// Telefon ilovasi (file://) internetdagi manzil ko'rsatilgan bo'lsa, eng yangi versiyani o'sha yerdan ochadi.
+if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== false) location.replace(window.OT_APP_URL);
+</script>
+</head>
+<body>
+<header id="hdr" hidden>
+  <div class="wrap">
+    <div class="hrow">
+      <div class="brand"><i>OT</i>OchiqTanlov</div>
+      <span class="role" id="roleBadge"></span>
+      <span class="spacer"></span>
+      <span class="who" id="whoami"></span>
+      <button class="btn ghost" id="btnSwitch" type="button">Chiqish</button>
+    </div>
+    <nav id="nav" aria-label="Bo'limlar"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <!-- ROLE GATE -->
+  <section class="gate" id="v-gate">
+    <div class="brand" style="margin-bottom:18px"><i>OT</i>OchiqTanlov</div>
+    <h1>Davlat tashkilotlaridagi bo'sh ish o'rinlari — tanlovni tizim o'tkazadi</h1>
+    <p class="lede">Ish o'rnini rahbar emas, oldindan e'lon qilingan ochiq formula bo'yicha tizim to'ldiradi. Kim sifatida kirasiz?</p>
+    <div id="gateBanner"></div>
+    <div class="roles" id="roleStep">
+      <button class="rolecard" type="button" data-role="applicant">
+        <span class="ico">IT</span>
+        <h2>Ish topshiruvchi</h2>
+        <ul><li>Profil va kasbiy test</li><li>Maosh va hudud bo'yicha vakansiyalarni tanlash</li><li>Anonim kod bilan ariza topshirish</li><li>O'z natijangizni ochiq reytingda ko'rish</li></ul>
+        <span class="go">Ish topshiruvchi sifatida kirish →</span>
+      </button>
+      <button class="rolecard adm" type="button" data-role="admin">
+        <span class="ico">AD</span>
+        <h2>Ilova administratori</h2>
+        <ul><li>Davlat tashkilotlarini STIR bilan kiritish</li><li>Tashkilot nomidan vakansiya e'lon qilish</li><li>Muddat tugagach tanlovni yakunlash</li><li>G'olibni tanlash huquqi yo'q — uni tizim belgilaydi</li></ul>
+        <span class="go">Administrator sifatida kirish →</span>
+      </button>
+      <button class="rolecard chief" type="button" data-role="chief">
+        <span class="ico">BA</span>
+        <h2>Bosh administrator</h2>
+        <ul><li>Kim qachon kirgani va chiqqani</li><li>Hozir onlayn foydalanuvchilar va qurilmalari</li><li>Noto'g'ri parol urinishlari</li><li>Administratorning barcha imkoniyatlari</li></ul>
+        <span class="go">Bosh administrator sifatida kirish →</span>
+      </button>
+    </div>
+    <p class="err" id="gateErr" hidden style="margin-top:14px"></p>
+
+    <div class="auth" id="authStep" hidden>
+      <button class="btn ghost" type="button" id="authBack">← Rolni qayta tanlash</button>
+      <div class="panel stack authbox">
+        <div class="btnrow" style="justify-content:space-between">
+          <h2 style="margin:0" id="authTitle">Kirish</h2>
+          <span class="role" id="authRole"></span>
+        </div>
+        <div class="tabs2" role="tablist">
+          <button type="button" role="tab" id="tabLogin" aria-selected="true">Kirish</button>
+          <button type="button" role="tab" id="tabReg" aria-selected="false">Ro'yxatdan o'tish</button>
+        </div>
+
+        <form class="stack" id="loginForm" autocomplete="on">
+          <label for="l-login">Login<input id="l-login" autocomplete="username" required></label>
+          <label for="l-pass">Parol<input id="l-pass" type="password" autocomplete="current-password" required></label>
+          <p class="err" id="l-err" hidden></p>
+          <div class="btnrow"><button class="btn" type="submit" id="l-btn">Kirish</button><button class="linkbtn" type="button" id="l-forgot">Parolni unutdingizmi?</button></div>
+        </form>
+
+        <form class="stack" id="regForm" hidden autocomplete="on">
+          <label for="r-name">F.I.Sh.<input id="r-name" autocomplete="name" required></label>
+          <label for="r-phone">Telefon<input id="r-phone" inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67" required></label>
+          <label for="r-login">Login (lotin harflari, raqam, _ ; 4–20 belgi)<input id="r-login" autocomplete="username" required></label>
+          <label for="r-pass">Parol (kamida 8 belgi, harf va raqam)<input id="r-pass" type="password" autocomplete="new-password" required></label>
+          <label for="r-pass2">Parolni takrorlang<input id="r-pass2" type="password" autocomplete="new-password" required></label>
+          <p class="err" id="r-err" hidden></p>
+          <div><button class="btn" type="submit" id="r-btn">Ro'yxatdan o'tish</button></div>
+        </form>
+
+        <form class="stack" id="codeForm" hidden>
+          <p class="note" id="c-note">Administrator bo'limiga kirish uchun maxsus kodni kiriting.</p>
+          <label for="c-code">Administrator kodi<input id="c-code" type="password" autocomplete="off" required></label>
+          <label for="c-code2" id="c-code2-wrap" hidden>Kodni takrorlang<input id="c-code2" type="password" autocomplete="off"></label>
+          <p class="err" id="c-err" hidden></p>
+          <div><button class="btn" type="submit" id="c-btn">Tasdiqlash</button></div>
+        </form>
+
+        <form class="stack" id="resetForm" hidden>
+          <p class="note">Parolni tiklash uchun administratorga murojaat qiling.</p>
+          <label for="x-pass">Yangi parol<input id="x-pass" type="password" autocomplete="new-password" required></label>
+          <label for="x-pass2">Yangi parolni takrorlang<input id="x-pass2" type="password" autocomplete="new-password" required></label>
+          <p class="err" id="x-err" hidden></p>
+          <div class="btnrow"><button class="btn" type="submit">Parolni yangilash</button><button class="linkbtn" type="button" id="x-cancel">Bekor qilish</button></div>
+        </form>
+        <p class="note">Xavfsizlik uchun kirish va chiqish vaqti hamda qurilma turi qayd etiladi.</p>
+        <p class="note">Parol Firebase serverida shifrlangan holda saqlanadi va tekshiriladi. Uni hech kim, jumladan administrator ham ko'ra olmaydi.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLICANT: VAKANSIYALAR -->
+  <section id="v-vakansiyalar" class="section" hidden>
+    <div><h1>Bo'sh ish o'rinlari</h1><p class="lede">Maosh, hudud va soha bo'yicha saralang. Talablarga mos kelsangiz, ariza anonim kodingiz bilan topshiriladi.</p></div>
+    <div class="filters">
+      <label for="f-region">Hudud<select id="f-region"></select></label>
+      <label for="f-sector">Soha<select id="f-sector"></select></label>
+      <label for="f-min">Eng kam maosh (so'm)<input id="f-min" type="number" min="0" step="500000" placeholder="masalan 5000000"></label>
+      <label for="f-sort">Saralash<select id="f-sort"><option value="sal">Maosh: yuqoridan</option><option value="dl">Muddat yaqin</option></select></label>
+      <label class="check" for="f-fit"><input type="checkbox" id="f-fit" checked> Faqat menga moslar</label>
+    </div>
+    <div class="vlist" id="vlist"></div>
+  </section>
+
+  <!-- APPLICANT: PROFIL -->
+  <section id="v-profil" class="section" hidden>
+    <div><h1>Mening profilim</h1><p class="lede">Profil ma'lumotlari faqat sizga ko'rinadi. Ariza topshirganda ulardan nusxa anonim kod bilan tanlovga yuboriladi. Ism va telefon faqat administratorga, siz g'olib bo'lganingizdan keyin ko'rsatiladi.</p></div>
+    <div class="grid">
+      <form class="panel stack" id="pform">
+        <h2>Shaxsiy ma'lumotlar</h2>
+        <label for="p-name">F.I.Sh.<input id="p-name" required autocomplete="name"></label>
+        <label for="p-phone">Telefon<input id="p-phone" inputmode="tel" placeholder="+998 90 123 45 67" autocomplete="tel"></label>
+        <div class="row2">
+          <label for="p-region">Viloyat<select id="p-region"></select></label>
+          <label for="p-edu">Ma'lumoti<select id="p-edu"></select></label>
+        </div>
+        <label for="p-spec">Mutaxassislik<select id="p-spec"></select></label>
+        <label for="p-exp">Ish staji (yil)<input id="p-exp" type="number" min="0" max="45" step="1" value="0"></label>
+        <div><label>Ko'nikmalar</label><div class="chips" id="p-skills"></div></div>
+        <div><label>Tillar</label><div class="chips" id="p-langs"></div></div>
+        <p class="err" id="p-err" hidden></p>
+        <div class="btnrow"><button class="btn" type="submit">Profilni saqlash</button><span class="note" id="p-saved"></span></div>
+      </form>
+      <div class="stack">
+        <div class="panel stack">
+          <h2>Kasbiy test</h2>
+          <dl class="kv"><dt>Test bali</dt><dd class="mono" id="p-test">—</dd><dt>Anonim kodingiz</dt><dd class="mono" id="p-code">—</dd></dl>
+          <p class="note">Test bali barcha arizalaringiz uchun bir xil ishlatiladi. Bu prototipda 5 ta namunaviy savol bor. Haqiqiy tizimda savollar bankidan tasodifiy tanlanadi va Face ID bilan tasdiqlanadi.</p>
+          <div><button class="btn ghost" type="button" id="btn-quiz">Testni topshirish</button></div>
+          <div id="quiz" class="quiz" hidden></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLICANT: ARIZALAR -->
+  <section id="v-arizalar" class="section" hidden>
+    <div><h1>Mening arizalarim</h1><p class="lede">Muddat tugaguncha arizani qaytarib olishingiz mumkin. "Reyting" tugmasi siz qatnashgan tanlovdagi barcha ballarni anonim kodlar bilan ko'rsatadi.</p></div>
+    <div id="myapps"></div>
+    <div id="myrank" class="rankbox"></div>
+    <details class="panel">
+      <summary style="cursor:pointer;font-weight:600">Ball qanday hisoblanadi?</summary>
+      <div class="formula" style="margin-top:12px">Ball = 0,50 × Test
+     + 0,20 × Staj             (har yil 10 ball, ko'pi bilan 10 yil)
+     + 0,15 × Afzal ko'nikmalar ulushi
+     + 0,10 × Ma'lumot         (o'rta maxsus 60 · bakalavr 80 · magistr 100)
+     + 0,05 × Afzal tillar ulushi</div>
+      <p class="note" style="margin-top:10px">Avval majburiy talablar tekshiriladi. Ballar teng bo'lsa, test bali yuqori bo'lgan, so'ng arizani oldinroq topshirgan nomzod tanlanadi. G'olibni administrator emas, tizim belgilaydi.</p>
+    </details>
+  </section>
+
+  <!-- ADMIN: BOSHQARUV -->
+  <section id="v-boshqaruv" class="section" hidden>
+    <div><h1>Boshqaruv paneli</h1><p class="lede">Administrator tashkilot va vakansiyalarni kiritadi, muddat tugagan tanlovni yakunlaydi. Nomzodni tanlash yoki ballni o'zgartirish imkoniyati yo'q.</p></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel stack">
+      <h2>Yakunlash kutilayotgan tanlovlar</h2>
+      <div id="pending"></div>
+    </div>
+    <div class="cols2" id="statsBox"></div>
+  </section>
+
+  <!-- CHIEF: MONITORING -->
+  <section id="v-monitoring" class="section" hidden>
+    <div><h1>Monitoring</h1><p class="lede">Ilovaga kim kirgani, kim hozir onlayn va bugungi faollik. Ma'lumotlar real vaqtda yangilanadi.</p></div>
+    <div class="kpis" id="m-kpis"></div>
+    <div class="cols-mon">
+      <div class="panel stack"><h2>Hozir onlayn</h2><div id="m-online"></div><p class="note">Foydalanuvchi oxirgi 3 daqiqada faol bo'lsa, onlayn hisoblanadi. "Chiqish" tugmasini bosmay sahifani yopgan foydalanuvchi 3 daqiqadan keyin oflaynga o'tadi.</p></div>
+      <div class="panel stack"><h2>So'nggi hodisalar</h2><div id="m-last"></div></div>
+    </div>
+    <div class="panel stack"><h2>Bugungi kirishlar soatlar bo'yicha</h2><div id="m-hours"></div></div>
+  </section>
+
+  <!-- CHIEF: KIRISH-CHIQISH -->
+  <section id="v-kirishlar" class="section" hidden>
+    <div><h1>Kirish-chiqish jurnali</h1><p class="lede">Har bir kirish, chiqish va noto'g'ri parol urinishi vaqti, roli va qurilmasi bilan.</p></div>
+    <div class="filters">
+      <label for="k-range">Davr<select id="k-range"><option value="today">Bugun</option><option value="7" selected>Oxirgi 7 kun</option><option value="30">Oxirgi 30 kun</option><option value="">Hammasi</option></select></label>
+      <label for="k-role">Rol<select id="k-role"><option value="">Barcha rollar</option><option value="applicant">Ish topshiruvchi</option><option value="admin">Administrator</option><option value="chief">Bosh administrator</option></select></label>
+      <label for="k-type">Hodisa<select id="k-type"><option value="">Barchasi</option><option value="login">Kirish</option><option value="logout">Chiqish</option><option value="fail">Noto'g'ri parol</option></select></label>
+      <label for="k-q">Login yoki ism<input id="k-q" placeholder="Qidirish"></label>
+    </div>
+    <div class="btnrow" style="justify-content:space-between"><span class="note" id="k-count"></span><button class="btn ghost" type="button" id="k-csv" hidden>CSV nusxalash</button></div>
+    <div id="k-body"></div>
+  </section>
+
+  <!-- CHIEF: FOYDALANUVCHILAR -->
+  <section id="v-foydalanuvchilar" class="section" hidden>
+    <div><h1>Foydalanuvchilar</h1><p class="lede">Barcha ro'yxatdan o'tganlar: holati, rollari, kirishlar soni va oxirgi faolligi.</p></div>
+    <div class="filters">
+      <label for="u-q">Login, ism yoki telefon<input id="u-q" placeholder="Qidirish"></label>
+      <label for="u-role">Rol<select id="u-role"><option value="">Barcha rollar</option><option value="applicant">Ish topshiruvchi</option><option value="admin">Administrator</option><option value="chief">Bosh administrator</option></select></label>
+    </div>
+    <p class="note" id="u-count"></p>
+    <div id="u-body"></div>
+  </section>
+
+  <!-- ADMIN: ARIZALAR -->
+  <section id="v-arizalar-adm" class="section" hidden>
+    <div><h1>Barcha arizalar</h1><p class="lede">Arizalar anonim kodlar bilan ko'rsatiladi. Nomzodning ismi va telefoni faqat u g'olib bo'lgandan keyin ochiladi. Ballarni o'zgartirish imkoniyati yo'q.</p></div>
+    <div class="filters">
+      <label for="aa-vac">Vakansiya<select id="aa-vac"></select></label>
+      <label for="aa-st">Holat<select id="aa-st"><option value="">Barchasi</option><option value="ok">Talablarga mos</option><option value="no">Mos emas</option></select></label>
+      <label for="aa-q">Kod bo'yicha qidirish<input id="aa-q" placeholder="N-1234A" class="mono"></label>
+    </div>
+    <div id="aa-body"></div>
+  </section>
+
+  <!-- ADMIN: JURNAL -->
+  <section id="v-jurnal" class="section" hidden>
+    <div><h1>Harakatlar jurnali</h1><p class="lede">Administratorlarning har bir harakati vaqt bilan yoziladi: tashkilot qo'shish, vakansiya e'lon qilish, muddatni uzaytirish, bekor qilish, tanlovni yakunlash va g'olibni rad etish.</p></div>
+    <div id="auditBody"></div>
+  </section>
+
+  <!-- ADMIN: SOZLAMALAR -->
+  <section id="v-sozlamalar" class="section" hidden>
+    <div><h1>Sozlamalar</h1><p class="lede">Ilova bo'yicha umumiy ma'lumot va xizmat amallari.</p></div>
+    <div class="panel stack">
+      <h2>Foydalanuvchilar</h2>
+      <dl class="kv" id="usersInfo"></dl>
+      <p class="note">Bosh administrator kodi Firebase konsolida <span class="mono">secrets/chief</span> hujjatidagi <span class="mono">code</span> maydonida saqlanadi.</p>
+      <p class="note">Yangi administrator qo'shish uchun unga administrator kodini ayting: u ro'yxatdan o'tib, "Administrator" rolini tanlaydi va kodni kiritadi. Kodni o'zgartirish uchun Firebase konsolida <span class="mono">secrets/admin</span> hujjatidagi <span class="mono">code</span> maydonini yangilang. Administratorni olib tashlash uchun <span class="mono">admins</span> to'plamidan uning hujjatini o'chiring.</p>
+    </div>
+    <form class="panel stack" id="codeChange" hidden>
+      <h2>Administrator kodini o'zgartirish</h2>
+      <p class="note">Faqat ilova egasi ko'radi. Yangi kod o'rnatilgach, eski kod bilan kirib bo'lmaydi. Kodni faqat administrator bo'ladigan odamlarga ayting.</p>
+      <div class="row2">
+        <label for="cc-1">Yangi kod<input id="cc-1" type="password" autocomplete="off" required></label>
+        <label for="cc-2">Takrorlang<input id="cc-2" type="password" autocomplete="off" required></label>
+      </div>
+      <p class="err" id="cc-err" hidden></p>
+      <div><button class="btn" type="submit">Kodni yangilash</button></div>
+    </form>
+    <div class="panel stack" id="sampleBox">
+      <h2>Namuna ma'lumotlar</h2>
+      <p class="note">Ilovani tez sinab ko'rish uchun 3 ta namuna tashkilot va 4 ta vakansiya qo'shiladi. Ular nomida "(namuna)" deb belgilanadi va keyin o'chirish mumkin.</p>
+      <div><button class="btn ghost" type="button" id="btn-sample">Namuna ma'lumot qo'shish</button></div>
+    </div>
+  </section>
+
+  <!-- ADMIN: TASHKILOTLAR -->
+  <section id="v-tashkilotlar" class="section" hidden>
+    <div><h1>Davlat tashkilotlari</h1><p class="lede">Faqat davlat ro'yxatidan o'tgan tashkilotlar kiritiladi. STIR takrorlanmasligi tekshiriladi.</p></div>
+    <div class="grid">
+      <form class="panel stack" id="oform">
+        <h2>Yangi tashkilot</h2>
+        <label for="o-name">Tashkilot nomi<input id="o-name" required placeholder="Jizzax shahar 7-umumta'lim maktabi"></label>
+        <label for="o-stir">STIR (9 raqam)<input id="o-stir" class="mono" inputmode="numeric" maxlength="9" required></label>
+        <div class="row2">
+          <label for="o-type">Turi<select id="o-type"></select></label>
+          <label for="o-region">Viloyat<select id="o-region"></select></label>
+        </div>
+        <p class="err" id="o-err" hidden></p>
+        <div><button class="btn" type="submit">Tashkilotni qo'shish</button></div>
+        <p class="note">Haqiqiy tizimda STIR Yagona davlat reyestri orqali avtomatik tekshiriladi.</p>
+      </form>
+      <div id="orglist" style="min-width:0"></div>
+    </div>
+  </section>
+
+  <!-- ADMIN: VAKANSIYALAR -->
+  <section id="v-boshqaruv-vak" class="section" hidden>
+    <div><h1>Vakansiyalar</h1><p class="lede">Vakansiyada maosh ko'rsatilishi shart. Talablar shablondan tanlanadi. Muddat tugamaguncha tanlovni yakunlab bo'lmaydi.</p></div>
+    <div class="grid">
+      <form class="panel stack" id="vform">
+        <div class="btnrow" style="justify-content:space-between"><h2 style="margin:0" id="vformTitle">Yangi vakansiya</h2><button class="linkbtn" type="button" id="vEditCancel" hidden>Tahrirni bekor qilish</button></div>
+        <p class="edit-flag" id="vEditFlag" hidden>Tahrirlash faqat hali ariza tushmagan vakansiyada mumkin.</p>
+        <label for="v-org">Tashkilot<select id="v-org" required></select></label>
+        <label for="v-title">Lavozim<input id="v-title" required placeholder="Matematika o'qituvchisi"></label>
+        <label for="v-salary">Oylik maosh, so'm (majburiy)<input id="v-salary" type="number" min="1000000" step="100000" required class="mono"></label>
+        <div class="row2">
+          <label for="v-sector">Soha<select id="v-sector"></select></label>
+          <label for="v-region">Ish joyi<select id="v-region"></select></label>
+        </div>
+        <div class="row2">
+          <label for="v-edu">Eng kam ma'lumot<select id="v-edu"></select></label>
+          <label for="v-exp">Eng kam staj (yil)<input id="v-exp" type="number" min="0" max="20" value="1"></label>
+        </div>
+        <div class="row2">
+          <label for="v-test">Eng kam test bali<input id="v-test" type="number" min="0" max="100" value="60"></label>
+          <label for="v-days">Ariza muddati<select id="v-days"><option value="600000">10 daqiqa (sinov uchun)</option><option value="86400000">1 kun</option><option value="259200000">3 kun</option><option value="604800000">7 kun</option><option value="1209600000" selected>14 kun</option><option value="2592000000">30 kun</option></select></label>
+        </div>
+        <div><label>Qabul qilinadigan mutaxassisliklar</label><div class="chips" id="v-specs"></div></div>
+        <div><label>Ko'nikmalar: bir bosish — afzal, ikki bosish — majburiy (●)</label><div class="chips" id="v-skills"></div></div>
+        <div><label>Afzal tillar</label><div class="chips" id="v-langs"></div></div>
+        <p class="err" id="v-err" hidden></p>
+        <div><button class="btn" type="submit" id="vSubmit">Vakansiyani e'lon qilish</button></div>
+        <p class="note">Sinov uchun "10 daqiqa"ni tanlang: arizalar topshirilgach, 10 daqiqadan keyin tanlovni yakunlash mumkin bo'ladi.</p>
+      </form>
+      <div id="admvacs" style="min-width:0"></div>
+    </div>
+  </section>
+
+  <!-- NATIJALAR (both) -->
+  <section id="v-natijalar" class="section" hidden>
+    <div><h1>Ochiq reyting</h1><p class="lede">Har bir vakansiya bo'yicha barcha arizachilarning ballari anonim kodlar bilan ko'rsatiladi. Reyting har safar ma'lumotlardan qayta hisoblanadi va yakuniy qaror bilan solishtiriladi.</p></div>
+    <label for="r-vac" style="max-width:560px">Vakansiya<select id="r-vac"></select></label>
+    <div id="r-body"></div>
+  </section>
+
+  <!-- QOIDALAR (both) -->
+  <section id="v-qoidalar" class="section" hidden>
+    <div><h1>Tanlov qanday o'tadi</h1><p class="lede">Qoidalar hamma uchun bir xil va oldindan e'lon qilinadi. Rahbar yoki administratorning ixtiyoriga qoladigan bosqich yo'q.</p></div>
+    <ol class="steps">
+      <li><b>Administrator vakansiya kiritadi</b><p>Tashkilot, lavozim, maosh va talablar shablondan tanlanadi.</p></li>
+      <li><b>Ish topshiruvchi tanlaydi</b><p>Maosh va hudud bo'yicha o'ziga ma'qul vakansiyaga anonim kod bilan ariza beradi.</p></li>
+      <li><b>Majburiy talablar filtri</b><p>Ma'lumot, mutaxassislik, staj, majburiy ko'nikmalar va test chegarasi avtomatik tekshiriladi.</p></li>
+      <li><b>Ball hisoblanadi</b><p>Mos nomzodlar quyidagi ochiq formula bo'yicha baholanadi.</p></li>
+      <li><b>Tizim g'olibni belgilaydi</b><p>Muddat tugagach eng yuqori ball — g'olib, ikkinchisi — zaxira. Natija ochiq e'lon qilinadi.</p></li>
+    </ol>
+    <div class="panel stack">
+      <h2>Ball formulasi (100 ball)</h2>
+      <div class="formula">Ball = 0,50 × Test
+     + 0,20 × Staj             (har yil 10 ball, ko'pi bilan 10 yil)
+     + 0,15 × Afzal ko'nikmalar ulushi
+     + 0,10 × Ma'lumot         (o'rta maxsus 60 · bakalavr 80 · magistr 100)
+     + 0,05 × Afzal tillar ulushi</div>
+      <p class="note">Ballar teng bo'lsa: avval test bali yuqori bo'lgan, so'ng arizani oldinroq topshirgan nomzod tanlanadi. Tashkilot g'olibni rad etsa, sababini ochiq yozadi va o'rin avtomatik zaxiradagi nomzodga o'tadi.</p>
+    </div>
+    <div class="panel stack">
+      <h2>Prototip haqida</h2>
+      <p class="note">Bu namoyish uchun yaratilgan prototip. Keyingi bosqichda STIR Yagona davlat reyestridan, ma'lumot va staj HEMIS hamda mehnat tizimidan, test esa Face ID bilan tasdiqlangan onlayn imtihondan olinadi. Hozir profil ma'lumotlari va test bali foydalanuvchining o'zi kiritgan ma'lumotlarga asoslanadi.</p>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// Firebase server kutubxonalari yuklanadi, so'ng ilova ishga tushadi.
+(function(){
+  function add(src,cb){var s=document.createElement("script");s.src=src;s.onload=cb;s.onerror=cb;document.body.appendChild(s)}
+  function seq(list,done){if(!list.length)return done();add(list[0],function(){seq(list.slice(1),done)})}
+  var fb="https://www.gstatic.com/firebasejs/10.12.2/";
+  var list=[fb+"firebase-app-compat.js",fb+"firebase-auth-compat.js",fb+"firebase-firestore-compat.js","firebase-init.js"];
+  seq(list,function(){add("app.js")});
+})();
+</script>
+</body>
+</html>
