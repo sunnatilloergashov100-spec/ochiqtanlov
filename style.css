@@ -244,3 +244,8 @@ body.exam-open{overflow:hidden}
 .ex-opt{display:flex;gap:12px;align-items:center;text-align:left;font:inherit;font-size:16px;padding:14px 16px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;min-height:52px}
 .ex-opt span{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);font-weight:700}
 .ex-opt[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}.ex-opt[aria-pressed=true] span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.waitbar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;position:relative}
+.waitbar span{position:absolute;inset:0 auto 0 0;width:35%;background:var(--accent);border-radius:99px;animation:wait 1.4s ease-in-out infinite}
+@keyframes wait{0%{left:-35%}100%{left:100%}}
+.reqpanel{border-color:var(--gold)}
+.kpi small{display:block;margin-top:4px;font-size:11px}

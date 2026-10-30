@@ -85,6 +85,7 @@ function route(){
   $("#hdr").hidden=!S.role||t==="tekshir";
   if(S.role){$("#nav").innerHTML=tabs().map(([k,l],i)=>(S.role==="chief"&&i===CHIEF_TABS.length?'<span class="navsep"></span>':"")+`<a href="#${k}" ${k===t?'aria-current="page"':""}>${l}</a>`).join("")}
   render();
+  if(S.role==="chief"&&typeof notifyReqs==="function")notifyReqs();
 }
 window.addEventListener("hashchange",route);
 
@@ -939,8 +940,10 @@ Hozirgi tartib oraliq natija. Muddat tugagach tizim g'olibni belgilaydi.`}</div>
 // =====================================================================
 const FACE_LIBS=[
   {js:"https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.js",models:"https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/"},
-  {js:"https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js",models:"https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights/"}
+  {js:"https://unpkg.com/@vladmandic/face-api@1.7.13/dist/face-api.js",models:"https://unpkg.com/@vladmandic/face-api@1.7.13/model/"},
+  {js:"https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js",models:"https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/"}
 ];
+let faceErr="";
 const FACE_MATCH=0.5,FACE_SAME=0.6,NOFACE_MS=2500,MULTI_MS=1500,AWAY_MS=2000,ID_EVERY_MS=8000;
 let faceReady=null;
 function loadFace(){
@@ -949,10 +952,11 @@ function loadFace(){
     let last;
     for(const L of FACE_LIBS){
       try{if(typeof faceapi==="undefined")await loadScript(L.js);
+        if(faceapi.tf&&faceapi.tf.ready){try{await faceapi.tf.ready()}catch(e){}}
         await faceapi.nets.tinyFaceDetector.loadFromUri(L.models);
         await faceapi.nets.faceLandmark68TinyNet.loadFromUri(L.models);
         await faceapi.nets.faceRecognitionNet.loadFromUri(L.models);
-        return true}catch(e){last=e;try{delete window.faceapi}catch(_){window.faceapi=undefined}}
+        faceErr="";return true}catch(e){last=e;faceErr=String(e&&e.message||e||"").slice(0,140);try{delete window.faceapi}catch(_){window.faceapi=undefined}}
     }
     throw last||new Error("face");
   })();
@@ -984,6 +988,8 @@ async function captureFace(video,need,timeoutMs,onMsg){
   if(got.length<need)return null;
   return got[0].map((_,i)=>got.reduce((s,d)=>s+d[i],0)/got.length);
 }
+const testWindow=()=>{const c=S.testCfg||{},now=Date.now();if(!c.enabled)return {ok:false,why:"closed"};if(c.startAt&&now<c.startAt)return {ok:false,why:"early",at:c.startAt};if(c.endAt&&now>c.endAt)return {ok:false,why:"late",at:c.endAt};return {ok:true}};
+const toLocalInput=ms=>{if(!ms)return "";const d=new Date(ms);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 
 function renderTestPanel(){
@@ -996,8 +1002,8 @@ function renderTestPanel(){
   if(ts.k==="done")h=`<div class="banner"><b>Test topshirilgan: ${ts.t} / 100.</b> ${a&&a.status==="terminated"?"Test to'xtatilgan: "+esc(a.reason||"")+". ":""}Bu ball barcha arizalaringizda ishlatiladi. Qayta topshirish faqat bosh administrator ruxsati bilan.</div>`;
   else if(ts.k==="grading"||ts.k==="running")h=a&&a.status==="terminated"?`<div class="banner warn"><b>Test to'xtatildi.</b> Sabab: ${esc(a.reason||"qoidabuzarlik")}. Natija 0 ball bo'lib hisoblanadi. Texnik sabab bo'lsa, bosh administratorga murojaat qiling.</div>`
     :`<div class="banner"><b>Javoblaringiz qabul qilindi.</b> Natija bosh administrator tizimida avtomatik hisoblanadi va shu yerda paydo bo'ladi.</div>`;
-  else if(!cfg.enabled)h=`<p class="note">Kasbiy test hali ochilmagan. Bosh administrator testni ochgach, shu yerda "Testni boshlash" tugmasi paydo bo'ladi.</p>`;
-  else h=`<ul class="rules"><li>Test faqat <b>bir marta</b> topshiriladi va barcha arizalaringiz uchun ishlatiladi.</li><li>Avval <b>Face ID</b>: yuzingiz ${S.face?"ro'yxatdagi yuz bilan solishtiriladi":"ro'yxatga olinadi va keyingi safar solishtiriladi"}.</li><li>Test davomida <b>kamera yoqiq</b> turadi. Yuzingiz ko'rinmasa, boshqa tomonga qarasangiz, kamerada boshqa odam paydo bo'lsa yoki <b>ilovadan chiqsangiz — test darhol to'xtatiladi</b> va 0 ball qo'yiladi.</li><li>Har bir savolga alohida vaqt beriladi. Vaqt tugasa, keyingi savolga o'tiladi.</li><li>Skrinshot olish taqiqlangan.</li></ul>
+  else if(!testWindow().ok){const w=testWindow();h=w.why==="early"?`<div class="banner"><b>Test ${dt(w.at)} da boshlanadi.</b> Shu vaqtdan keyin "Testni boshlash" tugmasi paydo bo'ladi.${cfg.endAt?" Tugash vaqti: "+dt(cfg.endAt)+".":""}</div>`:w.why==="late"?`<div class="banner warn"><b>Test vaqti tugagan</b> (${dt(w.at)}). Yangi test vaqti e'lon qilinishini kuting.</div>`:`<p class="note">Kasbiy test hali ochilmagan. Bosh administrator testni ochgach, shu yerda "Testni boshlash" tugmasi paydo bo'ladi.</p>`}
+  else h=(cfg.endAt?`<p class="note">Test ${dt(cfg.endAt)} gacha ochiq.</p>`:"")+`<ul class="rules"><li>Test faqat <b>bir marta</b> topshiriladi va barcha arizalaringiz uchun ishlatiladi.</li><li>Avval <b>Face ID</b>: yuzingiz ro'yxatdagi yuz bilan solishtiriladi. So'ng <b>bosh administrator ruxsat berishi</b> kutiladi.</li><li>Test davomida <b>kamera yoqiq</b> turadi. Yuzingiz ko'rinmasa, boshqa tomonga qarasangiz, kamerada boshqa odam paydo bo'lsa yoki <b>ilovadan chiqsangiz — test darhol to'xtatiladi</b> va 0 ball qo'yiladi.</li><li>Har bir savolga alohida vaqt beriladi. Vaqt tugasa, keyingi savolga o'tiladi.</li><li>Skrinshot olish taqiqlangan.</li></ul>
     <div><button class="btn" type="button" id="btn-exam" ${profileReady()?"":"disabled"}>Testni boshlash</button></div>${profileReady()?"":`<p class="note">Avval profilni saqlang.</p>`}<p class="note">Yorug' joyda, yolg'iz o'tiring. Internet barqaror bo'lsin. Birinchi marta Face ID modeli yuklanadi (taxminan 6 MB).</p>`;
   box.innerHTML=h;
   const b=$("#btn-exam");if(b)b.onclick=startExam;
@@ -1028,10 +1034,10 @@ function faceGate(){
       const msg=t=>{const m=$("#fg-msg");if(m)m.textContent=t};
       exCam("Kamera ochilmoqda…");
       try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},audio:false})}
-      catch(e){return fail("Kamera ochilmadi","Face ID uchun kamera kerak. Brauzer yoki telefon sozlamalarida kameraga ruxsat bering.")}
+      catch(e){return fail("Kamera ochilmadi","Face ID uchun kamera kerak. "+(location.protocol==="file:"?"Ilova internetdagi versiyani ocholmadi — internetni tekshiring. ":"")+"Brauzerda manzil satri yonidagi kamera belgisini bosib ruxsat bering; telefonda: Sozlamalar → Ilovalar → OchiqTanlov → Ruxsatlar → Kamera. ("+String(e&&e.name||e)+")")}
       if(stopped){stream.getTracks().forEach(t=>t.stop());return}
       const v=$("#ex-video");v.srcObject=stream;try{await v.play()}catch(e){}exCam("Kamera yoqiq","on");
-      try{msg("Face ID modeli yuklanmoqda (birinchi marta ~6 MB)…");await loadFace()}catch(e){return fail("Face ID yuklanmadi","Internet aloqasini tekshirib, qayta urinib ko'ring.")}
+      try{msg("Face ID modeli yuklanmoqda (birinchi marta ~6 MB, 10–40 soniya)…");await loadFace()}catch(e){return fail("Face ID yuklanmadi","Internet aloqasini tekshirib, qayta urinib ko'ring."+(faceErr?" Texnik ma'lumot: "+faceErr:""))}
       msg("Kameraga to'g'ri qarang…");
       const desc=await captureFace(v,enroll?5:3,25000,msg);
       if(stopped)return;
@@ -1056,6 +1062,7 @@ function exUI(html){$("#ex-body").innerHTML=html}
 function exCam(st,cls){const e=$("#ex-cam-st");e.textContent=st;$("#ex-cam").className="exam-cam "+(cls||"")}
 function stopCam(){if(EX&&EX.stream)EX.stream.getTracks().forEach(t=>t.stop());const v=$("#ex-video");if(v)v.srcObject=null}
 function exClose(){
+  if(EX&&EX.reqUnsub){try{EX.reqUnsub()}catch(e){}}
   stopCam();clearTimeout(EX&&EX.ptimer);clearInterval(EX&&EX.qtimer);
   EX=null;$("#exam").hidden=true;document.body.classList.remove("exam-open");
   try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}
@@ -1099,7 +1106,26 @@ async function startExam(){
   const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),qs.length);
   if(!qs.length){exFail("Savollar yo'q","Bosh administrator hali savollarni yuklamagan.");return}
   EX.qs=shuffle(qs).slice(0,n);
+  if(!testWindow().ok){exFail("Test vaqti emas","Test faqat bosh administrator belgilagan vaqt oralig'ida topshiriladi.");return}
+  // Bosh administrator ruxsatini so'rash
+  const c=S.contacts[S.uid]||{};
+  try{await fs.doc("testreq/"+S.uid).set({uid:S.uid,login:S.login||"",name:c.name||(S.profile||{}).name||"",at:Date.now(),status:"waiting",enrolled,faceDist:fd==null?null:Math.round(fd*1000)/1000,device:devText(device())})}
+  catch(e){exFail("So'rov yuborilmadi","Internet aloqasini tekshirib, qayta urinib ko'ring.");return}
   exUI(`<div class="ex-card"><h2>${enrolled?"Yuzingiz ro'yxatga olindi ✓":"Face ID tasdiqlandi ✓"}</h2>
+    <p><b>Bosh administrator ruxsatini kuting.</b> Ruxsat berilishi bilan test shu ekranda boshlanadi. Kamera oldidan ketmang.</p>
+    <div class="waitbar"><span></span></div>
+    <div><button class="btn ghost" type="button" id="ex-x">Bekor qilish</button></div></div>`);
+  $("#ex-x").onclick=()=>{if(EX&&EX.reqUnsub)EX.reqUnsub();exClose()};
+  exCam("Ruxsat kutilmoqda","on");
+  EX.reqUnsub=fs.doc("testreq/"+S.uid).onSnapshot(sn=>{
+    if(!EX||EX.phase!=="prep")return;const r=sn.exists?sn.data():null;if(!r)return;
+    if(r.status==="denied"){EX.reqUnsub();exFail("Ruxsat berilmadi","Bosh administrator testni boshlashga ruxsat bermadi. Batafsil ma'lumot uchun unga murojaat qiling.");return}
+    if(r.status==="approved"){EX.reqUnsub();beginRun(n,enrolled,fd)}
+  },()=>{});
+}
+async function beginRun(n,enrolled,fd){
+  if(!EX)return;
+  exUI(`<div class="ex-card"><h2>Ruxsat berildi ✓</h2>
     <p>${n} ta savol. Har bir savolning o'z vaqti bor. Jami taxminan ${Math.ceil(EX.qs.reduce((s,q)=>s+(q.sec||60),0)/60)} daqiqa.</p>
     <ul class="rules"><li>Kameraga qarab o'tiring, yuzingiz doim ko'rinib tursin.</li><li>Boshqa tomonga qarasangiz, kamerada boshqa odam paydo bo'lsa yoki ilovadan chiqsangiz — <b>test to'xtatiladi</b>.</li><li>Javobni tanlab "Tasdiqlash"ni bosing. Ortga qaytib bo'lmaydi.</li></ul>
     <div class="btnrow"><button class="btn" type="button" id="ex-go">Testni boshlash</button><button class="btn ghost" type="button" id="ex-x">Bekor qilish</button></div></div>`);
@@ -1108,7 +1134,7 @@ async function startExam(){
     $("#ex-go").disabled=true;
     EX.startedAt=Date.now();
     try{await fs.doc("attempts/"+S.uid).set({uid:S.uid,login:S.login||"",startedAt:EX.startedAt,status:"running",qids:EX.qs.map(q=>q.id),answers:{},face:{enrolled,dist:fd==null?null:Math.round(fd*1000)/1000},device:devText(device())})}
-    catch(e){exFail("Test boshlanmadi","Siz testni allaqachon topshirgansiz yoki internet aloqasi yo'q.");return}
+    catch(e){exFail("Test boshlanmadi","Ruxsat muddati (15 daqiqa) o'tgan, test vaqti tugagan yoki siz testni allaqachon topshirgansiz.");return}
     EX.phase="run";
     try{if(document.documentElement.requestFullscreen){await document.documentElement.requestFullscreen();EX.fs=true}}catch(e){}
     armGuards();proctor();showQ(0);
@@ -1199,8 +1225,10 @@ $("#tqform").addEventListener("submit",async e=>{
 });
 $("#tcfg").addEventListener("submit",async e=>{
   e.preventDefault();
-  try{await fs.doc("config/test").set({enabled:$("#tc-on").checked,count:Math.max(1,Math.min(100,+$("#tc-n").value||10)),at:Date.now()});
-    await log("test",`Test sozlamalari: ${$("#tc-on").checked?"ochiq":"yopiq"}, ${$("#tc-n").value} ta savol`);$("#tc-saved").textContent="Saqlandi";setTimeout(()=>$("#tc-saved").textContent="",2500)}catch(e2){toast("Saqlab bo'lmadi")}
+  const fr=$("#tc-from").value?new Date($("#tc-from").value).getTime():null,to=$("#tc-to").value?new Date($("#tc-to").value).getTime():null;
+  if(fr&&to&&to<=fr){toast("Tugash vaqti boshlanishdan keyin bo'lishi kerak");return}
+  try{await fs.doc("config/test").set({enabled:$("#tc-on").checked,count:Math.max(1,Math.min(100,+$("#tc-n").value||10)),startAt:fr,endAt:to,at:Date.now()});
+    await log("test",`Test sozlamalari: ${$("#tc-on").checked?"ochiq":"yopiq"}, ${$("#tc-n").value} ta savol${fr?", "+dt(fr):""}${to?" — "+dt(to):""}`);$("#tc-saved").textContent="Saqlandi";setTimeout(()=>$("#tc-saved").textContent="",2500)}catch(e2){toast("Saqlab bo'lmadi")}
 });
 function parseBulk(text,defSec){
   const blocks=text.replace(/\r/g,"").split(/\n\s*\n/).map(b=>b.split("\n").map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
@@ -1229,6 +1257,29 @@ $("#tb-btn").onclick=async()=>{
   catch(e){err.textContent=`${n} ta yuklandi, keyingisida xato: Firestore qoidalarini tekshiring.`;err.hidden=false}
   b.disabled=false;
 };
+
+// --- testni boshlashga ruxsat so'rovlari (bosh admin) ---
+const APPROVE_MS=15*60000;
+var reqSeen=null;
+function renderTestReqs(){
+  const L=[...(S.testreqs||[])].sort((a,b)=>(a.status==="waiting"?0:1)-(b.status==="waiting"?0:1)||(b.at||0)-(a.at||0)).filter(r=>r.status==="waiting"||Date.now()-(r.decidedAt||r.at||0)<3*3600e3);
+  const w=L.filter(r=>r.status==="waiting");
+  $("#trq-count").textContent=w.length?w.length+" ta so'rov javob kutmoqda":"Kutilayotgan so'rov yo'q";
+  $("#trq-list").innerHTML=L.length?`<div class="tablebox"><table class="wide"><thead><tr><th>Vaqt</th><th>Login</th><th>F.I.Sh.</th><th>Face ID</th><th>Qurilma</th><th>Holat</th><th></th></tr></thead><tbody>`+L.map(r=>{
+    const att=S.attempts.find(a=>a.id===r.id),st=r.status==="waiting"?`<span class="pill res">Kutmoqda</span>`:r.status==="approved"?(att?`<span class="pill win">Boshladi</span>`:Date.now()-(r.decidedAt||0)>APPROVE_MS?`<span class="pill closed">Muddati o'tdi</span>`:`<span class="pill open">Ruxsat berildi</span>`):`<span class="pill out">Rad etildi</span>`;
+    return `<tr class="${r.status==="waiting"?"winner":""}"><td class="mono" style="white-space:nowrap">${dt(r.at)}</td><td class="mono">${esc(r.login||"—")}</td><td>${esc(r.name||"—")}</td><td>${r.enrolled?"Ro'yxatga olindi":r.faceDist!=null?`Mos (${r.faceDist})`:"—"}</td><td>${esc(r.device||"")}</td><td>${st}</td>
+      <td>${r.status==="waiting"?`<span class="btnrow"><button class="btn" type="button" data-rqok="${esc(r.id)}">Ruxsat berish</button><button class="btn ghost" type="button" data-rqno="${esc(r.id)}">Rad etish</button></span>`:""}</td></tr>`}).join("")+`</tbody></table></div>`:`<div class="empty">Hozircha so'rov yo'q.</div>`;
+  $("#trq-list").querySelectorAll("[data-rqok],[data-rqno]").forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.rqok||b.dataset.rqno,ok=!!b.dataset.rqok,r=S.testreqs.find(x=>x.id===id);b.disabled=true;
+    try{await fs.doc("testreq/"+id).update({status:ok?"approved":"denied",decidedAt:Date.now(),decidedBy:S.uid});await log("test",`Testga ${ok?"ruxsat berildi":"ruxsat berilmadi"}: ${r?r.login:id}`);toast(ok?"Ruxsat berildi":"Rad etildi")}catch(e){toast("Bajarib bo'lmadi: Firestore qoidalarini yangilang");b.disabled=false}});
+}
+function notifyReqs(){
+  const w=(S.testreqs||[]).filter(r=>r.status==="waiting").map(r=>r.id);
+  if(reqSeen&&w.some(id=>!reqSeen.includes(id))){toast("Yangi so'rov: ishtirokchi testni boshlashga ruxsat kutmoqda");try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.frequency.value=880;o.start();o.stop(c.currentTime+.18)}catch(e){}}
+  reqSeen=w;
+  const a=document.querySelector('#nav a[href="#testlar"]');if(a)a.textContent="Test"+(w.length?" ("+w.length+")":"");
+}
+
 let gradeT=null,grading=false;
 function gradeSoon(){clearTimeout(gradeT);gradeT=setTimeout(gradeAll,700)}
 async function gradeAll(){
@@ -1244,10 +1295,11 @@ async function gradeAll(){
 }
 function renderTestAdmin(){
   const cfg=S.testCfg||{},Q=[...S.questions].sort((a,b)=>(a.at||0)-(b.at||0));
-  if(document.activeElement!==$("#tc-n")){$("#tc-on").checked=!!cfg.enabled;$("#tc-n").value=cfg.count||10}
+  if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest("#tcfg")){$("#tc-on").checked=!!cfg.enabled;$("#tc-n").value=cfg.count||10;$("#tc-from").value=toLocalInput(cfg.startAt);$("#tc-to").value=toLocalInput(cfg.endAt)}
+  renderTestReqs();
   const A=S.attempts,done=A.filter(a=>a.status!=="running"),res=Object.values(S.results).filter(r=>typeof r.test==="number");
   const avg=res.length?Math.round(res.reduce((s,r)=>s+r.test,0)/res.length):"—";
-  $("#t-kpis").innerHTML=`<div class="kpi"><span>Test holati</span><b style="color:${cfg.enabled?"var(--accent)":"var(--muted)"}">${cfg.enabled?"Ochiq":"Yopiq"}</b></div><div class="kpi"><span>Savollar bankida</span><b>${Q.length}</b></div><div class="kpi"><span>Har kimga savol</span><b>${Math.min(cfg.count||10,Q.length)}</b></div><div class="kpi"><span>Topshirganlar</span><b>${done.length}</b></div><div class="kpi"><span>Hozir topshiryapti</span><b>${A.filter(a=>a.status==="running").length}</b></div><div class="kpi"><span>To'xtatilgan</span><b style="color:${A.some(a=>a.status==="terminated")?"var(--bad)":"inherit"}">${A.filter(a=>a.status==="terminated").length}</b></div><div class="kpi"><span>O'rtacha ball</span><b>${avg}</b></div>`;
+  $("#t-kpis").innerHTML=`<div class="kpi"><span>Test holati</span><b style="color:${testWindow().ok?"var(--accent)":"var(--muted)"}">${testWindow().ok?"Ochiq":testWindow().why==="early"?"Kutilmoqda":testWindow().why==="late"?"Tugagan":"Yopiq"}</b>${cfg.startAt||cfg.endAt?`<small class="note">${cfg.startAt?dt(cfg.startAt):"…"} — ${cfg.endAt?dt(cfg.endAt):"…"}</small>`:""}</div><div class="kpi"><span>Savollar bankida</span><b>${Q.length}</b></div><div class="kpi"><span>Har kimga savol</span><b>${Math.min(cfg.count||10,Q.length)}</b></div><div class="kpi"><span>Topshirganlar</span><b>${done.length}</b></div><div class="kpi"><span>Hozir topshiryapti</span><b>${A.filter(a=>a.status==="running").length}</b></div><div class="kpi"><span>To'xtatilgan</span><b style="color:${A.some(a=>a.status==="terminated")?"var(--bad)":"inherit"}">${A.filter(a=>a.status==="terminated").length}</b></div><div class="kpi"><span>O'rtacha ball</span><b>${avg}</b></div>`;
   $("#tq-count").textContent=Q.length+" ta savol · jami vaqt "+Math.round(Q.reduce((s,q)=>s+(+q.sec||60),0)/60)+" daqiqa";
   $("#tq-list").innerHTML=Q.length?`<div class="tablebox"><table class="wide"><thead><tr><th>#</th><th>Savol va variantlar</th><th>Vaqt (soniya)</th><th></th></tr></thead><tbody>`+Q.map((q,i)=>{const k=S.qkeys[q.id];
     return `<tr><td class="num">${i+1}</td><td><b>${esc(q.q)}</b><div class="opts-mini">${(q.o||[]).map((o,j)=>`<span class="${k&&k.a===j?"ok":""}">${"ABCDEF"[j]}) ${esc(o)}${k&&k.a===j?" ✓":""}</span>`).join("")}</div>${k?"":`<div class="why">To'g'ri javob kaliti topilmadi</div>`}</td>
@@ -1273,7 +1325,7 @@ function renderTestAdmin(){
   T.querySelectorAll("[data-retake]").forEach(b=>b.onclick=()=>{const id=b.dataset.retake,cell=b.parentElement,a=S.attempts.find(x=>x.id===id);
     cell.innerHTML=`<span class="confirm">Eski natija o'chiriladi. Ruxsat berilsinmi? <button class="btn" type="button" data-yes>Ha</button><button class="btn ghost" type="button" data-no>Yo'q</button></span>`;
     cell.querySelector("[data-no]").onclick=()=>renderTestAdmin();
-    cell.querySelector("[data-yes]").onclick=async()=>{try{await fs.doc("attempts/"+id).delete();await fs.doc("results/"+id).delete();await log("test",`Qayta topshirishga ruxsat: ${a?a.login:id}`);toast("Ruxsat berildi")}catch(e){toast("Bajarib bo'lmadi")}}});
+    cell.querySelector("[data-yes]").onclick=async()=>{try{await fs.doc("attempts/"+id).delete();await fs.doc("results/"+id).delete();await fs.doc("testreq/"+id).delete().catch(()=>{});await log("test",`Qayta topshirishga ruxsat: ${a?a.login:id}`);toast("Ruxsat berildi")}catch(e){toast("Bajarib bo'lmadi")}}});
   T.querySelectorAll("[data-facereset]").forEach(b=>b.onclick=async()=>{const id=b.dataset.facereset;try{await fs.doc("faces/"+id).delete();await log("test",`Face ID tiklandi: ${(S.attempts.find(x=>x.id===id)||{}).login||id}`);toast("Face ID tiklandi: keyingi testda qayta ro'yxatga olinadi")}catch(e){toast("Bajarib bo'lmadi")}});
   $("#tr-csv").onclick=()=>{const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';let k=0;
     downloadCsv("test-reytingi.csv","﻿"+[["O'rin","Login","F.I.Sh.","Ball","To'g'ri","Jami","Holat","Sabab","Boshlagan","Davomiyligi (daq)"].map(q).join(";")].concat(rows.map(x=>[x.score!=null&&x.a.status==="done"?++k:"",x.login,x.name,x.score??"",x.r.correct??"",x.r.total??"",x.a.status==="done"?"Yakunlangan":x.a.status==="terminated"?"To'xtatilgan":"Topshiryapti",x.a.reason||"",dt(x.a.startedAt),x.dur?Math.round(x.dur/6000)/10:""].map(q).join(";"))).join("\r\n"))};
@@ -1286,7 +1338,7 @@ renderDraft();route();
 
 // ---------- connect (Firestore) ----------
 S.db=fs;document.body.classList.add("owner");
-setInterval(()=>{if(S.role==="chief"&&["monitoring","foydalanuvchilar"].includes(location.hash.slice(1)))render()},30000);
+setInterval(()=>{const h=location.hash.slice(1);if((S.role==="chief"&&["monitoring","foydalanuvchilar","testlar"].includes(h))||(S.role==="applicant"&&h==="profil"&&!EX))render()},30000);
 let unsubs=[];
 function unsubAll(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];(typeof orgUnsubs!=="undefined"?orgUnsubs:[]).forEach(u=>{try{u()}catch(e){}})}
 function subscribe(){
@@ -1311,6 +1363,7 @@ function subscribe(){
     col("qkeys",x=>{const m={};x.forEach(d=>m[d.id]=d);S.qkeys=m;gradeSoon()});
     col("attempts",x=>{S.attempts=x;gradeSoon()});
     col("faces",x=>{S.faces=x});
+    col("testreq",x=>{S.testreqs=x;notifyReqs()});
   }else{
     unsubs.push(fs.doc("contacts/"+S.uid).onSnapshot(s=>{S.contacts=s.exists?{[S.uid]:s.data()}:{};render()},err));
     unsubs.push(fs.doc("attempts/"+S.uid).onSnapshot(s=>{S.myAttempt=s.exists?s.data():null;render()},err));

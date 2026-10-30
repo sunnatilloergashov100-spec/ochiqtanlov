@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="style.css">
+<script>document.write('<link rel="stylesheet" href="style.css?v='+Date.now()+'">')</script>
 <script src="firebase-config.js"></script>
 <script>
 // Telefon ilovasi (file://) internetdagi manzil ko'rsatilgan bo'lsa, eng yangi versiyani o'sha yerdan ochadi.
@@ -346,11 +346,21 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
   <section id="v-testlar" class="section" hidden>
     <div><h1>Kasbiy test</h1><p class="lede">Savollar banki, har bir savol vaqti va natijalar reytingi. To'g'ri javoblar faqat sizda saqlanadi, ishtirokchilar ularni ko'ra olmaydi. Topshirilgan testlar shu ilova ochiq turganda avtomatik baholanadi.</p></div>
     <div class="kpis" id="t-kpis"></div>
+    <div class="panel stack reqpanel">
+      <div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Testni boshlashga ruxsat so'rovlari</h2><span class="note" id="trq-count"></span></div>
+      <p class="note">Ishtirokchi Face ID dan o'tgach, shu yerda paydo bo'ladi. "Ruxsat berish"ni bossangiz, uning ekranida test boshlanadi. Ruxsat 15 daqiqa amal qiladi.</p>
+      <div id="trq-list"></div>
+    </div>
     <div class="grid">
       <form class="panel stack" id="tcfg">
         <h2>Sozlamalar</h2>
         <label class="check" for="tc-on"><input type="checkbox" id="tc-on"> Test ochiq (ishtirokchilar topshira oladi)</label>
         <label for="tc-n">Har bir ishtirokchiga beriladigan savollar soni<input id="tc-n" type="number" min="1" max="100" value="10"></label>
+        <div class="row2">
+          <label for="tc-from">Test boshlanadi<input id="tc-from" type="datetime-local"></label>
+          <label for="tc-to">Test tugaydi<input id="tc-to" type="datetime-local"></label>
+        </div>
+        <p class="note">Ishtirokchi faqat shu vaqt oralig'ida testni boshlay oladi. Bo'sh qoldirilsa, cheklov yo'q. Face ID dan o'tgan har bir ishtirokchiga testni boshlash uchun siz ruxsat berasiz.</p>
         <p class="note">Savollar bankdan tasodifiy tanlanadi va har kimga boshqa tartibda beriladi. Har bir savolning vaqtini pastdagi ro'yxatda belgilaysiz.</p>
         <div class="btnrow"><button class="btn" type="submit">Saqlash</button><span class="note" id="tc-saved"></span></div>
       </form>
@@ -482,8 +492,8 @@ C) Boshqa bo'limga yo'naltirish</pre>
   function add(src,cb){var s=document.createElement("script");s.src=src;s.onload=cb;s.onerror=cb;document.body.appendChild(s)}
   function seq(list,done){if(!list.length)return done();add(list[0],function(){seq(list.slice(1),done)})}
   var fb="https://www.gstatic.com/firebasejs/10.12.2/";
-  var list=[fb+"firebase-app-compat.js",fb+"firebase-auth-compat.js",fb+"firebase-firestore-compat.js","firebase-init.js"];
-  seq(list,function(){add("app.js")});
+  var list=[fb+"firebase-app-compat.js",fb+"firebase-auth-compat.js",fb+"firebase-firestore-compat.js","firebase-init.js?v="+Date.now()];
+  seq(list,function(){add("app.js?v="+Date.now())});
 })();
 </script>
 </body>
