@@ -44,19 +44,20 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
         <span class="go">Ish topshiruvchi sifatida kirish →</span>
       </button>
       <button class="rolecard adm" type="button" data-role="admin">
-        <span class="ico">AD</span>
-        <h2>Ilova administratori</h2>
-        <ul><li>Davlat tashkilotlarini STIR bilan kiritish</li><li>Tashkilot nomidan vakansiya e'lon qilish</li><li>Muddat tugagach tanlovni yakunlash</li><li>G'olibni tanlash huquqi yo'q — uni tizim belgilaydi</li></ul>
-        <span class="go">Administrator sifatida kirish →</span>
+        <span class="ico">IB</span>
+        <h2>Ish beruvchi</h2>
+        <ul><li>O'z tashkiloti nomidan vakansiya e'lon qilish</li><li>Arizalarni anonim kodlar bilan kuzatish</li><li>Muddat tugagach tanlovni yakunlash</li><li>G'olibni tanlash huquqi yo'q — uni tizim belgilaydi</li></ul>
+        <span class="go">Ish beruvchi sifatida kirish →</span>
       </button>
       <button class="rolecard chief" type="button" data-role="chief">
         <span class="ico">BA</span>
         <h2>Bosh administrator</h2>
-        <ul><li>Kim qachon kirgani va chiqqani</li><li>Hozir onlayn foydalanuvchilar va qurilmalari</li><li>Noto'g'ri parol urinishlari</li><li>Administratorning barcha imkoniyatlari</li></ul>
+        <ul><li>Tashkilotlar va ish beruvchilarni boshqarish</li><li>Kirish-chiqish va onlayn foydalanuvchilar</li><li>Shikoyatlarga javob berish, g'olibni rad etish</li><li>Ilovaning barcha imkoniyatlari</li></ul>
         <span class="go">Bosh administrator sifatida kirish →</span>
       </button>
     </div>
     <p class="err" id="gateErr" hidden style="margin-top:14px"></p>
+    <p class="note gate-verify" id="gateVerify"><a href="#tekshir">Natija guvohnomasini tekshirish →</a></p>
 
     <div class="auth" id="authStep" hidden>
       <button class="btn ghost" type="button" id="authBack">← Rolni qayta tanlash</button>
@@ -123,7 +124,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 
   <!-- APPLICANT: PROFIL -->
   <section id="v-profil" class="section" hidden>
-    <div><h1>Mening profilim</h1><p class="lede">Profil ma'lumotlari faqat sizga ko'rinadi. Ariza topshirganda ulardan nusxa anonim kod bilan tanlovga yuboriladi. Ism va telefon faqat administratorga, siz g'olib bo'lganingizdan keyin ko'rsatiladi.</p></div>
+    <div><h1>Profil va kasbiy test</h1><p class="lede">Profil ma'lumotlari faqat sizga ko'rinadi. Ariza topshirganda ulardan nusxa anonim kod bilan tanlovga yuboriladi. Ism va telefoningiz faqat siz g'olib bo'lib, taklifni qabul qilganingizdan keyin tashkilotga yuboriladi.</p></div>
     <div class="grid">
       <form class="panel stack" id="pform">
         <h2>Shaxsiy ma'lumotlar</h2>
@@ -143,10 +144,8 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       <div class="stack">
         <div class="panel stack">
           <h2>Kasbiy test</h2>
-          <dl class="kv"><dt>Test bali</dt><dd class="mono" id="p-test">—</dd><dt>Anonim kodingiz</dt><dd class="mono" id="p-code">—</dd></dl>
-          <p class="note">Test bali barcha arizalaringiz uchun bir xil ishlatiladi. Bu prototipda 5 ta namunaviy savol bor. Haqiqiy tizimda savollar bankidan tasodifiy tanlanadi va Face ID bilan tasdiqlanadi.</p>
-          <div><button class="btn ghost" type="button" id="btn-quiz">Testni topshirish</button></div>
-          <div id="quiz" class="quiz" hidden></div>
+          <dl class="kv"><dt>Test bali</dt><dd class="mono" id="p-test">—</dd><dt>Anonim kodingiz</dt><dd class="mono" id="p-code">—</dd><dt>Face ID</dt><dd id="p-face">—</dd></dl>
+          <div id="testPanel" class="stack"></div>
         </div>
       </div>
     </div>
@@ -170,7 +169,8 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 
   <!-- ADMIN: BOSHQARUV -->
   <section id="v-boshqaruv" class="section" hidden>
-    <div><h1>Boshqaruv paneli</h1><p class="lede">Administrator tashkilot va vakansiyalarni kiritadi, muddat tugagan tanlovni yakunlaydi. Nomzodni tanlash yoki ballni o'zgartirish imkoniyati yo'q.</p></div>
+    <div><h1>Boshqaruv paneli</h1><p class="lede">Vakansiyalarni e'lon qilish va muddat tugagan tanlovni yakunlash. Nomzodni tanlash yoki ballni o'zgartirish imkoniyati yo'q.</p></div>
+    <div id="empBanner"></div>
     <div class="kpis" id="kpis"></div>
     <div class="panel stack">
       <h2>Yakunlash kutilayotgan tanlovlar</h2>
@@ -195,11 +195,11 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
     <div><h1>Kirish-chiqish jurnali</h1><p class="lede">Har bir kirish, chiqish va noto'g'ri parol urinishi vaqti, roli va qurilmasi bilan.</p></div>
     <div class="filters">
       <label for="k-range">Davr<select id="k-range"><option value="today">Bugun</option><option value="7" selected>Oxirgi 7 kun</option><option value="30">Oxirgi 30 kun</option><option value="">Hammasi</option></select></label>
-      <label for="k-role">Rol<select id="k-role"><option value="">Barcha rollar</option><option value="applicant">Ish topshiruvchi</option><option value="admin">Administrator</option><option value="chief">Bosh administrator</option></select></label>
+      <label for="k-role">Rol<select id="k-role"><option value="">Barcha rollar</option><option value="applicant">Ish topshiruvchi</option><option value="admin">Ish beruvchi</option><option value="chief">Bosh administrator</option></select></label>
       <label for="k-type">Hodisa<select id="k-type"><option value="">Barchasi</option><option value="login">Kirish</option><option value="logout">Chiqish</option><option value="fail">Noto'g'ri parol</option></select></label>
       <label for="k-q">Login yoki ism<input id="k-q" placeholder="Qidirish"></label>
     </div>
-    <div class="btnrow" style="justify-content:space-between"><span class="note" id="k-count"></span><button class="btn ghost" type="button" id="k-csv" hidden>CSV nusxalash</button></div>
+    <div class="btnrow" style="justify-content:space-between"><span class="note" id="k-count"></span><button class="btn ghost" type="button" id="k-csv" hidden>Excel (CSV) yuklab olish</button></div>
     <div id="k-body"></div>
   </section>
 
@@ -208,7 +208,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
     <div><h1>Foydalanuvchilar</h1><p class="lede">Barcha ro'yxatdan o'tganlar: holati, rollari, kirishlar soni va oxirgi faolligi.</p></div>
     <div class="filters">
       <label for="u-q">Login, ism yoki telefon<input id="u-q" placeholder="Qidirish"></label>
-      <label for="u-role">Rol<select id="u-role"><option value="">Barcha rollar</option><option value="applicant">Ish topshiruvchi</option><option value="admin">Administrator</option><option value="chief">Bosh administrator</option></select></label>
+      <label for="u-role">Rol<select id="u-role"><option value="">Barcha rollar</option><option value="applicant">Ish topshiruvchi</option><option value="admin">Ish beruvchi</option><option value="chief">Bosh administrator</option></select></label>
     </div>
     <p class="note" id="u-count"></p>
     <div id="u-body"></div>
@@ -216,7 +216,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 
   <!-- ADMIN: ARIZALAR -->
   <section id="v-arizalar-adm" class="section" hidden>
-    <div><h1>Barcha arizalar</h1><p class="lede">Arizalar anonim kodlar bilan ko'rsatiladi. Nomzodning ismi va telefoni faqat u g'olib bo'lgandan keyin ochiladi. Ballarni o'zgartirish imkoniyati yo'q.</p></div>
+    <div><h1>Barcha arizalar</h1><p class="lede">Arizalar anonim kodlar bilan ko'rsatiladi. Nomzodning ismi va telefoni faqat u g'olib bo'lib, taklifni qabul qilgandan keyin ish beruvchiga ochiladi. Ballarni o'zgartirish imkoniyati yo'q.</p></div>
     <div class="filters">
       <label for="aa-vac">Vakansiya<select id="aa-vac"></select></label>
       <label for="aa-st">Holat<select id="aa-st"><option value="">Barchasi</option><option value="ok">Talablarga mos</option><option value="no">Mos emas</option></select></label>
@@ -227,7 +227,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 
   <!-- ADMIN: JURNAL -->
   <section id="v-jurnal" class="section" hidden>
-    <div><h1>Harakatlar jurnali</h1><p class="lede">Administratorlarning har bir harakati vaqt bilan yoziladi: tashkilot qo'shish, vakansiya e'lon qilish, muddatni uzaytirish, bekor qilish, tanlovni yakunlash va g'olibni rad etish.</p></div>
+    <div><h1>Harakatlar jurnali</h1><p class="lede" id="auditLede">Har bir harakat vaqt bilan yoziladi: tashkilot qo'shish, ish beruvchini biriktirish, vakansiya e'lon qilish, muddatni uzaytirish, bekor qilish, tanlovni yakunlash, g'olibni rad etish va shikoyatlarga javob.</p></div>
     <div id="auditBody"></div>
   </section>
 
@@ -238,7 +238,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       <h2>Foydalanuvchilar</h2>
       <dl class="kv" id="usersInfo"></dl>
       <p class="note">Bosh administrator kodi Firebase konsolida <span class="mono">secrets/chief</span> hujjatidagi <span class="mono">code</span> maydonida saqlanadi.</p>
-      <p class="note">Yangi administrator qo'shish uchun unga administrator kodini ayting: u ro'yxatdan o'tib, "Administrator" rolini tanlaydi va kodni kiritadi. Kodni o'zgartirish uchun Firebase konsolida <span class="mono">secrets/admin</span> hujjatidagi <span class="mono">code</span> maydonini yangilang. Administratorni olib tashlash uchun <span class="mono">admins</span> to'plamidan uning hujjatini o'chiring.</p>
+      <p class="note">Yangi ish beruvchi qo'shish: unga ish beruvchi kodini ayting. U ro'yxatdan o'tib, "Ish beruvchi" rolini tanlaydi va kodni kiritadi. So'ng "Ish beruvchilar" bo'limida uni tashkilotiga biriktirasiz. Kodni o'zgartirish uchun Firebase konsolida <span class="mono">secrets/admin</span> hujjatidagi <span class="mono">code</span> maydonini yangilang.</p>
     </div>
     <form class="panel stack" id="codeChange" hidden>
       <h2>Administrator kodini o'zgartirish</h2>
@@ -280,7 +280,8 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
   <!-- ADMIN: VAKANSIYALAR -->
   <section id="v-boshqaruv-vak" class="section" hidden>
     <div><h1>Vakansiyalar</h1><p class="lede">Vakansiyada maosh ko'rsatilishi shart. Talablar shablondan tanlanadi. Muddat tugamaguncha tanlovni yakunlab bo'lmaydi.</p></div>
-    <div class="grid">
+    <div id="vNoOrg"></div>
+    <div class="grid" id="vGrid">
       <form class="panel stack" id="vform">
         <div class="btnrow" style="justify-content:space-between"><h2 style="margin:0" id="vformTitle">Yangi vakansiya</h2><button class="linkbtn" type="button" id="vEditCancel" hidden>Tahrirni bekor qilish</button></div>
         <p class="edit-flag" id="vEditFlag" hidden>Tahrirlash faqat hali ariza tushmagan vakansiyada mumkin.</p>
@@ -341,14 +342,106 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
     </form>
   </section>
 
+  <!-- CHIEF: TEST -->
+  <section id="v-testlar" class="section" hidden>
+    <div><h1>Kasbiy test</h1><p class="lede">Savollar banki, har bir savol vaqti va natijalar reytingi. To'g'ri javoblar faqat sizda saqlanadi, ishtirokchilar ularni ko'ra olmaydi. Topshirilgan testlar shu ilova ochiq turganda avtomatik baholanadi.</p></div>
+    <div class="kpis" id="t-kpis"></div>
+    <div class="grid">
+      <form class="panel stack" id="tcfg">
+        <h2>Sozlamalar</h2>
+        <label class="check" for="tc-on"><input type="checkbox" id="tc-on"> Test ochiq (ishtirokchilar topshira oladi)</label>
+        <label for="tc-n">Har bir ishtirokchiga beriladigan savollar soni<input id="tc-n" type="number" min="1" max="100" value="10"></label>
+        <p class="note">Savollar bankdan tasodifiy tanlanadi va har kimga boshqa tartibda beriladi. Har bir savolning vaqtini pastdagi ro'yxatda belgilaysiz.</p>
+        <div class="btnrow"><button class="btn" type="submit">Saqlash</button><span class="note" id="tc-saved"></span></div>
+      </form>
+      <form class="panel stack" id="tqform">
+        <h2 id="tq-title">Yangi savol</h2>
+        <label for="tq-q">Savol<textarea id="tq-q" rows="3" maxlength="600" required></textarea></label>
+        <div class="stack" id="tq-opts"></div>
+        <p class="note">To'g'ri javob yonidagi doirachani belgilang. Bo'sh qoldirilgan variantlar hisobga olinmaydi.</p>
+        <label for="tq-sec">Javob berish vaqti (soniya)<input id="tq-sec" type="number" min="5" max="600" value="60" required></label>
+        <p class="err" id="tq-err" hidden></p>
+        <div class="btnrow"><button class="btn" type="submit" id="tq-btn">Savolni qo'shish</button><button class="linkbtn" type="button" id="tq-cancel" hidden>Tahrirni bekor qilish</button></div>
+      </form>
+    </div>
+    <details class="panel stack">
+      <summary style="cursor:pointer;font-weight:600">Savollarni ommaviy yuklash (matn yoki .txt fayl)</summary>
+      <p class="note" style="margin-top:10px">Har bir savol bo'sh qator bilan ajratiladi. To'g'ri javob oxiriga <b>*</b> qo'yiladi. "Vaqt:" qatori ixtiyoriy — yozilmasa, standart vaqt olinadi.</p>
+      <pre class="formula">2 000 000 so'mning 15 foizi qancha?
+A) 150 000
+B) 300 000 *
+C) 30 000
+D) 3 000 000
+Vaqt: 45
+
+Fuqarodan shikoyat kelsa, birinchi qadam qaysi?
+A) Shikoyatni tinglab, mazmunini aniqlash *
+B) E'tibor bermaslik
+C) Boshqa bo'limga yo'naltirish</pre>
+      <label for="tb-text">Savollar matni<textarea id="tb-text" rows="8" class="mono"></textarea></label>
+      <div class="row2"><label for="tb-file">Yoki .txt fayl tanlang<input id="tb-file" type="file" accept=".txt,text/plain"></label><label for="tb-sec">Standart vaqt (soniya)<input id="tb-sec" type="number" min="5" max="600" value="60"></label></div>
+      <p class="err" id="tb-err" hidden></p>
+      <div class="btnrow"><button class="btn" type="button" id="tb-btn">Tekshirib yuklash</button><span class="note" id="tb-info"></span></div>
+    </details>
+    <div class="panel stack">
+      <div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Savollar banki</h2><span class="note" id="tq-count"></span></div>
+      <div id="tq-list"></div>
+    </div>
+    <div class="panel stack">
+      <div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Test natijalari reytingi</h2><button class="btn ghost" type="button" id="tr-csv">Excel (CSV) yuklab olish</button></div>
+      <div id="tr-list"></div>
+      <p class="note">To'xtatilgan test 0 ball bilan baholanadi. Texnik nosozlik bo'lsa (masalan, yorug'lik yetmagan), "Qayta topshirishga ruxsat" tugmasi bilan ishtirokchiga yana bir imkon berishingiz mumkin — eski natija o'chiriladi.</p>
+    </div>
+  </section>
+
+  <!-- CHIEF: ISH BERUVCHILAR -->
+  <section id="v-ish-beruvchilar" class="section" hidden>
+    <div><h1>Ish beruvchilar</h1><p class="lede">Ish beruvchi kodini kiritgan foydalanuvchilar. Har birini o'z tashkilotiga biriktiring: u faqat shu tashkilot nomidan vakansiya e'lon qila oladi va faqat uning arizalarini ko'radi.</p></div>
+    <div class="panel stack">
+      <h2>Ish beruvchi qanday qo'shiladi</h2>
+      <ol class="note" style="margin:0;padding-left:20px"><li>Unga ish beruvchi kodini ayting.</li><li>U ilovada ro'yxatdan o'tadi, "Ish beruvchi" rolini tanlaydi va kodni kiritadi.</li><li>Shu ro'yxatda paydo bo'lgach, tashkilotini tanlab "Biriktirish"ni bosing.</li></ol>
+    </div>
+    <p class="note" id="eb-count"></p>
+    <div id="eb-body"></div>
+  </section>
+
+  <!-- ADMIN/CHIEF: SHIKOYATLAR -->
+  <section id="v-shikoyatlar" class="section" hidden>
+    <div><h1>Shikoyatlar</h1><p class="lede" id="sh-lede">Tanlov natijasi e'lon qilingach, ishtirokchi 3 kun ichida shikoyat yozishi mumkin. Shikoyatga faqat bosh administrator javob beradi. Javob ishtirokchiga va ish beruvchiga ko'rinadi.</p></div>
+    <div class="filters">
+      <label for="sh-st">Holat<select id="sh-st"><option value="open">Javob kutilmoqda</option><option value="">Barchasi</option><option value="accepted">Qanoatlantirilgan</option><option value="rejected">Rad etilgan</option></select></label>
+    </div>
+    <div id="sh-body"></div>
+  </section>
+
+  <!-- HAMMA: STATISTIKA -->
+  <section id="v-statistika" class="section" hidden>
+    <div><h1>Ochiq statistika</h1><p class="lede">Butun tizim bo'yicha umumiy ko'rsatkichlar. Shaxsiy ma'lumotlar ko'rsatilmaydi.</p></div>
+    <div class="kpis" id="st-kpis"></div>
+    <div class="cols2" id="st-grid"></div>
+  </section>
+
+  <!-- HAMMA (kirmasdan ham): GUVOHNOMANI TEKSHIRISH -->
+  <section id="v-tekshir" class="section" hidden>
+    <div class="brand" style="margin-bottom:6px"><img src="logo.png" alt="" width="36" height="36">OchiqTanlov</div>
+    <div><h1>Natija guvohnomasini tekshirish</h1><p class="lede">Guvohnomadagi QR kodni skanerlang yoki tekshirish raqamini kiriting. Ma'lumot to'g'ridan-to'g'ri tanlov bazasidan olinadi.</p></div>
+    <form class="panel stack" id="vf-form" style="max-width:560px">
+      <label for="vf-id">Tekshirish raqami<input id="vf-id" class="mono" placeholder="v1abc2de.N-1234A" required></label>
+      <div class="btnrow"><button class="btn" type="submit">Tekshirish</button><a class="linkbtn" href="#" id="vf-back">← Ilovaga qaytish</a></div>
+    </form>
+    <div id="vf-out"></div>
+  </section>
+
   <section id="v-qoidalar" class="section" hidden>
     <div><h1>Tanlov qanday o'tadi</h1><p class="lede">Qoidalar hamma uchun bir xil va oldindan e'lon qilinadi. Rahbar yoki administratorning ixtiyoriga qoladigan bosqich yo'q.</p></div>
     <ol class="steps">
-      <li><b>Administrator vakansiya kiritadi</b><p>Tashkilot, lavozim, maosh va talablar shablondan tanlanadi.</p></li>
+      <li><b>Ish beruvchi vakansiya kiritadi</b><p>Faqat bosh administrator biriktirgan o'z tashkiloti nomidan. Maosh ko'rsatilishi shart, talablar shablondan tanlanadi.</p></li>
       <li><b>Ish topshiruvchi tanlaydi</b><p>Maosh va hudud bo'yicha o'ziga ma'qul vakansiyaga anonim kod bilan ariza beradi.</p></li>
       <li><b>Majburiy talablar filtri</b><p>Ma'lumot, mutaxassislik, staj, majburiy ko'nikmalar va test chegarasi avtomatik tekshiriladi.</p></li>
       <li><b>Ball hisoblanadi</b><p>Mos nomzodlar quyidagi ochiq formula bo'yicha baholanadi.</p></li>
       <li><b>Tizim g'olibni belgilaydi</b><p>Muddat tugagach eng yuqori ball — g'olib, ikkinchisi — zaxira. Natija ochiq e'lon qilinadi.</p></li>
+      <li><b>G'olib taklifni qabul qiladi yoki voz kechadi</b><p>Qabul qilsa, ismi va telefoni ish beruvchiga yuboriladi. Voz kechsa, o'rin avtomatik zaxiradagi nomzodga o'tadi.</p></li>
+      <li><b>Shikoyat va guvohnoma</b><p>Har bir ishtirokchi 3 kun ichida shikoyat yozishi va QR kodli natija guvohnomasini olishi mumkin. Guvohnomani istalgan odam tekshira oladi.</p></li>
     </ol>
     <div class="panel stack">
       <h2>Ball formulasi (100 ball)</h2>
@@ -357,14 +450,30 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
      + 0,15 × Afzal ko'nikmalar ulushi
      + 0,10 × Ma'lumot         (o'rta maxsus 60 · bakalavr 80 · magistr 100)
      + 0,05 × Afzal tillar ulushi</div>
-      <p class="note">Ballar teng bo'lsa: avval test bali yuqori bo'lgan, so'ng arizani oldinroq topshirgan nomzod tanlanadi. Tashkilot g'olibni rad etsa, sababini ochiq yozadi va o'rin avtomatik zaxiradagi nomzodga o'tadi.</p>
+      <p class="note">Ballar teng bo'lsa: avval test bali yuqori bo'lgan, so'ng arizani oldinroq topshirgan nomzod tanlanadi. Bosh administrator g'olibni faqat bir marta, sababini ochiq yozib rad eta oladi; o'rin avtomatik zaxiradagi nomzodga o'tadi.</p>
     </div>
     <div class="panel stack">
-      <h2>Prototip haqida</h2>
-      <p class="note">Bu namoyish uchun yaratilgan prototip. Keyingi bosqichda STIR Yagona davlat reyestridan, ma'lumot va staj HEMIS hamda mehnat tizimidan, test esa Face ID bilan tasdiqlangan onlayn imtihondan olinadi. Hozir profil ma'lumotlari va test bali foydalanuvchining o'zi kiritgan ma'lumotlarga asoslanadi.</p>
+      <h2>Kim nima qila oladi</h2>
+      <div class="tablebox"><table class="wide"><thead><tr><th>Imkoniyat</th><th>Ish topshiruvchi</th><th>Ish beruvchi</th><th>Bosh administrator</th></tr></thead><tbody>
+        <tr><td>Vakansiyalarni ko'rish, ariza topshirish</td><td>✓</td><td>—</td><td>—</td></tr>
+        <tr><td>Vakansiya e'lon qilish, tahrirlash, uzaytirish, bekor qilish</td><td>—</td><td>faqat o'z tashkiloti</td><td>✓ hamma tashkilot</td></tr>
+        <tr><td>Tanlovni yakunlash (g'olibni tizim belgilaydi)</td><td>—</td><td>faqat o'z tashkiloti</td><td>✓</td></tr>
+        <tr><td>G'olibning ismi va telefoni</td><td>—</td><td>g'olib rozi bo'lgach</td><td>✓</td></tr>
+        <tr><td>Tashkilot qo'shish, ish beruvchini biriktirish</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr><td>Shikoyatga javob, g'olibni rad etish</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr><td>Kirish-chiqish monitoringi, foydalanuvchilar</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr><td>G'olibni qo'lda tanlash yoki ballni o'zgartirish</td><td>—</td><td>—</td><td>— hech kimda yo'q</td></tr>
+      </tbody></table></div>
+      <p class="note">Keyingi bosqichda STIR Yagona davlat reyestridan, ma'lumot va staj HEMIS hamda elektron mehnat daftarchasidan avtomatik olinadi. Hozir profil ma'lumotlari foydalanuvchining o'zi kiritgan ma'lumotlarga asoslanadi.</p>
     </div>
   </section>
 </main>
+<div class="exam" id="exam" hidden>
+  <div class="exam-top"><b>Kasbiy test</b><span id="ex-prog" class="note"></span><span class="spacer"></span><span id="ex-timer" class="mono ex-timer"></span></div>
+  <div class="exam-cam" id="ex-cam"><video id="ex-video" autoplay muted playsinline></video><span id="ex-cam-st">Kamera</span></div>
+  <div class="exam-body wrap" id="ex-body"></div>
+</div>
+<div class="modal" id="cert" hidden role="dialog" aria-modal="true" aria-label="Natija guvohnomasi"><div class="sheet" id="certBody"></div></div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
