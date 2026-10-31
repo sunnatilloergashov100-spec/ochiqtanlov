@@ -370,3 +370,13 @@ table tbody tr:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
 #st-theme{grid-template-columns:repeat(3,1fr)}
 @media (max-width:620px){.who{display:none}.hrow{flex-wrap:nowrap}}
 #st-theme button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);box-shadow:var(--sh-1)}
+/* kirish sarlavhasi tor ekranda sig'sin */
+.gate{padding-inline:16px;box-sizing:border-box;overflow-wrap:anywhere}
+.gate h1{font-size:clamp(22px,3.6vw,34px);letter-spacing:-.02em;max-width:100%}
+/* ilova ichidan kod so'ralganda katta sarlavha kerak emas */
+body.auth-code .gate>.brand,body.auth-code .gate>h1,body.auth-code .gate>.lede,body.auth-code #gateVerify{display:none}
+body.auth-code .gate{padding-top:28px}
+body.auth-code .authbox>.note{display:none}
+.pending-ico.req{color:var(--accent);background:var(--accent-soft);animation:none}
+form.pending input{width:100%;box-sizing:border-box}
+tr.row-pend{background:color-mix(in srgb,var(--warn,#B4600B) 7%,transparent)}

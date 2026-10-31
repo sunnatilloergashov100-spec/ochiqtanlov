@@ -141,12 +141,23 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 
   <!-- ISH BERUVCHI: TASDIQ KUTILMOQDA -->
   <section id="v-kutish" class="section" hidden>
-    <div class="pending">
+    <form class="pending" id="kt-form" hidden>
+      <div class="pending-ico req" aria-hidden="true"><svg viewBox="0 0 24 24" width="38" height="38"><path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-5h6v5M9 11h.01M15 11h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h1>Ish beruvchi sifatida so'rov</h1>
+      <p class="lede"><b id="kt-name"></b>, tashkilotingiz nomidan vakansiya e'lon qilish uchun so'rov yuboring. So'rov bosh administratorning profilida ko'rinadi — u ruxsat bergach, "Ish beruvchi tashkilot" qismi ochiladi.</p>
+      <div class="stack" style="width:100%;max-width:420px;text-align:left">
+        <label for="kt-org">Tashkilot nomi<input id="kt-org" maxlength="120" required placeholder="Jizzax shahar 7-umumta'lim maktabi"></label>
+        <label for="kt-pos">Lavozimingiz<input id="kt-pos" maxlength="80" placeholder="Direktor, kadrlar bo'limi boshlig'i…"></label>
+        <p class="err" id="kt-err" hidden></p>
+      </div>
+      <div class="btnrow"><button class="btn" type="submit" id="kt-send">So'rov yuborish</button><a class="btn ghost" href="#vakansiyalar" id="kt-back">← Orqaga</a></div>
+    </form>
+    <div class="pending" id="kt-wait" hidden>
       <div class="pending-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-      <h1>Tasdiq kutilmoqda</h1>
-      <p class="lede">Ish beruvchi kodini to'g'ri kiritdingiz. Endi bosh administrator sizni tekshirib, tashkilotingizga biriktirishi kerak. Tasdiqlangach, bu qism o'zi ochiladi — sahifani yangilash shart emas.</p>
+      <h1>Ruxsat kutilmoqda</h1>
+      <p class="lede">So'rovingiz bosh administratorga yuborildi. U sizni tekshirib, tashkilotingizga biriktirgach, bu qism o'zi ochiladi — sahifani yangilash shart emas.</p>
       <dl class="kv" id="kt-info"></dl>
-      <div class="btnrow"><a class="btn ghost" href="#vakansiyalar" id="kt-back">← Bo'sh ish o'rinlariga qaytish</a></div>
+      <div class="btnrow"><a class="btn ghost" href="#vakansiyalar">← Bo'sh ish o'rinlariga qaytish</a><button class="btn ghost" type="button" id="kt-cancel">So'rovni bekor qilish</button></div>
     </div>
   </section>
 
@@ -281,7 +292,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       <h2>Foydalanuvchilar</h2>
       <dl class="kv" id="usersInfo"></dl>
       <p class="note">Bosh administrator kodi Firebase konsolida <span class="mono">secrets/chief</span> hujjatidagi <span class="mono">code</span> maydonida saqlanadi.</p>
-      <p class="note">Yangi ish beruvchi qo'shish: unga ish beruvchi kodini ayting. U ro'yxatdan o'tib, "Ish beruvchi" rolini tanlaydi va kodni kiritadi. So'ng "Ish beruvchilar" bo'limida uni tashkilotiga biriktirasiz. Kodni o'zgartirish uchun Firebase konsolida <span class="mono">secrets/admin</span> hujjatidagi <span class="mono">code</span> maydonini yangilang.</p>
+      <p class="note">Ish beruvchilar kod kiritmaydi: ro'yxatdan o'tib, "Ish beruvchi tashkilot" qismida so'rov yuboradi. So'rov "Tashkilotlar → Ish beruvchilar" bo'limida chiqadi — tashkilotini tanlab "Ruxsat berish" ni bossangiz, u tizimga kiradi.</p>
     </div>
     <form class="panel stack" id="codeChange" hidden>
       <h2>Administrator kodini o'zgartirish</h2>
@@ -461,10 +472,10 @@ C) Boshqa bo'limga yo'naltirish</pre>
 
   <!-- CHIEF: ISH BERUVCHILAR -->
   <section id="v-ish-beruvchilar" class="section" hidden>
-    <div><h1>Ish beruvchilar</h1><p class="lede">Ish beruvchi kodini kiritgan foydalanuvchilar. Ish beruvchi faqat siz tasdiqlaganingizdan keyin tizimga kiradi. Har birini o'z tashkilotiga biriktiring: u faqat shu tashkilot nomidan vakansiya e'lon qila oladi va faqat uning arizalarini ko'radi.</p></div>
+    <div><h1>Ish beruvchilar</h1><p class="lede">Ish beruvchi bo'lish uchun so'rov yuborgan foydalanuvchilar. Ish beruvchi faqat siz ruxsat berganingizdan keyin tizimga kiradi. Har birini o'z tashkilotiga biriktiring: u faqat shu tashkilot nomidan vakansiya e'lon qila oladi va faqat uning arizalarini ko'radi.</p></div>
     <div class="panel stack">
       <h2>Ish beruvchi qanday qo'shiladi</h2>
-      <ol class="note" style="margin:0;padding-left:20px"><li>Unga ish beruvchi kodini ayting.</li><li>U ilovada ro'yxatdan o'tadi, "Ish beruvchi tashkilot" qismini bosib kodni kiritadi.</li><li>U shu ro'yxatda "Tasdiq kutmoqda" bo'lib chiqadi. Ma'lumotlarini tekshirib, tashkilotini tanlang va "Tasdiqlash"ni bosing. Shundan keyingina u tizimga kira oladi.</li></ol>
+      <ol class="note" style="margin:0;padding-left:20px"><li>Ish beruvchi ilovada ro'yxatdan o'tadi (login, parol, Face ID).</li><li>"Ish beruvchi tashkilot" qismini bosib, tashkiloti nomi va lavozimini yozib so'rov yuboradi. Kod kerak emas.</li><li>So'rov shu ro'yxatda "Ruxsat kutmoqda" bo'lib chiqadi. Ma'lumotlarini tekshirib, tashkilotini tanlang va "Ruxsat berish"ni bosing — u tizimga kiradi. Kerak bo'lmasa "Rad etish".</li></ol>
     </div>
     <p class="note" id="eb-count"></p>
     <div id="eb-body"></div>

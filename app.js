@@ -85,7 +85,7 @@ const APP_TABS=[["vakansiyalar","Vakansiyalar"],["arizalar","Arizalarim"],["prof
 const EMP_TABS=[["boshqaruv","Boshqaruv"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
 const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"],["ish-beruvchilar","Ish beruvchilar"],["testlar","Test"]];
 const CHIEF_ADM=[["boshqaruv","Boshqaruv"],["tashkilotlar","Tashkilotlar"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["sozlamalar","Sozlamalar"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
-APP_TABS.push(["sozlamalarim","Sozlamalar"]);EMP_TABS.push(["sozlamalarim","Sozlamalar"]);CHIEF_ADM.push(["sozlamalarim","Sozlamalar"]);
+APP_TABS.push(["sozlamalarim","Sozlamalar"],["kutish","Ish beruvchi so'rovi"]);EMP_TABS.push(["sozlamalarim","Sozlamalar"]);CHIEF_ADM.push(["sozlamalarim","Sozlamalar"]);
 const ALL_VIEWS=["kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
 // Ilova uch qismga bo'linadi; har qism ichida bo'limlar guruhlangan
 const MODES=[["applicant","Bo'sh ish o'rinlari"],["admin","Ish beruvchi tashkilot"],["chief","Administrator"],["settings","Sozlamalar"]];
@@ -97,8 +97,8 @@ const G_CADM=[["Monitoring",["monitoring","kirishlar","foydalanuvchilar"]],["Tes
 const G_SET=[["Sozlamalar",["sozlamalarim"]]];
 const TAB_LABEL={...Object.fromEntries(APP_TABS.concat(EMP_TABS,CHIEF_TABS,CHIEF_ADM)),sozlamalar:"Tizim sozlamalari"};
 const inG=(G,t)=>G.some(g=>g[1].includes(t));
-function curMode(t){if(t==="sozlamalarim")return "settings";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
-function groupsFor(t){if(t==="sozlamalarim")return G_SET;if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
+function curMode(t){if(t==="sozlamalarim")return "settings";if(t==="kutish")return "admin";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
+function groupsFor(t){if(t==="sozlamalarim")return G_SET;if(t==="kutish")return [["Ish beruvchi so'rovi",["kutish"]]];if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
 function renderNav(t){
   const m=curMode(t);
   $("#modes").innerHTML=MODES.map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===m}"${k==="settings"?` class="gear" title="${l}" aria-label="${l}"`:""}>${k==="settings"?GEAR+"<span>"+l+"</span>":l}</button>`).join("");
@@ -152,6 +152,7 @@ function showAuthMode(mode){
   $("#tabLogin").setAttribute("aria-selected",mode==="login"?"true":"false");$("#tabReg").setAttribute("aria-selected",mode==="reg"?"true":"false");
   $("#authTitle").textContent=mode==="reg"?"Ro'yxatdan o'tish":mode==="code"?"Administrator kodi":"Kirish";
   ["l-err","r-err","c-err"].forEach(id=>$("#"+id).hidden=true);
+  document.body.classList.toggle("auth-code",mode==="code");
   $("#authRole").hidden=mode!=="code";$("#authBack").hidden=mode!=="code";
   if(mode==="code"){$("#c-code2-wrap").hidden=true;$("#c-code2").required=false;$("#c-code").value="";
     const ck=pendingRole==="chief"?"chief":"admin",cn=ck==="chief"?"bosh administrator":"ish beruvchi";
@@ -165,7 +166,7 @@ function openAuth(role,mode){
   $("#roleStep").hidden=true;$("#authStep").hidden=false;$("#gateErr").hidden=true;
   showAuthMode(mode||"login");
 }
-function closeAuth(){$("#authStep").hidden=true;document.body.classList.remove("auth-admin")}
+function closeAuth(){$("#authStep").hidden=true;document.body.classList.remove("auth-admin","auth-code")}
 $("#authBack").onclick=()=>{pendingRole=null;closeAuth();const r=S.prevRole||"applicant",h=S.prevHash;S.prevRole=null;S.prevHash=null;if(h)history.replaceState(null,"","#"+h);if(S.uid)setRole(r);else route()};
 $("#tabLogin").onclick=()=>showAuthMode("login");
 $("#tabReg").onclick=()=>showAuthMode("reg");
@@ -240,10 +241,11 @@ $("#modes").addEventListener("click",e=>{
   const go=(r,h)=>{if(h)history.replaceState(null,"","#"+h);remember(r);if(S.role!==r){setRole(r);track("login",r)}else route()};
   if(m==="settings")return go(S.role,"sozlamalarim");
   if(m==="applicant"){S.elev=null;return go("applicant","vakansiyalar")}
-  // Ish beruvchi va Administrator qismlariga har kirishda kod so'raladi
-  const need=S.isChief||m==="chief"?"chief":"admin";
-  if(S.elev===need){if(need==="chief")return go("chief",m==="admin"?"boshqaruv":"monitoring");return go("admin","boshqaruv")}
-  S.codeTarget=m;S.prevRole=S.role;S.prevHash=location.hash.slice(1);S.role=null;location.hash="";openAuth(need,"code");route();
+  // Ish beruvchi: kod yo'q — so'rov yuboradi, bosh administrator ruxsat bergach kiradi
+  if(m==="admin"&&!S.isChief){S.elev=null;if((S.adminDoc||{}).org)return go("admin","boshqaruv");return go("applicant","kutish")}
+  // Administrator qismiga faqat bosh administrator kodi bilan, har kirishda
+  if(S.elev==="chief"&&S.isChief)return go("chief",m==="admin"?"boshqaruv":"monitoring");
+  S.codeTarget=m;S.prevRole=S.role;S.prevHash=location.hash.slice(1);S.role=null;location.hash="";openAuth("chief","code");route();
 });
 $("#btnSwitch").onclick=async()=>{await track("logout");const q=getQuick();setQuick({...(q&&q.uid===S.uid?q:{}),uid:S.uid,login:S.login,name:(S.contacts[S.uid]||{}).name||(q&&q.uid===S.uid?q.name:"")||"",role:S.role});remember(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;S.elev=null;
   setLock(true);unsubAll();location.hash="";route()};
@@ -418,22 +420,26 @@ $("#ab-form").onsubmit=async e=>{
 
 // ---------- BOSH ADMIN: ISH BERUVCHILAR ----------
 function renderEmployers(){
-  const list=[...S.admins].sort((a,b)=>(!!a.org-!!b.org)||((b.at||0)-(a.at||0)));
-  $("#eb-count").textContent=list.length+" ta ish beruvchi · "+list.filter(a=>!a.org).length+" tasi tasdiq kutmoqda";
-  if(!list.length){$("#eb-body").innerHTML=`<div class="empty">Hali hech kim ish beruvchi kodini kiritmagan.</div>`;return}
+  const list=[...S.admins].sort((a,b)=>(!!a.org-!!b.org)||((b.at||0)-(a.at||0))),np=list.filter(a=>!a.org).length;
+  $("#eb-count").textContent=list.length+" ta ish beruvchi · "+np+" ta so'rov ruxsat kutmoqda";
+  if(!list.length){$("#eb-body").innerHTML=`<div class="empty">Hali so'rov yo'q. Ish beruvchi ro'yxatdan o'tib, "Ish beruvchi tashkilot" qismida so'rov yuborsa, shu yerda chiqadi.</div>`;return}
+  const norm=x=>(x||"").toLowerCase().replace(/[^a-z0-9а-яё]+/g,"");
+  const guess=a=>{if(a.org)return a.org;const n=norm(a.orgReq);if(!n)return "";const o=S.orgs.find(o=>norm(o.name)===n)||S.orgs.find(o=>norm(o.name).includes(n)||n.includes(norm(o.name)));return o?o.id:""};
   const orgOpts=sel=>`<option value="">— tashkilot tanlang —</option>`+[...S.orgs].sort((a,b)=>a.name.localeCompare(b.name)).map(o=>`<option value="${esc(o.id)}" ${o.id===sel?"selected":""}>${esc(o.name)}</option>`).join("");
-  $("#eb-body").innerHTML=`<div class="tablebox"><table class="wide"><thead><tr><th>Login</th><th>F.I.Sh.</th><th>Telefon</th><th>Kod kiritgan</th><th>Tashkiloti</th><th></th></tr></thead><tbody>`+
-    list.map(a=>{const c=S.contacts[a.uid]||{};return `<tr><td class="mono">${esc(a.login||"—")}</td><td>${esc(c.name||"—")}</td><td class="mono">${esc(c.phone||"—")}</td><td class="mono">${dt(a.at)}</td>
-      <td><div class="inline"><select data-org="${esc(a.uid)}">${orgOpts(a.org||"")}</select><button class="btn ${a.org?"ghost":""}" type="button" data-asg="${esc(a.uid)}">${a.org?"O'zgartirish":"Tasdiqlash"}</button></div>${a.org?`<div class="note"><span class="pill open">Tasdiqlangan</span></div>`:`<div class="note"><span class="pill out">Tasdiq kutmoqda</span> — tizimga kira olmaydi</div>`}</td>
-      <td><span><button class="btn ghost" type="button" data-rv="${esc(a.uid)}">Huquqni olish</button></span></td></tr>`}).join("")+`</tbody></table></div>`;
+  $("#eb-body").innerHTML=`<div class="tablebox"><table class="wide"><thead><tr><th>Ish beruvchi</th><th>So'ragan tashkiloti</th><th>So'rov vaqti</th><th>Ruxsat</th><th></th></tr></thead><tbody>`+
+    list.map(a=>{const c=S.contacts[a.uid]||{};return `<tr${a.org?"":' class="row-pend"'}><td><b>${esc(a.name||c.name||"—")}</b><div class="note mono">${esc(a.login||"—")} · ${esc(a.phone||c.phone||"—")}</div></td>
+      <td>${esc(a.orgReq||"—")}${a.posReq?`<div class="note">${esc(a.posReq)}</div>`:""}</td><td class="mono">${dt(a.at)}</td>
+      <td><div class="inline"><select data-org="${esc(a.uid)}">${orgOpts(guess(a))}</select><button class="btn ${a.org?"ghost":""}" type="button" data-asg="${esc(a.uid)}">${a.org?"O'zgartirish":"Ruxsat berish"}</button></div>${a.org?`<div class="note"><span class="pill open">Ruxsat berilgan</span></div>`:`<div class="note"><span class="pill out">Ruxsat kutmoqda</span> — tizimga kira olmaydi. Tashkilot ro'yxatda bo'lmasa, avval <a href="#tashkilotlar">Tashkilotlar</a> bo'limida qo'shing.</div>`}</td>
+      <td><span><button class="btn ghost" type="button" data-rv="${esc(a.uid)}">${a.org?"Huquqni olish":"Rad etish"}</button></span></td></tr>`}).join("")+`</tbody></table></div>`;
   $("#eb-body").querySelectorAll("[data-asg]").forEach(b=>b.onclick=async()=>{
     const uid=b.dataset.asg,org=document.querySelector(`select[data-org="${uid}"]`).value,a=S.admins.find(x=>x.uid===uid),o=org?orgOf(org):null;
     b.disabled=true;
+    if(!org&&!a.org){toast("Avval tashkilotni tanlang");b.disabled=false;return}
     try{await fs.doc("admins/"+uid).update({org:org||"",orgName:o?o.name:"",assignedAt:Date.now(),assignedBy:S.uid});
-      await log("assign",org?`Ish beruvchi ${a.login} → ${o.name}`:`Ish beruvchi ${a.login} tashkilotdan ajratildi`,org||null);toast(org?"Biriktirildi":"Ajratildi")}catch(e){toast("Bajarib bo'lmadi: Firestore qoidalarini yangilang");b.disabled=false}});
+      await log("assign",org?`Ish beruvchi ${a.login} → ${o.name}`:`Ish beruvchi ${a.login} tashkilotdan ajratildi`,org||null);toast(org?(a.org?"O'zgartirildi":"Ruxsat berildi"):"Ajratildi")}catch(e){toast("Bajarib bo'lmadi: Firestore qoidalarini yangilang");b.disabled=false}});
   $("#eb-body").querySelectorAll("[data-rv]").forEach(b=>b.onclick=()=>{
     const uid=b.dataset.rv,a=S.admins.find(x=>x.uid===uid),cell=b.parentElement;
-    cell.innerHTML=`<span class="confirm">${esc(a.login)} ish beruvchi huquqidan mahrum qilinsinmi? <button class="btn danger" type="button" data-yes>Ha</button><button class="btn ghost" type="button" data-no>Yo'q</button></span>`;
+    cell.innerHTML=`<span class="confirm">${esc(a.login)} ${a.org?"ish beruvchi huquqidan mahrum qilinsinmi?":"so'rovi rad etilsinmi?"} <button class="btn danger" type="button" data-yes>Ha</button><button class="btn ghost" type="button" data-no>Yo'q</button></span>`;
     cell.querySelector("[data-no]").onclick=()=>renderEmployers();
     cell.querySelector("[data-yes]").onclick=async()=>{try{await fs.doc("admins/"+uid).delete();await log("revoke",`Ish beruvchi huquqi olindi: ${a.login}`,a.org||null);toast("Huquq olindi")}catch(e){toast("Bajarib bo'lmadi")}};
   });
@@ -509,8 +515,28 @@ function render(){
   if(t==="testlar")renderTestAdmin();
   if(t==="qoidalar"){}
   if(t==="sozlamalarim")renderMySettings();
-  if(t==="kutish"){const c=S.contacts[S.uid]||{},a=S.adminDoc||{};$("#kt-info").innerHTML=`<dt>Login</dt><dd class="mono">${esc(S.login||"")}</dd><dt>F.I.Sh.</dt><dd>${esc(c.name||"—")}</dd><dt>So'rov vaqti</dt><dd class="mono">${a.at?dt(a.at):"—"}</dd><dt>Holat</dt><dd><span class="pill rank">Bosh administrator tasdig'ini kutmoqda</span></dd>`}
+  if(t==="kutish")renderRequest();
 }
+// ---------- ISH BERUVCHI SO'ROVI (kodsiz; bosh administrator ruxsat beradi) ----------
+function renderRequest(){
+  const c=S.contacts[S.uid]||{},a=S.adminDoc,req=!!a&&!a.org;
+  $("#kt-form").hidden=!!a;$("#kt-wait").hidden=!req;
+  if(!a){$("#kt-name").textContent=c.name||S.login||"";return}
+  $("#kt-info").innerHTML=`<dt>Login</dt><dd class="mono">${esc(S.login||"")}</dd><dt>F.I.Sh.</dt><dd>${esc(a.name||c.name||"—")}</dd><dt>Tashkilot</dt><dd>${esc(a.orgReq||"—")}</dd><dt>Lavozim</dt><dd>${esc(a.posReq||"—")}</dd><dt>So'rov vaqti</dt><dd class="mono">${a.at?dt(a.at):"—"}</dd><dt>Holat</dt><dd><span class="pill rank">Ruxsat kutilmoqda</span></dd>`;
+}
+$("#kt-form").addEventListener("submit",async e=>{
+  e.preventDefault();const err=$("#kt-err"),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;
+  const org=$("#kt-org").value.trim(),pos=$("#kt-pos").value.trim();if(org.length<3)return fail("Tashkilot nomini to'liq yozing.");
+  const c=S.contacts[S.uid]||{},btn=$("#kt-send");btn.disabled=true;
+  const d={login:S.login||"",name:c.name||"",phone:c.phone||"",orgReq:org.slice(0,120),posReq:pos.slice(0,80),at:Date.now()};
+  try{await fs.doc("admins/"+S.uid).set(d);S.adminDoc=d;S.isAdmin=false;subscribe();toast("So'rov bosh administratorga yuborildi");render()}
+  catch(e2){fail(e2&&e2.code==="permission-denied"?"So'rov yuborib bo'lmadi: Firestore qoidalarini yangilash kerak.":"Internet aloqasini tekshiring.")}
+  btn.disabled=false;
+});
+$("#kt-cancel").onclick=async()=>{const b=$("#kt-cancel");
+  if(!b.dataset.sure){b.dataset.sure="1";b.textContent="Bekor qilish uchun yana bosing";setTimeout(()=>{delete b.dataset.sure;b.textContent="So'rovni bekor qilish"},5000);return}
+  delete b.dataset.sure;b.disabled=true;try{await fs.doc("admins/"+S.uid).delete();S.adminDoc=null;subscribe();toast("So'rov bekor qilindi");render()}catch(e){toast("Bajarib bo'lmadi")}b.disabled=false;b.textContent="So'rovni bekor qilish"};
+
 function renderGate(){
   const q=getQuick(),locked=isLocked()&&S.uid&&q&&q.uid===S.uid;
   $("#quickBox").hidden=!locked;$("#roleStep").hidden=true;
@@ -535,8 +561,8 @@ applyTheme();
 $("#st-theme").addEventListener("click",e=>{const b=e.target.closest("button[data-th]");if(!b)return;try{localStorage.setItem(THK,b.dataset.th)}catch(er){}applyTheme()});
 function renderMySettings(){
   const c=S.contacts[S.uid]||{};
-  $("#st-acc").innerHTML=`<dt>Login</dt><dd class="mono">${esc(S.login||"—")}</dd><dt>F.I.Sh.</dt><dd>${esc(c.name||(S.profile||{}).name||"—")}</dd><dt>Telefon</dt><dd class="mono">${esc(c.phone||"—")}</dd><dt>Huquqlar</dt><dd>${["Ish topshiruvchi"].concat(S.isAdmin&&!S.isChief?["Ish beruvchi"]:[]).concat(S.isChief?["Bosh administrator"]:[]).join(", ")}</dd>`;
-  $("#st-app").innerHTML=`<dt>Sayt versiyasi</dt><dd class="mono">${WEB_VER}</dd><dt>Ilova (APK)</dt><dd class="mono">${APK_VER==null?"brauzer":"v"+(APK_VER||"6 yoki eski")}</dd>`;
+  $("#st-acc").innerHTML=`<dt>Login</dt><dd class="mono">${esc(S.login||"—")}</dd><dt>F.I.Sh.</dt><dd>${esc(c.name||(S.profile||{}).name||"—")}</dd><dt>Telefon</dt><dd class="mono">${esc(c.phone||"—")}</dd><dt>Huquqlar</dt><dd>${["Ish topshiruvchi"].concat(S.isAdmin&&!S.isChief?["Ish beruvchi"]:S.adminDoc&&!S.isChief?["Ish beruvchi (ruxsat kutilmoqda)"]:[]).concat(S.isChief?["Bosh administrator"]:[]).join(", ")}</dd>`;
+  $("#st-app").innerHTML=`<dt>Sayt versiyasi</dt><dd class="mono">${WEB_VER}</dd><dt>Qurilma</dt><dd>${APK_VER==null?"Brauzer":"Android ilova · APK v"+(APK_VER||"6 yoki eski")}</dd>`;
   $("#st-sys").hidden=!S.isChief;
   fs.doc("faces/"+S.uid).get().then(g=>{$("#st-face").textContent=g.exists?"Yuzingiz ro'yxatga olingan. Har kirishda u bilan solishtiriladi.":"Yuz hali ro'yxatga olinmagan."}).catch(()=>{});
   applyTheme();
@@ -1544,7 +1570,7 @@ function subscribe(){
     col("failed",x=>{S.failed=x});
     col("contacts",x=>{const c={};x.forEach(d=>{c[d.id]=d});S.contacts=c});
     col("admins",x=>{S.admins=x.map(d=>({...d,uid:d.id}));const np=S.admins.filter(a=>!a.org).length;
-      if(S._pend!=null&&np>S._pend&&S.role==="chief")toast("Yangi ish beruvchi tasdiq kutmoqda — Tashkilotlar → Ish beruvchilar");S._pend=np;
+      if(S._pend!=null&&np>S._pend&&S.role==="chief")toast("Yangi ish beruvchi so'rovi — Tashkilotlar → Ish beruvchilar");S._pend=np;
       if(S.role==="chief"&&!$("#hdr").hidden)renderNav(location.hash.slice(1))});
     col("offers",x=>{S.offers=x});
     col("appeals",x=>{S.appeals=x});
@@ -1557,13 +1583,15 @@ function subscribe(){
     unsubs.push(fs.doc("contacts/"+S.uid).onSnapshot(s=>{S.contacts=s.exists?{[S.uid]:s.data()}:{};render()},err));
     unsubs.push(fs.doc("attempts/"+S.uid).onSnapshot(s=>{S.myAttempt=s.exists?s.data():null;render()},err));
     unsubs.push(fs.doc("faces/"+S.uid).onSnapshot(s=>{S.face=s.exists?s.data():null},err));
-    if(S.isAdmin){
-      unsubs.push(fs.doc("admins/"+S.uid).onSnapshot(s=>{
-        const prevOrg=(S.adminDoc||{}).org;S.adminDoc=s.exists?s.data():null;
-        if(!s.exists){S.isAdmin=false;if(S.role==="admin"){toast("Ish beruvchi huquqingiz olib tashlandi");remember("applicant");setRole("applicant")}subscribe();return}
+    if(!S.isChief&&(S.isAdmin||S.adminDoc))unsubs.push(fs.doc("admins/"+S.uid).onSnapshot(s=>{
+        const had=!!S.adminDoc,prevOrg=(S.adminDoc||{}).org,was=S.isAdmin;S.adminDoc=s.exists?s.data():null;S.isAdmin=!!(S.adminDoc&&S.adminDoc.org);
+        if(!s.exists){if(S.role==="admin"){toast("Ish beruvchi huquqingiz olib tashlandi");remember("applicant");setRole("applicant")}else if(had&&location.hash==="#kutish")toast("Bosh administrator so'rovingizni rad etdi");if(was)subscribe();else render();return}
+        if(was!==S.isAdmin){subscribe();
+          if(S.isAdmin&&location.hash==="#kutish"){toast("Bosh administrator ruxsat berdi — xush kelibsiz!");history.replaceState(null,"","#boshqaruv");remember("admin");setRole("admin");track("login","admin");return}
+          if(!S.isAdmin&&S.role==="admin"){toast("Tashkilotdan ajratildingiz — ruxsat kutilmoqda");history.replaceState(null,"","#kutish");setRole("applicant");return}
+          route();return}
         if(prevOrg!==S.adminDoc.org){subscribeOrg();if(!prevOrg&&S.adminDoc.org&&S.role==="admin")toast("Bosh administrator sizni tasdiqladi");updateWho();route()}else{updateWho();render()}},err));
-      subscribeOrg();
-    }else{
+    if(S.isAdmin){subscribeOrg()}else{
       col("offers",x=>{S.offers=x},["uid",S.uid]);
       col("appeals",x=>{S.appeals=x},["uid",S.uid]);
     }
@@ -1589,7 +1617,7 @@ auth.onAuthStateChanged(async u=>{
 async function afterAuth(u,quick){
   S.uid=u.uid;S.login=(u.email||"").split("@")[0];
   try{S.isChief=(await fs.doc("chiefs/"+u.uid).get()).exists}catch(e){S.isChief=false}
-  try{const ad=S.isChief?null:await fs.doc("admins/"+u.uid).get();S.adminDoc=ad&&ad.exists?ad.data():null;S.isAdmin=S.isChief||!!S.adminDoc}catch(e){S.isAdmin=S.isChief}
+  try{const ad=S.isChief?null:await fs.doc("admins/"+u.uid).get();S.adminDoc=ad&&ad.exists?ad.data():null;S.isAdmin=S.isChief||!!(S.adminDoc&&S.adminDoc.org)}catch(e){S.isAdmin=S.isChief}
   try{const g=await fs.doc("logins/"+u.uid).get();S.myLog=g.exists?g.data():null}catch(e){S.myLog=null}
   S.loaded=true;subscribe();
   route();checkVersion();
