@@ -288,3 +288,85 @@ a.btn{background:var(--accent);color:var(--accent-ink);padding:12px 18px;border-
 .modes{display:grid;grid-template-columns:repeat(3,1fr);overflow:visible}
 .modes button{white-space:normal;line-height:1.2;padding:9px 8px}
 @media (max-width:520px){.modes button{font-size:12.5px;padding:8px 4px}}
+
+/* ===================== v11 · zamonaviy dizayn qatlami ===================== */
+:root{--r:16px;--r-sm:11px;--sh-1:0 1px 2px rgba(16,35,44,.05),0 1px 1px rgba(16,35,44,.03);--sh-2:0 6px 24px -8px rgba(16,35,44,.14),0 2px 6px -2px rgba(16,35,44,.06);--sh-3:0 18px 50px -18px rgba(16,35,44,.28);--ring:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);--ease:cubic-bezier(.2,.7,.2,1)}
+:root[data-theme="dark"]{--sh-1:0 1px 2px rgba(0,0,0,.35);--sh-2:0 8px 26px -10px rgba(0,0,0,.6);--sh-3:0 20px 50px -18px rgba(0,0,0,.7)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sh-1:0 1px 2px rgba(0,0,0,.35);--sh-2:0 8px 26px -10px rgba(0,0,0,.6);--sh-3:0 20px 50px -18px rgba(0,0,0,.7)}}
+body{background:radial-gradient(1200px 500px at 100% -10%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 60%),var(--paper);background-attachment:fixed;-webkit-font-smoothing:antialiased}
+/* sarlavha: shisha effekti */
+header{background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);box-shadow:0 8px 24px -20px rgba(16,35,44,.35)}
+.brand img{border-radius:9px;box-shadow:var(--sh-1)}
+.who{font-size:13px;color:var(--muted);padding:5px 10px;border-radius:99px;background:var(--paper);border:1px solid var(--line)}
+/* qism almashtirgich */
+.modes{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:5px;gap:5px;grid-template-columns:repeat(3,1fr) auto;box-shadow:inset 0 1px 2px rgba(16,35,44,.05)}
+.modes button{border-radius:10px;transition:background .2s var(--ease),color .2s var(--ease),box-shadow .2s var(--ease)}
+.modes button:hover{color:var(--ink);background:color-mix(in srgb,var(--card) 70%,transparent)}
+.modes button[aria-pressed="true"]{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 88%,#fff),var(--accent));color:var(--accent-ink);box-shadow:0 4px 14px -4px color-mix(in srgb,var(--accent) 60%,transparent)}
+.modes button.gear{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding-inline:14px}
+.modes button.gear svg{flex:none}
+@media (max-width:620px){.modes button.gear span{display:none}.modes button.gear{padding-inline:10px}}
+/* bo'limlar */
+#nav .grp a{border-radius:10px;padding:8px 14px;transition:background .2s var(--ease),color .2s var(--ease)}
+#nav .grp a:hover{background:var(--paper);color:var(--ink)}
+#nav .grp a[aria-current="page"]{background:var(--paper);color:var(--ink);box-shadow:inset 0 -2.5px 0 var(--accent);font-weight:600}
+#nav .sub{border-top:0;padding-top:2px}
+#nav .sub a{background:var(--card);transition:all .2s var(--ease)}
+#nav .sub a:hover{border-color:var(--accent);color:var(--ink)}
+.bdg{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;margin-left:4px;border-radius:99px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;line-height:1;vertical-align:1px}
+/* sarlavhalar va matn */
+h1{font-size:clamp(22px,3.2vw,30px);letter-spacing:-.02em;font-weight:700}
+.section{gap:22px;padding-block:28px 64px;animation:rise .35s var(--ease)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.section{animation:none}}
+/* kartalar */
+.panel,.vac,.kpi,.tablebox,.empty,.ex-card,.quick,.rolecard{border-radius:var(--r);border-color:color-mix(in srgb,var(--line) 80%,transparent)}
+.panel,.kpi,.tablebox,.quick,.ex-card{box-shadow:var(--sh-1)}
+.panel{padding:22px}
+.panel h2{font-size:17px;letter-spacing:-.01em}
+.vac{box-shadow:var(--sh-1);transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .2s var(--ease)}
+.vac:hover{transform:translateY(-2px);box-shadow:var(--sh-2);border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.kpi{position:relative;overflow:hidden;padding:16px 18px}
+.kpi::after{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 20%,transparent))}
+.kpi b{font-size:28px;letter-spacing:-.02em;margin-top:2px}
+.empty{background:color-mix(in srgb,var(--card) 70%,transparent);padding:36px 24px}
+/* tugmalar */
+button.btn,a.btn{border-radius:var(--r-sm);padding:10px 16px;transition:transform .15s var(--ease),box-shadow .2s var(--ease),background .2s var(--ease),filter .2s;box-shadow:0 1px 2px rgba(16,35,44,.08)}
+button.btn:not(.ghost):not(:disabled):hover,a.btn:not(.ghost):hover{filter:brightness(1.06);box-shadow:0 6px 18px -6px color-mix(in srgb,var(--accent) 65%,transparent)}
+button.btn:not(:disabled):active,a.btn:active{transform:translateY(1px) scale(.99)}
+button.btn.ghost,a.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:var(--sh-1)}
+button.btn.ghost:hover,a.btn.ghost:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:var(--paper)}
+a.btn{display:inline-flex;align-items:center;gap:8px}
+/* maydonlar */
+input,select,textarea{border-radius:var(--r-sm);padding:10px 12px;background:var(--card);border:1px solid var(--line);transition:border-color .2s var(--ease),box-shadow .2s var(--ease)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+input:focus-visible,select:focus-visible{outline:none}
+label{font-size:12.5px;letter-spacing:.01em}
+/* jadvallar */
+.tablebox{overflow:auto}
+table th{background:color-mix(in srgb,var(--paper) 70%,var(--card));font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+table tbody tr{transition:background .15s}
+table tbody tr:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+/* belgilar */
+.pill{border-radius:99px;font-weight:600}
+.chip{border-radius:99px;transition:all .15s var(--ease)}
+.toast{border-radius:12px;box-shadow:var(--sh-3);padding:12px 18px;font-weight:500}
+/* kirish oynasi */
+.gate{padding-block:56px 72px}
+.gate h1{font-size:clamp(26px,4.4vw,40px);line-height:1.15;letter-spacing:-.025em}
+.authbox{box-shadow:var(--sh-2);border-radius:20px;padding:26px}
+.tabs2{border-radius:12px}
+/* sozlamalar va kutish */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:18px;align-items:start}
+.grid2 .danger-zone{grid-column:1/-1}
+#st-theme button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:var(--sh-1);font-weight:600}
+.pending{max-width:620px;margin:24px auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:34px 28px;box-shadow:var(--sh-2);display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.pending .lede{margin:0}
+.pending .kv{text-align:left;width:100%;max-width:420px}
+.pending-ico{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;color:var(--warn);background:var(--warn-soft);animation:pend 2.4s ease-in-out infinite}
+@keyframes pend{50%{box-shadow:0 0 0 12px color-mix(in srgb,var(--warn) 12%,transparent)}}
+/* aylanib turadigan scroll paneli */
+::-webkit-scrollbar{width:10px;height:8px}::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 35%,transparent);border-radius:99px;border:2px solid transparent;background-clip:content-box}
+#st-theme{grid-template-columns:repeat(3,1fr)}
+@media (max-width:620px){.who{display:none}.hrow{flex-wrap:nowrap}}
+#st-theme button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);box-shadow:var(--sh-1)}
