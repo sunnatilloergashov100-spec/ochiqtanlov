@@ -1,6 +1,6 @@
 (function(){
 // Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
-{const BUILD=10,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+{const BUILD=11,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
   if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
   document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
@@ -14,7 +14,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=10; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=11; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
@@ -85,15 +85,40 @@ const APP_TABS=[["vakansiyalar","Vakansiyalar"],["arizalar","Arizalarim"],["prof
 const EMP_TABS=[["boshqaruv","Boshqaruv"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
 const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"],["ish-beruvchilar","Ish beruvchilar"],["testlar","Test"]];
 const CHIEF_ADM=[["boshqaruv","Boshqaruv"],["tashkilotlar","Tashkilotlar"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["sozlamalar","Sozlamalar"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
-const ALL_VIEWS=["monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
+APP_TABS.push(["sozlamalarim","Sozlamalar"]);EMP_TABS.push(["sozlamalarim","Sozlamalar"]);CHIEF_ADM.push(["sozlamalarim","Sozlamalar"]);
+const ALL_VIEWS=["kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
+// Ilova uch qismga bo'linadi; har qism ichida bo'limlar guruhlangan
+const MODES=[["applicant","Bo'sh ish o'rinlari"],["admin","Ish beruvchi tashkilot"],["chief","Administrator"],["settings","Sozlamalar"]];
+const GEAR='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+const G_APP=[["Vakansiyalar",["vakansiyalar","arizalar"]],["Profil va test",["profil"]],["Ma'lumot",["statistika","qoidalar","haqida"]]];
+const G_EMP=[["Vakansiyalar",["boshqaruv","boshqaruv-vak","arizalar-adm","natijalar"]],["Shikoyatlar",["shikoyatlar"]],["Hisobot",["statistika","jurnal"]],["Ma'lumot",["qoidalar","haqida"]]];
+const G_CEMP=[["Vakansiyalar",["boshqaruv","boshqaruv-vak","arizalar-adm","natijalar"]],["Shikoyatlar",["shikoyatlar"]],["Tashkilotlar",["tashkilotlar","ish-beruvchilar"]]];
+const G_CADM=[["Monitoring",["monitoring","kirishlar","foydalanuvchilar"]],["Test",["testlar"]],["Hisobot",["statistika","jurnal"]],["Tizim",["sozlamalar","qoidalar","haqida"]]];
+const G_SET=[["Sozlamalar",["sozlamalarim"]]];
+const TAB_LABEL={...Object.fromEntries(APP_TABS.concat(EMP_TABS,CHIEF_TABS,CHIEF_ADM)),sozlamalar:"Tizim sozlamalari"};
+const inG=(G,t)=>G.some(g=>g[1].includes(t));
+function curMode(t){if(t==="sozlamalarim")return "settings";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
+function groupsFor(t){if(t==="sozlamalarim")return G_SET;if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
+function renderNav(t){
+  const m=curMode(t);
+  $("#modes").innerHTML=MODES.map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===m}"${k==="settings"?` class="gear" title="${l}" aria-label="${l}"`:""}>${k==="settings"?GEAR+"<span>"+l+"</span>":l}</button>`).join("");
+  const G=groupsFor(t),gi=Math.max(0,G.findIndex(g=>g[1].includes(t))),sub=G[gi][1];
+  $("#nav").hidden=m==="settings"||t==="kutish";
+  const pend=S.isChief?(S.admins||[]).filter(a=>!a.org).length:0,bdg=n=>n?` <span class="bdg">${n}</span>`:"";
+  const gb=g=>g[1].includes("ish-beruvchilar")?bdg(pend):"";
+  $("#nav").innerHTML=`<div class="grp">${G.map((g,i)=>`<a href="#${g[1][0]}" ${i===gi?'aria-current="page"':""}>${g[0]}${gb(g)}</a>`).join("")}</div>`+
+    (sub.length>1?`<div class="sub">${sub.map(k=>`<a href="#${k}" ${k===t?'aria-current="page"':""}>${TAB_LABEL[k]}${k==="ish-beruvchilar"?bdg(pend):""}</a>`).join("")}</div>`:"");
+}
 function tabs(){return S.role==="chief"?CHIEF_TABS.concat(CHIEF_ADM):S.role==="admin"?EMP_TABS:APP_TABS}
 function route(){
   let t=location.hash.slice(1);
   if(t.startsWith("tekshir"))t="tekshir";
   else if(!S.role)t="gate";else if(!tabs().some(x=>x[0]===t))t=tabs()[0][0];
+  // ish beruvchi bosh administrator tasdiqlamaguncha (tashkilotga biriktirmaguncha) ichkariga kirmaydi
+  if(S.role==="admin"&&!(S.adminDoc||{}).org&&!["sozlamalarim","qoidalar","haqida","tekshir"].includes(t))t="kutish";
   ALL_VIEWS.forEach(x=>{const el=document.getElementById("v-"+x);if(el)el.hidden=x!==t});
   $("#hdr").hidden=!S.role||t==="tekshir";
-  if(S.role){$("#nav").innerHTML=tabs().map(([k,l],i)=>(S.role==="chief"&&i===CHIEF_TABS.length?'<span class="navsep"></span>':"")+`<a href="#${k}" ${k===t?'aria-current="page"':""}>${l}</a>`).join("")}
+  if(S.role&&t!=="tekshir")renderNav(t);
   render();
   if(S.role==="chief"&&typeof notifyReqs==="function")notifyReqs();
 }
@@ -127,10 +152,11 @@ function showAuthMode(mode){
   $("#tabLogin").setAttribute("aria-selected",mode==="login"?"true":"false");$("#tabReg").setAttribute("aria-selected",mode==="reg"?"true":"false");
   $("#authTitle").textContent=mode==="reg"?"Ro'yxatdan o'tish":mode==="code"?"Administrator kodi":"Kirish";
   ["l-err","r-err","c-err"].forEach(id=>$("#"+id).hidden=true);
+  $("#authRole").hidden=mode!=="code";$("#authBack").hidden=mode!=="code";
   if(mode==="code"){$("#c-code2-wrap").hidden=true;$("#c-code2").required=false;$("#c-code").value="";
     const ck=pendingRole==="chief"?"chief":"admin",cn=ck==="chief"?"bosh administrator":"ish beruvchi";
     $("#authTitle").textContent=ck==="chief"?"Bosh administrator kodi":"Ish beruvchi kodi";
-    $("#c-note").textContent=(firebase.__demo&&!firebase.__demoHasCode(ck))?"Demo rejim: bu qurilmada hali "+cn+" kodi yo'q. Hozir kiritgan kodingiz "+cn+" kodi bo'lib qoladi — uni eslab qoling (kamida 6 belgi).":"Hisobingizga kirdingiz ("+(S.login||"")+"). Davom etish uchun "+cn+" kodini kiriting. Kod faqat bir marta so'raladi.";
+    $("#c-note").textContent=(firebase.__demo&&!firebase.__demoHasCode(ck))?"Demo rejim: bu qurilmada hali "+cn+" kodi yo'q. Hozir kiritgan kodingiz "+cn+" kodi bo'lib qoladi — uni eslab qoling (kamida 6 belgi).":"Bu qismga kirish uchun "+cn+" kodini kiriting. Kod har safar shu qismga kirganingizda so'raladi.";
     $("#c-btn").textContent="Tasdiqlash";setTimeout(()=>$("#c-code").focus(),0)}
 }
 function openAuth(role,mode){
@@ -139,8 +165,8 @@ function openAuth(role,mode){
   $("#roleStep").hidden=true;$("#authStep").hidden=false;$("#gateErr").hidden=true;
   showAuthMode(mode||"login");
 }
-function closeAuth(){$("#authStep").hidden=true;$("#roleStep").hidden=false;document.body.classList.remove("auth-admin")}
-$("#authBack").onclick=()=>{pendingRole=null;closeAuth()};
+function closeAuth(){$("#authStep").hidden=true;document.body.classList.remove("auth-admin")}
+$("#authBack").onclick=()=>{pendingRole=null;closeAuth();const r=S.prevRole||"applicant",h=S.prevHash;S.prevRole=null;S.prevHash=null;if(h)history.replaceState(null,"","#"+h);if(S.uid)setRole(r);else route()};
 $("#tabLogin").onclick=()=>showAuthMode("login");
 $("#tabReg").onclick=()=>showAuthMode("reg");
 $("#l-forgot").onclick=()=>{const e=$("#l-err");e.textContent="Parolni tiklash uchun ilova administratoriga murojaat qiling: u Firebase konsolida parolingizni yangilab beradi.";e.hidden=false};
@@ -178,8 +204,12 @@ $("#codeForm").addEventListener("submit",async e=>{
   if(firebase.__demo&&!firebase.__demoHasCode(ck)&&code.length<6)return fail("Kod kamida 6 belgidan iborat bo'lsin.");
   btn.disabled=true;
   try{
-    await fs.doc((ck==="chief"?"chiefs/":"admins/")+S.uid).set({code,login:S.login||"",at:Date.now()});
-    S.isAdmin=true;if(ck==="chief")S.isChief=true;else S.adminDoc={code:"",login:S.login||"",at:Date.now()};subscribe();await log("code",ck==="chief"?"Bosh administrator kodni tasdiqlab kirdi":"Yangi ish beruvchi kodni tasdiqlab kirdi");
+    const ref=fs.doc((ck==="chief"?"chiefs/":"admins/")+S.uid),had=ck==="chief"?S.isChief:!!S.adminDoc;
+    if(had){await ref.update({code,at:Date.now()})}   // kodni server tekshiradi (Firestore qoidalari)
+    else{await ref.set({code,login:S.login||"",at:Date.now()});
+      S.isAdmin=true;if(ck==="chief")S.isChief=true;else S.adminDoc={code:"",login:S.login||"",at:Date.now()};subscribe();await log("code",ck==="chief"?"Bosh administrator kodni tasdiqlab kirdi":"Yangi ish beruvchi kodni tasdiqlab kirdi")}
+    S.elev=ck;$("#c-code").value="";
+    history.replaceState(null,"","#"+(ck==="chief"&&S.codeTarget!=="admin"?"monitoring":"boshqaruv"));S.codeTarget=null;
     btn.disabled=false;finishEnter(ck);toast(ROLE_UZ[ck]+" sifatida kirdingiz");
   }catch(e2){btn.disabled=false;fail(e2&&e2.code==="permission-denied"?"Kod noto'g'ri.":"Tekshirib bo'lmadi. Internet aloqasini tekshiring.")}
 });
@@ -189,7 +219,7 @@ function enter(role){
   if(role==="admin"&&!S.isAdmin){openAuth("admin","code");return}
   finishEnter(role);
 }
-function finishEnter(role){pendingRole=null;closeAuth();remember(role);setRole(role);track("login",role)}
+function finishEnter(role){pendingRole=null;S.prevRole=null;closeAuth();remember(role);setRole(role);track("login",role)}
 
 function updateWho(){const r=S.role,o=r==="admin"&&myOrgId()?orgOf(myOrgId()).name:"";$("#whoami").textContent=r&&S.login?S.login+(o?" · "+o:""):""}
 function setRole(r){
@@ -205,7 +235,17 @@ document.querySelectorAll(".rolecard").forEach(b=>b.onclick=()=>{
   $("#gateErr").hidden=true;const r=b.dataset.role;if(isLocked()&&S.uid){route();return}
   if(S.uid)enter(r);else openAuth(r,"login");
 });
-$("#btnSwitch").onclick=async()=>{await track("logout");const q=getQuick();setQuick({...(q&&q.uid===S.uid?q:{}),uid:S.uid,login:S.login,name:(S.contacts[S.uid]||{}).name||(q&&q.uid===S.uid?q.name:"")||"",role:S.role});remember(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;
+$("#modes").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-mode]");if(!b)return;const m=b.dataset.mode;
+  const go=(r,h)=>{if(h)history.replaceState(null,"","#"+h);remember(r);if(S.role!==r){setRole(r);track("login",r)}else route()};
+  if(m==="settings")return go(S.role,"sozlamalarim");
+  if(m==="applicant"){S.elev=null;return go("applicant","vakansiyalar")}
+  // Ish beruvchi va Administrator qismlariga har kirishda kod so'raladi
+  const need=S.isChief||m==="chief"?"chief":"admin";
+  if(S.elev===need){if(need==="chief")return go("chief",m==="admin"?"boshqaruv":"monitoring");return go("admin","boshqaruv")}
+  S.codeTarget=m;S.prevRole=S.role;S.prevHash=location.hash.slice(1);S.role=null;location.hash="";openAuth(need,"code");route();
+});
+$("#btnSwitch").onclick=async()=>{await track("logout");const q=getQuick();setQuick({...(q&&q.uid===S.uid?q:{}),uid:S.uid,login:S.login,name:(S.contacts[S.uid]||{}).name||(q&&q.uid===S.uid?q.name:"")||"",role:S.role});remember(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;S.elev=null;
   setLock(true);unsubAll();location.hash="";route()};
 // ---------- FACE ID BILAN KIRISH (shu qurilmada avval login-parol bilan kirilgan akkaunt uchun) ----------
 const QK="ot-quick",LK="ot-lock";
@@ -213,7 +253,7 @@ function getQuick(){try{return JSON.parse(localStorage.getItem(QK)||"null")}catc
 function setQuick(v){try{v?localStorage.setItem(QK,JSON.stringify(v)):localStorage.removeItem(QK)}catch(e){}}
 function isLocked(){try{return localStorage.getItem(LK)==="1"}catch(e){return false}}
 function setLock(v){try{v?localStorage.setItem(LK,"1"):localStorage.removeItem(LK)}catch(e){}}
-async function fullSignOut(){setLock(false);setQuick(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;remember(null);try{await auth.signOut()}catch(e){}location.hash="";route()}
+async function fullSignOut(){S.elev=null;setLock(false);setQuick(null);try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}S.role=null;remember(null);try{await auth.signOut()}catch(e){}location.hash="";route()}
 $("#qOther").onclick=fullSignOut;
 $("#qFace").onclick=async()=>{
   const u=auth.currentUser;if(!u){fullSignOut();return}
@@ -379,12 +419,12 @@ $("#ab-form").onsubmit=async e=>{
 // ---------- BOSH ADMIN: ISH BERUVCHILAR ----------
 function renderEmployers(){
   const list=[...S.admins].sort((a,b)=>(!!a.org-!!b.org)||((b.at||0)-(a.at||0)));
-  $("#eb-count").textContent=list.length+" ta ish beruvchi · "+list.filter(a=>!a.org).length+" tasi biriktirilmagan";
+  $("#eb-count").textContent=list.length+" ta ish beruvchi · "+list.filter(a=>!a.org).length+" tasi tasdiq kutmoqda";
   if(!list.length){$("#eb-body").innerHTML=`<div class="empty">Hali hech kim ish beruvchi kodini kiritmagan.</div>`;return}
   const orgOpts=sel=>`<option value="">— tashkilot tanlang —</option>`+[...S.orgs].sort((a,b)=>a.name.localeCompare(b.name)).map(o=>`<option value="${esc(o.id)}" ${o.id===sel?"selected":""}>${esc(o.name)}</option>`).join("");
   $("#eb-body").innerHTML=`<div class="tablebox"><table class="wide"><thead><tr><th>Login</th><th>F.I.Sh.</th><th>Telefon</th><th>Kod kiritgan</th><th>Tashkiloti</th><th></th></tr></thead><tbody>`+
     list.map(a=>{const c=S.contacts[a.uid]||{};return `<tr><td class="mono">${esc(a.login||"—")}</td><td>${esc(c.name||"—")}</td><td class="mono">${esc(c.phone||"—")}</td><td class="mono">${dt(a.at)}</td>
-      <td><div class="inline"><select data-org="${esc(a.uid)}">${orgOpts(a.org||"")}</select><button class="btn ghost" type="button" data-asg="${esc(a.uid)}">Biriktirish</button></div>${a.org?"":`<div class="note" style="color:var(--warn)">Biriktirilmagan — vakansiya e'lon qila olmaydi</div>`}</td>
+      <td><div class="inline"><select data-org="${esc(a.uid)}">${orgOpts(a.org||"")}</select><button class="btn ${a.org?"ghost":""}" type="button" data-asg="${esc(a.uid)}">${a.org?"O'zgartirish":"Tasdiqlash"}</button></div>${a.org?`<div class="note"><span class="pill open">Tasdiqlangan</span></div>`:`<div class="note"><span class="pill out">Tasdiq kutmoqda</span> — tizimga kira olmaydi</div>`}</td>
       <td><span><button class="btn ghost" type="button" data-rv="${esc(a.uid)}">Huquqni olish</button></span></td></tr>`}).join("")+`</tbody></table></div>`;
   $("#eb-body").querySelectorAll("[data-asg]").forEach(b=>b.onclick=async()=>{
     const uid=b.dataset.asg,org=document.querySelector(`select[data-org="${uid}"]`).value,a=S.admins.find(x=>x.uid===uid),o=org?orgOf(org):null;
@@ -445,9 +485,10 @@ function renderStats(){
 
 // ---------- render dispatcher ----------
 function render(){
-  const t=location.hash.slice(1);
+  let t=location.hash.slice(1);
   if(t.startsWith("tekshir")){renderVerify();return}
   if(!S.role){renderGate();return}
+  if(S.role==="admin"&&!(S.adminDoc||{}).org&&!["sozlamalarim","qoidalar","haqida"].includes(t))t="kutish";
   if(t==="vakansiyalar"||!t&&S.role==="applicant")renderVacs();
   if(t==="profil")renderProfile();
   if(t==="arizalar")renderMyApps();
@@ -467,16 +508,59 @@ function render(){
   if(t==="statistika")renderStats();
   if(t==="testlar")renderTestAdmin();
   if(t==="qoidalar"){}
+  if(t==="sozlamalarim")renderMySettings();
+  if(t==="kutish"){const c=S.contacts[S.uid]||{},a=S.adminDoc||{};$("#kt-info").innerHTML=`<dt>Login</dt><dd class="mono">${esc(S.login||"")}</dd><dt>F.I.Sh.</dt><dd>${esc(c.name||"—")}</dd><dt>So'rov vaqti</dt><dd class="mono">${a.at?dt(a.at):"—"}</dd><dt>Holat</dt><dd><span class="pill rank">Bosh administrator tasdig'ini kutmoqda</span></dd>`}
 }
 function renderGate(){
   const q=getQuick(),locked=isLocked()&&S.uid&&q&&q.uid===S.uid;
-  $("#quickBox").hidden=!locked;$("#roleStep").hidden=locked||!$("#authStep").hidden;
+  $("#quickBox").hidden=!locked;$("#roleStep").hidden=true;
+  const coding=!!pendingRole&&!$("#codeForm").hidden;
+  if(!S.uid&&coding){pendingRole=null;showAuthMode("login")}
+  if(!S.uid&&$("#loginForm").hidden&&$("#regForm").hidden&&$("#resetForm").hidden)showAuthMode("login");
+  $("#authStep").hidden=locked||(!!S.uid&&!coding)||!S.loaded;
+  if(!S.uid)document.body.classList.remove("auth-admin");
   if(locked){$("#qName").textContent=q.name||q.login;$("#qMeta").textContent=" "+q.login+(q.role?" · "+(ROLE_UZ[q.role]||""):"");$("#qAva").textContent=((q.name||q.login||"?").trim()[0]||"?").toUpperCase();$("#gateBanner").innerHTML="";return}
   const b=$("#gateBanner");
   const demo="";
   if(!S.loaded){b.innerHTML=demo+`<p class="note">Serverga ulanmoqda…</p>`;return}
-  b.innerHTML=demo+(S.uid?`<div class="banner">Siz <b class="mono">${esc(S.login||"")}</b> sifatida kirgansiz. Rolni tanlang.</div>`:"");
+  b.innerHTML=demo+(S.uid?(pendingRole?"":`<p class="note">Kirilmoqda…</p>`):"");
 }
+
+// ---------- SOZLAMALAR (har bir foydalanuvchi) ----------
+const THK="ot-theme";
+function applyTheme(){let th="auto";try{th=localStorage.getItem(THK)||"auto"}catch(e){}
+  if(th==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",th);
+  document.querySelectorAll("#st-theme button").forEach(b=>b.setAttribute("aria-selected",b.dataset.th===th?"true":"false"));return th}
+applyTheme();
+$("#st-theme").addEventListener("click",e=>{const b=e.target.closest("button[data-th]");if(!b)return;try{localStorage.setItem(THK,b.dataset.th)}catch(er){}applyTheme()});
+function renderMySettings(){
+  const c=S.contacts[S.uid]||{};
+  $("#st-acc").innerHTML=`<dt>Login</dt><dd class="mono">${esc(S.login||"—")}</dd><dt>F.I.Sh.</dt><dd>${esc(c.name||(S.profile||{}).name||"—")}</dd><dt>Telefon</dt><dd class="mono">${esc(c.phone||"—")}</dd><dt>Huquqlar</dt><dd>${["Ish topshiruvchi"].concat(S.isAdmin&&!S.isChief?["Ish beruvchi"]:[]).concat(S.isChief?["Bosh administrator"]:[]).join(", ")}</dd>`;
+  $("#st-app").innerHTML=`<dt>Sayt versiyasi</dt><dd class="mono">${WEB_VER}</dd><dt>Ilova (APK)</dt><dd class="mono">${APK_VER==null?"brauzer":"v"+(APK_VER||"6 yoki eski")}</dd>`;
+  $("#st-sys").hidden=!S.isChief;
+  fs.doc("faces/"+S.uid).get().then(g=>{$("#st-face").textContent=g.exists?"Yuzingiz ro'yxatga olingan. Har kirishda u bilan solishtiriladi.":"Yuz hali ro'yxatga olinmagan."}).catch(()=>{});
+  applyTheme();
+}
+$("#st-sys").onclick=e=>{e.preventDefault();$("#modes button[data-mode=chief]").click()};
+$("#st-out").onclick=()=>$("#btnSwitch").click();
+$("#st-pass").addEventListener("submit",async e=>{
+  e.preventDefault();const err=$("#sp-err"),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;$("#sp-ok").textContent="";
+  const o=$("#sp-old").value,p=$("#sp-1").value,p2=$("#sp-2").value;const pp=passProblem(p,p2);if(pp)return fail(pp);
+  if(o===p)return fail("Yangi parol eskisidan farq qilsin.");
+  const u=auth.currentUser,btn=$("#sp-btn");if(!u)return;btn.disabled=true;
+  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,o));await u.updatePassword(p);
+    ["sp-old","sp-1","sp-2"].forEach(id=>$("#"+id).value="");$("#sp-ok").textContent="Parol yangilandi";toast("Parol yangilandi");log("pass","Parolini o'zgartirdi").catch(()=>{})}
+  catch(e2){fail(/wrong-password|invalid-credential|invalid-login/.test((e2&&e2.code)||"")?"Hozirgi parol noto'g'ri.":authMsg(e2))}
+  btn.disabled=false;
+});
+$("#st-reface").onclick=async()=>{
+  if(!confirm("Face ID qayta ro'yxatga olinadi. Kamera ochiladi va yuzingiz yangidan saqlanadi. Davom etasizmi?"))return;
+  const btn=$("#st-reface");btn.disabled=true;
+  try{await fs.doc("faces/"+S.uid).delete();try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}
+    const ok=await faceGate();toast(ok?"Face ID yangilandi":"Face ID ro'yxatga olinmadi — keyingi kirishda so'raladi");renderMySettings()}
+  catch(e){toast("Bajarib bo'lmadi. Internet aloqasini tekshiring.")}
+  btn.disabled=false;
+};
 
 // ---------- APPLICANT ----------
 const myDoc=()=>S.apps.find(d=>d.uid===S.uid);
@@ -1459,7 +1543,9 @@ function subscribe(){
     unsubs.push(fs.collection("logins").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]={uid:d.id,...d.data()});S.logins=m;render()},err));
     col("failed",x=>{S.failed=x});
     col("contacts",x=>{const c={};x.forEach(d=>{c[d.id]=d});S.contacts=c});
-    col("admins",x=>{S.admins=x.map(d=>({...d,uid:d.id}))});
+    col("admins",x=>{S.admins=x.map(d=>({...d,uid:d.id}));const np=S.admins.filter(a=>!a.org).length;
+      if(S._pend!=null&&np>S._pend&&S.role==="chief")toast("Yangi ish beruvchi tasdiq kutmoqda — Tashkilotlar → Ish beruvchilar");S._pend=np;
+      if(S.role==="chief"&&!$("#hdr").hidden)renderNav(location.hash.slice(1))});
     col("offers",x=>{S.offers=x});
     col("appeals",x=>{S.appeals=x});
     col("questions",x=>{S.questions=x});
@@ -1475,7 +1561,7 @@ function subscribe(){
       unsubs.push(fs.doc("admins/"+S.uid).onSnapshot(s=>{
         const prevOrg=(S.adminDoc||{}).org;S.adminDoc=s.exists?s.data():null;
         if(!s.exists){S.isAdmin=false;if(S.role==="admin"){toast("Ish beruvchi huquqingiz olib tashlandi");remember("applicant");setRole("applicant")}subscribe();return}
-        if(prevOrg!==S.adminDoc.org)subscribeOrg();updateWho();render()},err));
+        if(prevOrg!==S.adminDoc.org){subscribeOrg();if(!prevOrg&&S.adminDoc.org&&S.role==="admin")toast("Bosh administrator sizni tasdiqladi");updateWho();route()}else{updateWho();render()}},err));
       subscribeOrg();
     }else{
       col("offers",x=>{S.offers=x},["uid",S.uid]);
@@ -1513,7 +1599,7 @@ async function afterAuth(u,quick){
   const c=S.contacts[S.uid]||{},prev=getQuick();
   setQuick({uid:S.uid,login:S.login,name:c.name||(prev&&prev.uid===S.uid?prev.name:"")||"",role:prev&&prev.uid===S.uid?prev.role:null});
   setTimeout(()=>{const q=getQuick(),cc=S.contacts[S.uid];if(q&&q.uid===S.uid&&cc&&cc.name&&q.name!==cc.name)setQuick({...q,name:cc.name})},2500);
-  if(pendingRole)enter(pendingRole);
-  else{const r=recalled()||(quick&&prev&&prev.uid===S.uid?prev.role:null);if((r==="chief"&&S.isChief)||(r==="admin"&&S.isAdmin)||r==="applicant"){if(quick){remember(r);setRole(r);track("login",r)}else{setRole(r);track("resume",r)}}else route()}
+  // kirgandan keyin har doim "Bo'sh ish o'rinlari" qismi ochiladi; boshqa qismlarga kod bilan o'tiladi
+  S.elev=null;const was=!quick&&recalled();remember("applicant");setRole("applicant");track(was?"resume":"login","applicant");
 }
 })();

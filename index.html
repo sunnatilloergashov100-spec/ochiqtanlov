@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B7A62">
-<meta name="ot-build" content="10">
+<meta name="ot-build" content="11">
 <title>OchiqTanlov</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,6 +26,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       <span class="who" id="whoami"></span>
       <button class="btn ghost" id="btnSwitch" type="button">Chiqish</button>
     </div>
+    <div class="modes" id="modes" role="group" aria-label="Ilova qismlari"></div>
     <nav id="nav" aria-label="Bo'limlar"></nav>
   </div>
 </header>
@@ -35,38 +36,19 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
   <section class="gate" id="v-gate">
     <div class="brand" style="margin-bottom:18px"><img src="logo.png" alt="" width="36" height="36">OchiqTanlov</div>
     <h1>Davlat tashkilotlaridagi bo'sh ish o'rinlari — tanlovni tizim o'tkazadi</h1>
-    <p class="lede">Ish o'rnini rahbar emas, oldindan e'lon qilingan ochiq formula bo'yicha tizim to'ldiradi. Kim sifatida kirasiz?</p>
+    <p class="lede">Ish o'rnini rahbar emas, oldindan e'lon qilingan ochiq formula bo'yicha tizim to'ldiradi. Hisobingizga kiring yoki ro'yxatdan o'ting.</p>
     <div id="gateBanner"></div>
     <div class="quick" id="quickBox" hidden>
       <div class="quick-id"><span class="quick-ava" id="qAva"></span><div><b id="qName"></b><span class="note" id="qMeta"></span></div></div>
       <button class="btn faceid" type="button" id="qFace"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 10v1M15 10v1M12 10v4h-1M9.5 16.5c1.4 1 3.6 1 5 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Face ID bilan kirish</button>
       <button class="linkbtn" type="button" id="qOther">Boshqa akkaunt yoki login-parol bilan kirish</button>
     </div>
-    <div class="roles" id="roleStep">
-      <button class="rolecard" type="button" data-role="applicant">
-        <span class="ico">IT</span>
-        <h2>Ish topshiruvchi</h2>
-        <ul><li>Profil va kasbiy test</li><li>Maosh va hudud bo'yicha vakansiyalarni tanlash</li><li>Anonim kod bilan ariza topshirish</li><li>O'z natijangizni ochiq reytingda ko'rish</li></ul>
-        <span class="go">Ish topshiruvchi sifatida kirish →</span>
-      </button>
-      <button class="rolecard adm" type="button" data-role="admin">
-        <span class="ico">IB</span>
-        <h2>Ish beruvchi</h2>
-        <ul><li>O'z tashkiloti nomidan vakansiya e'lon qilish</li><li>Arizalarni anonim kodlar bilan kuzatish</li><li>Muddat tugagach tanlovni yakunlash</li><li>G'olibni tanlash huquqi yo'q — uni tizim belgilaydi</li></ul>
-        <span class="go">Ish beruvchi sifatida kirish →</span>
-      </button>
-      <button class="rolecard chief" type="button" data-role="chief">
-        <span class="ico">BA</span>
-        <h2>Bosh administrator</h2>
-        <ul><li>Tashkilotlar va ish beruvchilarni boshqarish</li><li>Kirish-chiqish va onlayn foydalanuvchilar</li><li>Shikoyatlarga javob berish, g'olibni rad etish</li><li>Ilovaning barcha imkoniyatlari</li></ul>
-        <span class="go">Bosh administrator sifatida kirish →</span>
-      </button>
-    </div>
+    <div id="roleStep" hidden></div>
     <p class="err" id="gateErr" hidden style="margin-top:14px"></p>
     <p class="note gate-verify" id="gateVerify"><a href="#tekshir">Natija guvohnomasini tekshirish →</a> · <a href="maxfiylik.html">Maxfiylik siyosati</a></p>
 
     <div class="auth" id="authStep" hidden>
-      <button class="btn ghost" type="button" id="authBack">← Rolni qayta tanlash</button>
+      <button class="btn ghost" type="button" id="authBack" hidden>← Orqaga</button>
       <div class="panel stack authbox">
         <div class="btnrow" style="justify-content:space-between">
           <h2 style="margin:0" id="authTitle">Kirish</h2>
@@ -153,14 +135,62 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
           <dl class="kv"><dt>Test bali</dt><dd class="mono" id="p-test">—</dd><dt>Anonim kodingiz</dt><dd class="mono" id="p-code">—</dd><dt>Face ID</dt><dd id="p-face">—</dd></dl>
           <div id="testPanel" class="stack"></div>
         </div>
-        <details class="panel stack danger-zone">
+      </div>
+    </div>
+  </section>
+
+  <!-- ISH BERUVCHI: TASDIQ KUTILMOQDA -->
+  <section id="v-kutish" class="section" hidden>
+    <div class="pending">
+      <div class="pending-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+      <h1>Tasdiq kutilmoqda</h1>
+      <p class="lede">Ish beruvchi kodini to'g'ri kiritdingiz. Endi bosh administrator sizni tekshirib, tashkilotingizga biriktirishi kerak. Tasdiqlangach, bu qism o'zi ochiladi — sahifani yangilash shart emas.</p>
+      <dl class="kv" id="kt-info"></dl>
+      <div class="btnrow"><a class="btn ghost" href="#vakansiyalar" id="kt-back">← Bo'sh ish o'rinlariga qaytish</a></div>
+    </div>
+  </section>
+
+  <!-- HAR BIR FOYDALANUVCHI: SOZLAMALAR -->
+  <section id="v-sozlamalarim" class="section" hidden>
+    <div><h1>Sozlamalar</h1><p class="lede">Hisobingiz, xavfsizlik va ilova ko'rinishi.</p></div>
+    <div class="grid2">
+      <div class="panel stack">
+        <h2>Hisob</h2>
+        <dl class="kv" id="st-acc"></dl>
+      </div>
+      <div class="panel stack">
+        <h2>Ko'rinish</h2>
+        <div class="tabs2" role="group" aria-label="Mavzu" id="st-theme">
+          <button type="button" data-th="auto">Avtomatik</button><button type="button" data-th="light">Yorug'</button><button type="button" data-th="dark">Qorong'i</button>
+        </div>
+        <p class="note">"Avtomatik" — telefon yoki kompyuter sozlamasiga qarab o'zgaradi.</p>
+      </div>
+      <form class="panel stack" id="st-pass">
+        <h2>Parolni o'zgartirish</h2>
+        <label for="sp-old">Hozirgi parol<input id="sp-old" type="password" autocomplete="current-password" required></label>
+        <label for="sp-1">Yangi parol (kamida 8 belgi, harf va raqam)<input id="sp-1" type="password" autocomplete="new-password" required></label>
+        <label for="sp-2">Yangi parolni takrorlang<input id="sp-2" type="password" autocomplete="new-password" required></label>
+        <p class="err" id="sp-err" hidden></p>
+        <div class="btnrow"><button class="btn" type="submit" id="sp-btn">Parolni yangilash</button><span class="note" id="sp-ok"></span></div>
+      </form>
+      <div class="panel stack">
+        <h2>Face ID</h2>
+        <p class="note" id="st-face">—</p>
+        <p class="note">Tashqi ko'rinishingiz o'zgargan bo'lsa (soqol, ko'zoynak) yoki Face ID sizni yaxshi tanimayotgan bo'lsa, yuzingizni qayta ro'yxatga oling.</p>
+        <div><button class="btn ghost" type="button" id="st-reface">Face ID ni qayta ro'yxatga olish</button></div>
+      </div>
+      <div class="panel stack">
+        <h2>Ilova</h2>
+        <dl class="kv" id="st-app"></dl>
+        <div class="btnrow"><a class="btn ghost" href="#tizim-sozlamalari" id="st-sys" hidden>Tizim sozlamalari (bosh administrator) →</a><button class="btn ghost" type="button" id="st-out">Hisobdan chiqish</button></div>
+      </div>
+      <details class="panel stack danger-zone">
           <summary style="cursor:pointer;font-weight:600">Akkauntni o'chirish</summary>
           <p class="note" style="margin-top:10px">Akkauntingiz va shaxsiy ma'lumotlaringiz (ism, telefon, profil, arizalar, Face ID izi, kirish tarixi) butunlay o'chiriladi. Yakunlangan tanlovlardagi anonim natijalar va test natijasi shaffoflik uchun saqlanadi. Bu amalni ortga qaytarib bo'lmaydi.</p>
           <label for="del-pass">Tasdiqlash uchun parolingiz<input id="del-pass" type="password" autocomplete="current-password"></label>
           <p class="err" id="del-err" hidden></p>
           <div><button class="btn danger" type="button" id="del-btn">Akkauntni butunlay o'chirish</button></div>
         </details>
-      </div>
     </div>
   </section>
 
@@ -431,10 +461,10 @@ C) Boshqa bo'limga yo'naltirish</pre>
 
   <!-- CHIEF: ISH BERUVCHILAR -->
   <section id="v-ish-beruvchilar" class="section" hidden>
-    <div><h1>Ish beruvchilar</h1><p class="lede">Ish beruvchi kodini kiritgan foydalanuvchilar. Har birini o'z tashkilotiga biriktiring: u faqat shu tashkilot nomidan vakansiya e'lon qila oladi va faqat uning arizalarini ko'radi.</p></div>
+    <div><h1>Ish beruvchilar</h1><p class="lede">Ish beruvchi kodini kiritgan foydalanuvchilar. Ish beruvchi faqat siz tasdiqlaganingizdan keyin tizimga kiradi. Har birini o'z tashkilotiga biriktiring: u faqat shu tashkilot nomidan vakansiya e'lon qila oladi va faqat uning arizalarini ko'radi.</p></div>
     <div class="panel stack">
       <h2>Ish beruvchi qanday qo'shiladi</h2>
-      <ol class="note" style="margin:0;padding-left:20px"><li>Unga ish beruvchi kodini ayting.</li><li>U ilovada ro'yxatdan o'tadi, "Ish beruvchi" rolini tanlaydi va kodni kiritadi.</li><li>Shu ro'yxatda paydo bo'lgach, tashkilotini tanlab "Biriktirish"ni bosing.</li></ol>
+      <ol class="note" style="margin:0;padding-left:20px"><li>Unga ish beruvchi kodini ayting.</li><li>U ilovada ro'yxatdan o'tadi, "Ish beruvchi tashkilot" qismini bosib kodni kiritadi.</li><li>U shu ro'yxatda "Tasdiq kutmoqda" bo'lib chiqadi. Ma'lumotlarini tekshirib, tashkilotini tanlang va "Tasdiqlash"ni bosing. Shundan keyingina u tizimga kira oladi.</li></ol>
     </div>
     <p class="note" id="eb-count"></p>
     <div id="eb-body"></div>
