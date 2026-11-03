@@ -1014,7 +1014,7 @@ function renderSettings(){
   const reg=Object.keys(S.contacts).length;
   $("#usersInfo").innerHTML=`<dt>Ro'yxatdan o'tganlar</dt><dd class="mono">${reg}</dd><dt>Ariza bergan foydalanuvchilar</dt><dd class="mono">${S.apps.filter(d=>Object.values(d.items||{}).some(i=>!i.withdrawn)).length}</dd><dt>Sizning loginingiz</dt><dd class="mono">${esc(S.login||"—")}</dd>`;
   $("#sampleBox").hidden=S.orgs.some(o=>o.sample);
-  $("#codeChange").hidden=true;
+  renderOwner();
   renderVersion();
 }
 
@@ -1376,18 +1376,19 @@ function tqOptsRender(vals,correct){
   const m=$("#tq-more");if(m)m.onclick=()=>{const cur=[...document.querySelectorAll(".tq-o")].map(x=>x.value),c=document.querySelector('input[name=tq-ok]:checked');tqOptsRender([...cur,""],c?+c.value:null)};
 }
 tqOptsRender();
-function tqReset(){tqEdit=null;$("#tq-q").value="";$("#tq-sec").value=60;tqOptsRender();$("#tq-title").textContent="Yangi savol";$("#tq-btn").textContent="Savolni qo'shish";$("#tq-cancel").hidden=true;$("#tq-err").hidden=true}
+function tqReset(){tqEdit=null;$("#tq-q").value="";$("#tq-sec").value=60;$("#tq-pts").value=1;tqOptsRender();$("#tq-title").textContent="Yangi savol";$("#tq-btn").textContent="Savolni qo'shish";$("#tq-cancel").hidden=true;$("#tq-err").hidden=true}
 $("#tq-cancel").onclick=tqReset;
 $("#tqform").addEventListener("submit",async e=>{
   e.preventDefault();const err=$("#tq-err"),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;
-  const q=$("#tq-q").value.trim(),raw=[...document.querySelectorAll(".tq-o")].map(x=>x.value.trim()),c=document.querySelector('input[name=tq-ok]:checked'),sec=+$("#tq-sec").value;
+  const q=$("#tq-q").value.trim(),raw=[...document.querySelectorAll(".tq-o")].map(x=>x.value.trim()),c=document.querySelector('input[name=tq-ok]:checked'),sec=+$("#tq-sec").value,pts=+$("#tq-pts").value;
   if(!q)return fail("Savol matnini yozing.");
+  if(!(pts>0&&pts<=100))return fail("Ball 0 dan katta va 100 dan oshmasin.");
   const idx=raw.map((v,j)=>v?j:-1).filter(j=>j>=0);if(idx.length<2)return fail("Kamida 2 ta variant yozing.");
   if(!c||!raw[+c.value])return fail("To'g'ri javobni belgilang.");
   if(!(sec>=5&&sec<=600))return fail("Vaqt 5 dan 600 soniyagacha bo'lsin.");
   const o=idx.map(j=>raw[j]),a=idx.indexOf(+c.value);
   const id=tqEdit||("q"+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
-  try{await fs.doc("questions/"+id).set({q,o,sec,at:Date.now()});await fs.doc("qkeys/"+id).set({a});toast(tqEdit?"Savol yangilandi":"Savol qo'shildi");tqReset()}
+  try{await fs.doc("questions/"+id).set({q,o,sec,pts,at:Date.now()});await fs.doc("qkeys/"+id).set({a});toast(tqEdit?"Savol yangilandi":"Savol qo'shildi");tqReset()}
   catch(e2){fail("Saqlab bo'lmadi: Firestore qoidalarini yangilang.")}
 });
 $("#tcfg").addEventListener("submit",async e=>{
@@ -1397,29 +1398,32 @@ $("#tcfg").addEventListener("submit",async e=>{
   try{await fs.doc("config/test").set({enabled:$("#tc-on").checked,count:Math.max(1,Math.min(100,+$("#tc-n").value||10)),startAt:fr,endAt:to,at:Date.now()});
     await log("test",`Test sozlamalari: ${$("#tc-on").checked?"ochiq":"yopiq"}, ${$("#tc-n").value} ta savol${fr?", "+dt(fr):""}${to?" — "+dt(to):""}`);$("#tc-saved").textContent="Saqlandi";setTimeout(()=>$("#tc-saved").textContent="",2500)}catch(e2){toast("Saqlab bo'lmadi")}
 });
-function parseBulk(text,defSec){
+function parseBulk(text,defSec,defPts){defPts=defPts||1;
   const blocks=text.replace(/\r/g,"").split(/\n\s*\n/).map(b=>b.split("\n").map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
   const out=[],errs=[];
   blocks.forEach((b,bi)=>{
-    let sec=defSec,q=[],o=[],a=-1;
+    let sec=defSec,pts=defPts,q=[],o=[],a=-1;
     b.forEach(l=>{const t=l.match(/^(vaqt|time|время)\s*[:=]?\s*(\d+)/i);
       if(t){sec=+t[2];return}
+      const pb=l.match(/^(ball|bal|ochko|points?|балл)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+      if(pb){pts=+pb[2].replace(",",".");return}
       const m=l.match(/^\*?\s*([A-Fa-f])\s*[\)\.]\s*(.+)$/);
       if(m){let txt=m[2].trim(),ok=l.startsWith("*")||/\*\s*$/.test(txt);txt=txt.replace(/\s*\*\s*$/,"").trim();if(ok)a=o.length;o.push(txt);return}
       if(!o.length)q.push(l.replace(/^\d+\s*[\.\)]\s*/,""));});
     const qt=q.join(" ").trim();
     if(!qt)errs.push(`${bi+1}-savol: savol matni yo'q`);else if(o.length<2)errs.push(`${bi+1}-savol: kamida 2 ta variant kerak`);else if(a<0)errs.push(`${bi+1}-savol: to'g'ri javob (*) belgilanmagan`);else if(!(sec>=5&&sec<=600))errs.push(`${bi+1}-savol: vaqt 5–600 soniya bo'lsin`);
-    else out.push({q:qt,o,a,sec});
+    else if(!(pts>0&&pts<=100))errs.push(`${bi+1}-savol: ball 0 dan katta va 100 dan oshmasin`);
+    else out.push({q:qt,o,a,sec,pts});
   });
   return {out,errs};
 }
 $("#tb-file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("#tb-text").value=String(r.result||"")};r.readAsText(f,"utf-8")});
 $("#tb-btn").onclick=async()=>{
-  const err=$("#tb-err");err.hidden=true;const {out,errs}=parseBulk($("#tb-text").value,+$("#tb-sec").value||60);
+  const err=$("#tb-err");err.hidden=true;const {out,errs}=parseBulk($("#tb-text").value,+$("#tb-sec").value||60,+$("#tb-pts").value||1);
   if(errs.length){err.textContent=errs.slice(0,6).join("; ")+(errs.length>6?" …":"");err.hidden=false;return}
   if(!out.length){err.textContent="Matn bo'sh.";err.hidden=false;return}
   const b=$("#tb-btn");b.disabled=true;let n=0;
-  try{for(const x of out){const id="q"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);await fs.doc("questions/"+id).set({q:x.q,o:x.o,sec:x.sec,at:Date.now()});await fs.doc("qkeys/"+id).set({a:x.a});n++;$("#tb-info").textContent=n+" / "+out.length}
+  try{for(const x of out){const id="q"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);await fs.doc("questions/"+id).set({q:x.q,o:x.o,sec:x.sec,pts:x.pts,at:Date.now()});await fs.doc("qkeys/"+id).set({a:x.a});n++;$("#tb-info").textContent=n+" / "+out.length}
     await log("test",`${n} ta savol yuklandi`);toast(n+" ta savol yuklandi");$("#tb-text").value="";$("#tb-file").value=""}
   catch(e){err.textContent=`${n} ta yuklandi, keyingisida xato: Firestore qoidalarini tekshiring.`;err.hidden=false}
   b.disabled=false;
@@ -1470,12 +1474,57 @@ async function gradeAll(){
   if(!S.isChief||grading)return;grading=true;
   try{for(const a of S.attempts){
     if(a.status==="running")continue;const r=S.results[a.id];if(r&&r.attemptAt===a.startedAt)continue;
-    const qids=a.qids||[],ans=a.answers||{};let correct=0;
-    if(a.status!=="terminated")qids.forEach(id=>{const k=S.qkeys[id],an=ans[id],q=S.questions.find(x=>x.id===id);const lim=((q&&+q.sec)||60)*1000+5000;if(k&&an&&an.i!=null&&an.i===k.a&&(an.t||0)<=lim)correct++});
-    const test=a.status==="terminated"||!qids.length?0:Math.round(100*correct/qids.length);
-    await fs.doc("results/"+a.id).set({test,correct,total:qids.length,attemptAt:a.startedAt,status:a.status,reason:a.reason||"",gradedAt:Date.now(),login:a.login||""});
+    const qids=a.qids||[],ans=a.answers||{};let correct=0,earned=0,maxPts=0;
+    qids.forEach(id=>{const q=S.questions.find(x=>x.id===id);maxPts+=(q&&+q.pts)||1});
+    if(a.status!=="terminated")qids.forEach(id=>{const k=S.qkeys[id],an=ans[id],q=S.questions.find(x=>x.id===id);const lim=((q&&+q.sec)||60)*1000+5000;if(k&&an&&an.i!=null&&an.i===k.a&&(an.t||0)<=lim){correct++;earned+=(q&&+q.pts)||1}});
+    earned=Math.round(earned*100)/100;maxPts=Math.round(maxPts*100)/100;
+    const test=a.status==="terminated"||!qids.length||!maxPts?0:Math.round(100*earned/maxPts);
+    await fs.doc("results/"+a.id).set({test,correct,total:qids.length,earned,maxPts,attemptAt:a.startedAt,status:a.status,reason:a.reason||"",gradedAt:Date.now(),login:a.login||""});
   }}catch(e){console.warn(e)}
   grading=false;
+}
+let TR_ROWS=[];
+// Kutubxonasiz haqiqiy .xlsx yaratish (ZIP "stored" + Office Open XML)
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC_T[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zipStore(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+  const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+  for(const [name,text] of files){const nb=enc.encode(name),db=enc.encode(text),crc=crc32(db);
+    const lh=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0)]);
+    parts.push(lh,nb,db);
+    cd.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nb);
+    off+=lh.length+nb.length+db.length}
+  const cdSize=cd.reduce((s,x)=>s+x.length,0);
+  const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cdSize),...u32(off),...u16(0)]);
+  return new Blob([...parts,...cd,end],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+function makeXlsx(rows,opt){opt=opt||{};const x=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+  const col=i=>{let s="";i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s};
+  const sd=rows.map((r,ri)=>`<row r="${ri+1}">`+r.map((v,ci)=>{const ref=col(ci)+(ri+1),st=(opt.bold||[]).includes(ri)?' s="1"':(opt.title===ri?' s="2"':"");
+    if(v===""||v==null)return st?`<c r="${ref}"${st}/>`:"";if(typeof v==="number"&&isFinite(v))return `<c r="${ref}"${st}><v>${v}</v></c>`;
+    return `<c r="${ref}" t="inlineStr"${st}><is><t xml:space="preserve">${x(v)}</t></is></c>`}).join("")+`</row>`).join("");
+  const cols=(opt.widths||[]).length?`<cols>${opt.widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")}</cols>`:"";
+  const merge=opt.merge?`<mergeCells count="1"><mergeCell ref="${opt.merge}"/></mergeCells>`:"";
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${opt.freeze?`<sheetViews><sheetView workbookViewId="0"><pane ySplit="${opt.freeze}" topLeftCell="A${opt.freeze+1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>`:""}${cols}<sheetData>${sd}</sheetData>${merge}</worksheet>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="14"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0B7A62"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const nm=x(opt.sheet||"Reyting").slice(0,31);
+  return zipStore([
+    ["[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${nm}" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+    ["xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/worksheets/sheet1.xml",sheet],["xl/styles.xml",styles]])}
+async function exportTestXlsx(btn){
+  let rk=0;const head=["O'rin","F.I.Sh.","Login","To'plangan ball","Maksimal ball","Foiz (%)","To'g'ri javoblar","Jami savol","Holat","Boshlagan vaqti","Davomiyligi (daqiqa)"];
+  const data=TR_ROWS.map(x=>{const fr=x.r.attemptAt===x.a.startedAt,done=x.score!=null&&x.a.status==="done";
+    return [done?++rk:"",x.name||"",x.login||"",fr?(x.r.earned??x.r.correct):"",fr?(x.r.maxPts??x.r.total):"",x.score==null?"":x.score,fr?x.r.correct:"",fr?x.r.total:"",
+      x.a.status==="running"?"Topshiryapti":x.a.status==="terminated"?"To'xtatilgan: "+(x.a.reason||""):"Yakunlangan",dt(x.a.startedAt),x.dur?Math.round(x.dur/60000*10)/10:""]});
+  const name="Test_reytingi_"+new Date().toISOString().slice(0,10);
+  const inApp=/; wv\)/.test(navigator.userAgent);
+  if(inApp){downloadCsv(name+".csv",[head,...data].map(r=>r.join("\t")).join("\n"));return}
+  try{const blob=makeXlsx([["OchiqTanlov — kasbiy test reytingi"],["Yuklab olingan: "+dt(Date.now())],[],head,...data],{title:0,bold:[3],freeze:4,merge:"A1:F1",widths:[7,30,16,15,14,10,15,11,30,18,18],sheet:"Reyting"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name+".xlsx";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800);
+    toast("Excel fayl yuklab olindi");log("test","Test reytingi Excel'ga yuklab olindi").catch(()=>{});
+  }catch(e){console.warn(e);toast("Excel faylni yaratib bo'lmadi")}
 }
 function renderTestAdmin(){
   const cfg=S.testCfg||{},Q=[...S.questions].sort((a,b)=>(a.at||0)-(b.at||0));
@@ -1484,28 +1533,30 @@ function renderTestAdmin(){
   const A=S.attempts,done=A.filter(a=>a.status!=="running"),res=Object.values(S.results).filter(r=>typeof r.test==="number");
   const avg=res.length?Math.round(res.reduce((s,r)=>s+r.test,0)/res.length):"—";
   $("#t-kpis").innerHTML=`<div class="kpi"><span>Test holati</span><b style="color:${testWindow().ok?"var(--accent)":"var(--muted)"}">${testWindow().ok?"Ochiq":testWindow().why==="early"?"Kutilmoqda":testWindow().why==="late"?"Tugagan":"Yopiq"}</b>${cfg.startAt||cfg.endAt?`<small class="note">${cfg.startAt?dt(cfg.startAt):"…"} — ${cfg.endAt?dt(cfg.endAt):"…"}</small>`:""}</div><div class="kpi"><span>Savollar bankida</span><b>${Q.length}</b></div><div class="kpi"><span>Har kimga savol</span><b>${Math.min(cfg.count||10,Q.length)}</b></div><div class="kpi"><span>Topshirganlar</span><b>${done.length}</b></div><div class="kpi"><span>Hozir topshiryapti</span><b>${A.filter(a=>a.status==="running").length}</b></div><div class="kpi"><span>To'xtatilgan</span><b style="color:${A.some(a=>a.status==="terminated")?"var(--bad)":"inherit"}">${A.filter(a=>a.status==="terminated").length}</b></div><div class="kpi"><span>O'rtacha ball</span><b>${avg}</b></div>`;
-  $("#tq-count").textContent=Q.length+" ta savol · jami vaqt "+Math.round(Q.reduce((s,q)=>s+(+q.sec||60),0)/60)+" daqiqa";
-  $("#tq-list").innerHTML=Q.length?`<div class="tablebox"><table class="wide"><thead><tr><th>#</th><th>Savol va variantlar</th><th>Vaqt (soniya)</th><th></th></tr></thead><tbody>`+Q.map((q,i)=>{const k=S.qkeys[q.id];
+  $("#tq-count").textContent=Q.length+" ta savol · jami vaqt "+Math.round(Q.reduce((s,q)=>s+(+q.sec||60),0)/60)+" daqiqa · jami ball "+(Math.round(Q.reduce((s,q)=>s+(+q.pts||1),0)*10)/10);
+  $("#tq-list").innerHTML=Q.length?`<div class="tablebox"><table class="wide"><thead><tr><th>#</th><th>Savol va variantlar</th><th>Vaqt (s) · Ball</th><th></th></tr></thead><tbody>`+Q.map((q,i)=>{const k=S.qkeys[q.id];
     return `<tr><td class="num">${i+1}</td><td><b>${esc(q.q)}</b><div class="opts-mini">${(q.o||[]).map((o,j)=>`<span class="${k&&k.a===j?"ok":""}">${"ABCDEF"[j]}) ${esc(o)}${k&&k.a===j?" ✓":""}</span>`).join("")}</div>${k?"":`<div class="why">To'g'ri javob kaliti topilmadi</div>`}</td>
-      <td><div class="inline"><input type="number" min="5" max="600" value="${+q.sec||60}" data-sec="${esc(q.id)}" style="width:90px"><button class="btn ghost" type="button" data-secsave="${esc(q.id)}">Saqlash</button></div></td>
+      <td><div class="inline"><input type="number" min="5" max="600" value="${+q.sec||60}" data-sec="${esc(q.id)}" style="width:80px" title="Vaqt, soniya" aria-label="Vaqt, soniya"><input type="number" min="0.5" max="100" step="0.5" value="${+q.pts||1}" data-pts="${esc(q.id)}" style="width:70px" title="Ball" aria-label="Ball"><button class="btn ghost" type="button" data-secsave="${esc(q.id)}">Saqlash</button></div></td>
       <td><span class="btnrow"><button class="btn ghost" type="button" data-qed="${esc(q.id)}">Tahrirlash</button><button class="btn ghost" type="button" data-qdel="${esc(q.id)}">O'chirish</button></span></td></tr>`}).join("")+`</tbody></table></div>`:`<div class="empty">Savollar banki bo'sh. Yuqoridagi shakl orqali savol qo'shing yoki ommaviy yuklang.</div>`;
   const L=$("#tq-list");
-  L.querySelectorAll("[data-secsave]").forEach(b=>b.onclick=async()=>{const id=b.dataset.secsave,v=+L.querySelector(`[data-sec="${id}"]`).value;if(!(v>=5&&v<=600)){toast("Vaqt 5–600 soniya");return}try{await fs.doc("questions/"+id).update({sec:v});toast("Vaqt saqlandi: "+v+" s")}catch(e){toast("Bajarib bo'lmadi")}});
-  L.querySelectorAll("[data-qed]").forEach(b=>b.onclick=()=>{const q=S.questions.find(x=>x.id===b.dataset.qed),k=S.qkeys[q.id];tqEdit=q.id;$("#tq-q").value=q.q;$("#tq-sec").value=q.sec||60;tqOptsRender([...q.o],k?k.a:null);$("#tq-title").textContent="Savolni tahrirlash";$("#tq-btn").textContent="O'zgarishlarni saqlash";$("#tq-cancel").hidden=false;$("#tqform").scrollIntoView({behavior:"smooth",block:"start"})});
+  L.querySelectorAll("[data-secsave]").forEach(b=>b.onclick=async()=>{const id=b.dataset.secsave,v=+L.querySelector(`[data-sec="${id}"]`).value,pt=+L.querySelector(`[data-pts="${id}"]`).value;if(!(v>=5&&v<=600)){toast("Vaqt 5–600 soniya");return}if(!(pt>0&&pt<=100)){toast("Ball 0 dan katta, 100 gacha");return}try{await fs.doc("questions/"+id).update({sec:v,pts:pt});toast(`Saqlandi: ${v} s, ${pt} ball`)}catch(e){toast("Bajarib bo'lmadi")}});
+  L.querySelectorAll("[data-qed]").forEach(b=>b.onclick=()=>{const q=S.questions.find(x=>x.id===b.dataset.qed),k=S.qkeys[q.id];tqEdit=q.id;$("#tq-q").value=q.q;$("#tq-sec").value=q.sec||60;$("#tq-pts").value=q.pts||1;tqOptsRender([...q.o],k?k.a:null);$("#tq-title").textContent="Savolni tahrirlash";$("#tq-btn").textContent="O'zgarishlarni saqlash";$("#tq-cancel").hidden=false;$("#tqform").scrollIntoView({behavior:"smooth",block:"start"})});
   L.querySelectorAll("[data-qdel]").forEach(b=>b.onclick=()=>{const id=b.dataset.qdel,cell=b.parentElement;
     cell.innerHTML=`<span class="confirm">O'chirilsinmi? <button class="btn danger" type="button" data-yes>Ha</button><button class="btn ghost" type="button" data-no>Yo'q</button></span>`;
     cell.querySelector("[data-no]").onclick=()=>renderTestAdmin();
     cell.querySelector("[data-yes]").onclick=async()=>{try{await fs.doc("questions/"+id).delete();await fs.doc("qkeys/"+id).delete();toast("O'chirildi")}catch(e){toast("Bajarib bo'lmadi")}}});
   const rows=A.map(a=>{const r=S.results[a.id]||{},c=S.contacts[a.id]||{},f=(S.faces||[]).find(x=>x.id===a.id);return {a,r,name:c.name||"",login:a.login||c.login||"",score:typeof r.test==="number"&&r.attemptAt===a.startedAt?r.test:null,dur:a.finishedAt?a.finishedAt-a.startedAt:null,face:f}})
     .sort((x,y)=>((y.score??-1)-(x.score??-1))||((x.dur||9e15)-(y.dur||9e15)));
-  let rk=0;
-  $("#tr-list").innerHTML=rows.length?`<div class="tablebox"><table class="wide"><thead><tr><th class="num">O'rin</th><th>Login</th><th>F.I.Sh.</th><th class="num">Ball</th><th class="num">To'g'ri</th><th>Holat</th><th>Face ID</th><th>Boshlagan</th><th class="num">Davomiyligi</th><th></th></tr></thead><tbody>`+rows.map(x=>{
+  let rk=0;const fresh=x=>x.r.attemptAt===x.a.startedAt,ptsOf=x=>fresh(x)?{e:x.r.earned??x.r.correct,m:x.r.maxPts??x.r.total}:{e:"—",m:"—"};
+  TR_ROWS=rows;
+  $("#tr-list").innerHTML=(rows.length?`<div class="btnrow" style="margin-bottom:10px"><button class="btn" type="button" id="tr-xlsx">Reytingni Excel'ga yuklab olish</button><span class="note">F.I.Sh., ball va o'rin bilan</span></div>`:"")+(rows.length?`<div class="tablebox"><table class="wide"><thead><tr><th class="num">O'rin</th><th>Login</th><th>F.I.Sh.</th><th class="num">Ball</th><th class="num">Foiz</th><th class="num">To'g'ri</th><th>Holat</th><th>Face ID</th><th>Boshlagan</th><th class="num">Davomiyligi</th><th></th></tr></thead><tbody>`+rows.map(x=>{
     const st=x.a.status==="running"?`<span class="pill open">Topshiryapti</span>`:x.a.status==="terminated"?`<span class="pill out">To'xtatilgan</span><div class="why">${esc(x.a.reason||"")}</div>`:`<span class="pill win">Yakunlangan</span>`;
     const fc=x.a.face||{};const faceTxt=fc.enrolled?"Ro'yxatga olindi":fc.dist!=null?`Mos (${fc.dist})`:"—";
     const place=x.score!=null&&x.a.status==="done"?++rk:"—";
-    return `<tr class="${place===1?"winner":""}"><td class="num">${place}</td><td class="mono">${esc(x.login||"—")}</td><td>${esc(x.name||"—")}</td><td class="num"><b>${x.score==null?(x.a.status==="running"?"…":"hisoblanmoqda"):x.score}</b></td><td class="num">${x.r.attemptAt===x.a.startedAt?`${x.r.correct}/${x.r.total}`:"—"}</td><td>${st}</td><td>${faceTxt}</td><td class="mono" style="white-space:nowrap">${dt(x.a.startedAt)}</td><td class="num">${x.dur?Math.round(x.dur/60000*10)/10+" daq":"—"}</td>
-      <td><span class="btnrow"><button class="btn ghost" type="button" data-retake="${esc(x.a.id)}">Qayta topshirishga ruxsat</button>${x.face?`<button class="btn ghost" type="button" data-facereset="${esc(x.a.id)}">Face ID ni tiklash</button>`:""}</span></td></tr>`}).join("")+`</tbody></table></div>`:`<div class="empty">Hali hech kim test topshirmagan.</div>`;
+    return `<tr class="${place===1?"winner":""}"><td class="num">${place}</td><td class="mono">${esc(x.login||"—")}</td><td>${esc(x.name||"—")}</td><td class="num"><b>${x.score==null?(x.a.status==="running"?"…":"hisoblanmoqda"):`${ptsOf(x).e} / ${ptsOf(x).m}`}</b></td><td class="num">${x.score==null?"—":x.score+"%"}</td><td class="num">${fresh(x)?`${x.r.correct}/${x.r.total}`:"—"}</td><td>${st}</td><td>${faceTxt}</td><td class="mono" style="white-space:nowrap">${dt(x.a.startedAt)}</td><td class="num">${x.dur?Math.round(x.dur/60000*10)/10+" daq":"—"}</td>
+      <td><span class="btnrow"><button class="btn ghost" type="button" data-retake="${esc(x.a.id)}">Qayta topshirishga ruxsat</button>${x.face?`<button class="btn ghost" type="button" data-facereset="${esc(x.a.id)}">Face ID ni tiklash</button>`:""}</span></td></tr>`}).join("")+`</tbody></table></div>`:`<div class="empty">Hali hech kim test topshirmagan.</div>`);
   const T=$("#tr-list");
+  const xb=$("#tr-xlsx");if(xb)xb.onclick=()=>exportTestXlsx(xb);
   T.querySelectorAll("[data-retake]").forEach(b=>b.onclick=()=>{const id=b.dataset.retake,cell=b.parentElement,a=S.attempts.find(x=>x.id===id);
     cell.innerHTML=`<span class="confirm">Eski natija o'chiriladi. Ruxsat berilsinmi? <button class="btn" type="button" data-yes>Ha</button><button class="btn ghost" type="button" data-no>Yo'q</button></span>`;
     cell.querySelector("[data-no]").onclick=()=>renderTestAdmin();
@@ -1826,23 +1877,24 @@ Qat'iy qoidalar:
 - Agar matnda to'g'ri javob ko'rsatilmagan bo'lsa, o'zing tanlama: o'sha savolni "*" siz qoldir.
 - Variant harflari A), B), C), D)... ketma-ket bo'lsin. Savollar orasida bitta bo'sh qator.
 - Agar matnda vaqt berilgan bo'lsa "Vaqt: N" qatorini yoz, aks holda yozma.
+- Agar matnda savol uchun ball (ochko) ko'rsatilgan bo'lsa "Ball: N" qatorini yoz, aks holda yozma.
 - Eng oxirida alohida qatorda "IZOH:" so'zidan keyin topilgan muammolarni qisqa yoz (masalan: "5-savolda javob ko'rsatilmagan", "8-savolda 2 ta to'g'ri javob bor edi"). Muammo bo'lmasa "IZOH: yo'q".
 Boshqa hech narsa yozma.`;
     try{
       let t=await aiAsk(sys,[{role:"user",text:raw.slice(0,30000)}],{temp:0.1,max:8000,admin:true});
       t=t.replace(/^```[a-z]*\n?|```\s*$/gim,"").trim();
       let notes="";const im=t.match(/\n?\s*IZOH:\s*([\s\S]*)$/i);if(im){notes=im[1].trim();t=t.slice(0,im.index).trim();if(/^yo['ʻ’`]?q\.?$/i.test(notes))notes=""}
-      tb.value=t;const {out,errs}=parseBulk(t,+$("#tb-sec").value||60);
+      tb.value=t;const {out,errs}=parseBulk(t,+$("#tb-sec").value||60,+$("#tb-pts").value||1);
       rep(out,errs,notes);st.textContent="Natijani pastdagi oynada ko'rib chiqing.";
       tb.closest("details").open=true;
     }catch(e){st.textContent=aiErr(e)}
     b.disabled=false;
   };
-  tb.addEventListener("input",()=>{if(!$("#ai-q-rep").hidden){const {out,errs}=parseBulk(tb.value,+$("#tb-sec").value||60);rep(out,errs,"")}});
+  tb.addEventListener("input",()=>{if(!$("#ai-q-rep").hidden){const {out,errs}=parseBulk(tb.value,+$("#tb-sec").value||60,+$("#tb-pts").value||1);rep(out,errs,"")}});
   $("#ai-q-load").onclick=async()=>{
-    const {out}=parseBulk(tb.value,+$("#tb-sec").value||60);if(!out.length)return;
+    const {out}=parseBulk(tb.value,+$("#tb-sec").value||60,+$("#tb-pts").value||1);if(!out.length)return;
     // faqat xatosiz bloklarni qoldirib, mavjud yuklash tugmasi orqali yuklaymiz
-    tb.value=out.map(q=>[q.q,...q.o.map((o,i)=>String.fromCharCode(65+i)+") "+o+(i===q.a?" *":"")),"Vaqt: "+q.sec].join("\n")).join("\n\n");
+    tb.value=out.map(q=>[q.q,...q.o.map((o,i)=>String.fromCharCode(65+i)+") "+o+(i===q.a?" *":"")),"Vaqt: "+q.sec,"Ball: "+q.pts].join("\n")).join("\n\n");
     $("#ai-q-load").hidden=true;$("#ai-q-rep").hidden=true;$("#ai-q-raw").value="";$("#ai-q-st").textContent="";
     $("#tb-btn").click();log("ai",`AI yordamida ${out.length} ta savol tayyorlandi`).catch(()=>{});
   };
@@ -1941,5 +1993,41 @@ function uiFill(){
   $("#ui-labels").innerHTML=`<p class="sb-cap">Qismlar</p><div class="ui-grid">${K.modes.map(row).join("")}</div><p class="sb-cap">Bo'lim guruhlari</p><div class="ui-grid">${K.groups.map(row).join("")}</div><p class="sb-cap">Sahifalar</p><div class="ui-grid">${K.tabs.map(row).join("")}</div>`;
 }
 new MutationObserver(()=>{if(!$("#v-sozlamalar").hidden)uiFill()}).observe($("#v-sozlamalar"),{attributes:true,attributeFilter:["hidden"]});
+
+
+// =================== ILOVA EGASI: ADMINISTRATOR KODINI O'ZGARTIRISH ===================
+let OWNER=null,ownerUnsub=null,CHIEFS=[];
+let ownerUid=null;
+function watchOwner(){if(!S.uid)return;if(ownerUnsub&&ownerUid===S.uid)return;if(ownerUnsub)ownerUnsub();ownerUid=S.uid;OWNER=null;ownerUnsub=fs.doc("owner/main").onSnapshot(sn=>{OWNER=sn.exists?sn.data():null;if(!$("#v-sozlamalar").hidden)renderOwner()},()=>{})}
+async function loadChiefs(){try{const q=await fs.collection("chiefs").get();CHIEFS=q.docs.map(d=>({uid:d.id,...d.data()}))}catch(e){CHIEFS=[]}}
+function renderOwner(){
+  watchOwner();const box=$("#ownerInfo");if(!box)return;const me=OWNER&&OWNER.uid===S.uid;
+  $("#codeChange").hidden=!me;$("#chiefList").hidden=!me;
+  if(!OWNER){box.innerHTML=`<p class="note">Ilova egasi hali belgilanmagan. Ega — administrator kodini o'zgartira oladigan va boshqa bosh administratorlarning huquqini ola oladigan yagona odam. Buni <b>faqat bir marta</b> qilish mumkin, keyin o'zgartirib bo'lmaydi.</p><div><button class="btn" type="button" id="own-claim">Men ilova egasiman — belgilash</button></div>`;
+    $("#own-claim").onclick=async()=>{const b=$("#own-claim");if(!b.dataset.sure){b.dataset.sure="1";b.textContent="Tasdiqlang: egasi faqat bir marta belgilanadi";setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent="Men ilova egasiman — belgilash"}},6000);return}
+      b.disabled=true;try{await fs.doc("owner/main").set({uid:S.uid,login:S.login||"",at:Date.now()});await log("owner","Ilova egasi belgilandi: "+S.login);toast("Siz ilova egasi sifatida belgilandingiz")}catch(e){toast("Bajarib bo'lmadi: ega allaqachon belgilangan yoki Firestore qoidalari yangilanmagan");b.disabled=false}};return}
+  if(!me){box.innerHTML=`<p class="note">Ilova egasi: <b class="mono">${esc(OWNER.login||"—")}</b>. Administrator kodini faqat ega o'zgartira oladi.</p>`;return}
+  box.innerHTML=`<p class="note"><span class="pill win">Siz ilova egasisiz</span> Administrator kodini faqat siz o'zgartira olasiz.</p>`;
+  loadChiefs().then(()=>{const L=$("#chiefList");
+    L.innerHTML=`<p class="sb-cap">Bosh administratorlar</p>`+(CHIEFS.length?`<div class="tablebox"><table class="wide"><thead><tr><th>Login</th><th>F.I.Sh.</th><th>Oxirgi kod tasdig'i</th><th></th></tr></thead><tbody>`+CHIEFS.map(c=>{const ct=S.contacts[c.uid]||{};return `<tr><td class="mono">${esc(c.login||"—")}</td><td>${esc(ct.name||"—")}</td><td class="mono">${c.at?dt(c.at):"—"}</td><td>${c.uid===S.uid?`<span class="pill open">Siz</span>`:`<button class="btn ghost" type="button" data-chrm="${esc(c.uid)}">Huquqni olish</button>`}</td></tr>`}).join("")+`</tbody></table></div>`:`<p class="note">Ro'yxat bo'sh.</p>`);
+    L.querySelectorAll("[data-chrm]").forEach(b=>b.onclick=async()=>{if(!b.dataset.sure){b.dataset.sure="1";b.textContent="Tasdiqlash uchun yana bosing";return}
+      b.disabled=true;const c=CHIEFS.find(x=>x.uid===b.dataset.chrm);try{await fs.doc("chiefs/"+b.dataset.chrm).delete();await log("owner","Bosh administrator huquqi olindi: "+(c?c.login:""));toast("Huquq olindi");renderOwner()}catch(e){toast("Bajarib bo'lmadi");b.disabled=false}})});
+}
+$("#codeChange").addEventListener("submit",async e=>{
+  e.preventDefault();const err=$("#cc-err"),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;$("#cc-ok").textContent="";
+  if(!OWNER||OWNER.uid!==S.uid)return fail("Kodni faqat ilova egasi o'zgartira oladi.");
+  const pw=$("#cc-pass").value,c1=$("#cc-1").value.trim(),c2=$("#cc-2").value.trim();
+  if(c1.length<8||!/[A-Za-z]/.test(c1)||!/\d/.test(c1))return fail("Kod kamida 8 belgi bo'lsin va harf hamda raqam qatnashsin.");
+  if(c1.length>64)return fail("Kod 64 belgidan oshmasin.");
+  if(c1!==c2)return fail("Kodlar bir xil emas.");
+  const u=auth.currentUser,b=$("#cc-btn");if(!u)return;b.disabled=true;
+  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,pw))}catch(e2){b.disabled=false;return fail("Parol noto'g'ri.")}
+  try{await fs.doc("secrets/chief").set({code:c1,at:Date.now(),by:S.uid});
+    try{await fs.doc("chiefs/"+S.uid).update({code:c1,at:Date.now()})}catch(e3){}
+    S.elev="chief";["cc-pass","cc-1","cc-2"].forEach(id=>$("#"+id).value="");$("#cc-ok").textContent="Kod o'zgartirildi. Endi faqat yangi kod ishlaydi.";toast("Administrator kodi o'zgartirildi");
+    await log("owner","Administrator kodi o'zgartirildi")}
+  catch(e2){fail("O'zgartirib bo'lmadi: Firestore qoidalarini yangilang (ilova egasi qoidasi).")}
+  b.disabled=false;
+});
 
 })();

@@ -301,16 +301,21 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       <p class="note">Bosh administrator kodi Firebase konsolida <span class="mono">secrets/chief</span> hujjatidagi <span class="mono">code</span> maydonida saqlanadi.</p>
       <p class="note">Ish beruvchilar kod kiritmaydi: ro'yxatdan o'tib, "Ish beruvchi tashkilot" qismida so'rov yuboradi. So'rov "Tashkilotlar → Ish beruvchilar" bo'limida chiqadi — tashkilotini tanlab "Ruxsat berish" ni bossangiz, u tizimga kiradi.</p>
     </div>
-    <form class="panel stack" id="codeChange" hidden>
-      <h2>Administrator kodini o'zgartirish</h2>
-      <p class="note">Faqat ilova egasi ko'radi. Yangi kod o'rnatilgach, eski kod bilan kirib bo'lmaydi. Kodni faqat administrator bo'ladigan odamlarga ayting.</p>
-      <div class="row2">
-        <label for="cc-1">Yangi kod<input id="cc-1" type="password" autocomplete="off" required></label>
-        <label for="cc-2">Takrorlang<input id="cc-2" type="password" autocomplete="off" required></label>
-      </div>
-      <p class="err" id="cc-err" hidden></p>
-      <div><button class="btn" type="submit">Kodni yangilash</button></div>
-    </form>
+    <div class="panel stack" id="ownerBox">
+      <h2>Ilova egasi va administrator kodi</h2>
+      <div id="ownerInfo"></div>
+      <form class="stack" id="codeChange" hidden>
+        <p class="note">Yangi kod o'rnatilgach, eski kod bilan "Administrator" qismiga kirib bo'lmaydi. Kodni faqat ishonchli odamlarga ayting.</p>
+        <label for="cc-pass">Hisobingiz paroli (tasdiqlash uchun)<input id="cc-pass" type="password" autocomplete="current-password" required></label>
+        <div class="row2">
+          <label for="cc-1">Yangi kod (kamida 8 belgi, harf va raqam)<input id="cc-1" type="password" autocomplete="off" required></label>
+          <label for="cc-2">Yangi kodni takrorlang<input id="cc-2" type="password" autocomplete="off" required></label>
+        </div>
+        <p class="err" id="cc-err" hidden></p>
+        <div class="btnrow"><button class="btn" type="submit" id="cc-btn">Kodni o'zgartirish</button><span class="note" id="cc-ok"></span></div>
+      </form>
+      <div id="chiefList" hidden></div>
+    </div>
     <form class="panel stack" id="verForm">
       <h2>Ilova versiyalari va majburiy yangilanish</h2>
       <dl class="kv" id="verInfo"></dl>
@@ -442,27 +447,29 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
         <label for="tq-q">Savol<textarea id="tq-q" rows="3" maxlength="600" required></textarea></label>
         <div class="stack" id="tq-opts"></div>
         <p class="note">To'g'ri javob yonidagi doirachani belgilang. Bo'sh qoldirilgan variantlar hisobga olinmaydi.</p>
-        <label for="tq-sec">Javob berish vaqti (soniya)<input id="tq-sec" type="number" min="5" max="600" value="60" required></label>
+        <div class="row2"><label for="tq-sec">Javob berish vaqti (soniya)<input id="tq-sec" type="number" min="5" max="600" value="60" required></label>
+        <label for="tq-pts">To'g'ri javob uchun ball<input id="tq-pts" type="number" min="0.5" max="100" step="0.5" value="1" required></label></div>
         <p class="err" id="tq-err" hidden></p>
         <div class="btnrow"><button class="btn" type="submit" id="tq-btn">Savolni qo'shish</button><button class="linkbtn" type="button" id="tq-cancel" hidden>Tahrirni bekor qilish</button></div>
       </form>
     </div>
     <details class="panel stack">
       <summary style="cursor:pointer;font-weight:600">Savollarni ommaviy yuklash (matn yoki .txt fayl)</summary>
-      <p class="note" style="margin-top:10px">Har bir savol bo'sh qator bilan ajratiladi. To'g'ri javob oxiriga <b>*</b> qo'yiladi. "Vaqt:" qatori ixtiyoriy — yozilmasa, standart vaqt olinadi.</p>
+      <p class="note" style="margin-top:10px">Har bir savol bo'sh qator bilan ajratiladi. To'g'ri javob oxiriga <b>*</b> qo'yiladi. "Vaqt:" va "Ball:" qatorlari ixtiyoriy — yozilmasa, standart vaqt va ball olinadi.</p>
       <pre class="formula">2 000 000 so'mning 15 foizi qancha?
 A) 150 000
 B) 300 000 *
 C) 30 000
 D) 3 000 000
 Vaqt: 45
+Ball: 2
 
 Fuqarodan shikoyat kelsa, birinchi qadam qaysi?
 A) Shikoyatni tinglab, mazmunini aniqlash *
 B) E'tibor bermaslik
 C) Boshqa bo'limga yo'naltirish</pre>
       <label for="tb-text">Savollar matni<textarea id="tb-text" rows="8" class="mono"></textarea></label>
-      <div class="row2"><label for="tb-file">Yoki .txt fayl tanlang<input id="tb-file" type="file" accept=".txt,text/plain"></label><label for="tb-sec">Standart vaqt (soniya)<input id="tb-sec" type="number" min="5" max="600" value="60"></label></div>
+      <div class="row3"><label for="tb-file">Yoki .txt fayl tanlang<input id="tb-file" type="file" accept=".txt,text/plain"></label><label for="tb-sec">Standart vaqt (soniya)<input id="tb-sec" type="number" min="5" max="600" value="60"></label><label for="tb-pts">Standart ball (har savolga)<input id="tb-pts" type="number" min="0.5" max="100" step="0.5" value="1"></label></div>
       <p class="err" id="tb-err" hidden></p>
       <div class="btnrow"><button class="btn" type="button" id="tb-btn">Tekshirib yuklash</button><span class="note" id="tb-info"></span></div>
     </details>
