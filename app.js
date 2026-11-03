@@ -1,6 +1,6 @@
 (function(){
 // Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
-{const BUILD=11,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+{const BUILD=12,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
   if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
   document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
@@ -14,7 +14,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=11; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=12; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
@@ -99,15 +99,22 @@ const TAB_LABEL={...Object.fromEntries(APP_TABS.concat(EMP_TABS,CHIEF_TABS,CHIEF
 const inG=(G,t)=>G.some(g=>g[1].includes(t));
 function curMode(t){if(t==="sozlamalarim")return "settings";if(t==="kutish")return "admin";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
 function groupsFor(t){if(t==="sozlamalarim")return G_SET;if(t==="kutish")return [["Ish beruvchi so'rovi",["kutish"]]];if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
+// Bo'lim nomlari: bosh administrator config/ui ichida o'zgartira oladi
+const LBL=(k,d)=>{const L=((S.ui||{}).labels)||{};return (L[k]&&String(L[k]).trim())||d};
+const MODE_ICON={applicant:'<path d="M11 4a7 7 0 1 0 4.2 12.6L20 21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',admin:'<path d="M4 20V8l8-4 8 4v12M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',chief:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>'};
 function renderNav(t){
   const m=curMode(t);
-  $("#modes").innerHTML=MODES.map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===m}"${k==="settings"?` class="gear" title="${l}" aria-label="${l}"`:""}>${k==="settings"?GEAR+"<span>"+l+"</span>":l}</button>`).join("");
-  const G=groupsFor(t),gi=Math.max(0,G.findIndex(g=>g[1].includes(t))),sub=G[gi][1];
-  $("#nav").hidden=m==="settings"||t==="kutish";
+  $("#modes").innerHTML=MODES.map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===m}"${k==="settings"?` class="gear"`:""}>${k==="settings"?GEAR:`<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${MODE_ICON[k]}</svg>`}<span>${esc(LBL("m:"+k,l))}</span>${k==="admin"&&S.isChief&&(S.admins||[]).some(a=>!a.org)?` <span class="bdg">${(S.admins||[]).filter(a=>!a.org).length}</span>`:""}</button>`).join("");
+  const G=groupsFor(t),gi=Math.max(0,G.findIndex(g=>g[1].includes(t)));
+  const hide=m==="settings"||t==="kutish";$("#nav").hidden=hide;$("#sbNavCap").hidden=hide;
   const pend=S.isChief?(S.admins||[]).filter(a=>!a.org).length:0,bdg=n=>n?` <span class="bdg">${n}</span>`:"";
-  const gb=g=>g[1].includes("ish-beruvchilar")?bdg(pend):"";
-  $("#nav").innerHTML=`<div class="grp">${G.map((g,i)=>`<a href="#${g[1][0]}" ${i===gi?'aria-current="page"':""}>${g[0]}${gb(g)}</a>`).join("")}</div>`+
-    (sub.length>1?`<div class="sub">${sub.map(k=>`<a href="#${k}" ${k===t?'aria-current="page"':""}>${TAB_LABEL[k]}${k==="ish-beruvchilar"?bdg(pend):""}</a>`).join("")}</div>`:"");
+  $("#nav").innerHTML=`<div class="grp">${G.map((g,i)=>{const on=i===gi;
+    return `<a class="g" href="#${g[1][0]}" ${on?'aria-current="page"':""}>${esc(LBL("g:"+g[0],g[0]))}${g[1].includes("ish-beruvchilar")?bdg(pend):""}</a>`+
+      (on&&g[1].length>1?`<div class="sub">${g[1].map(k=>`<a href="#${k}" ${k===t?'aria-current="page"':""}>${esc(LBL("t:"+k,TAB_LABEL[k]))}${k==="ish-beruvchilar"?bdg(pend):""}</a>`).join("")}</div>`:"")}).join("")}</div>`;
+  const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||S.login||"";
+  $("#sbProf").innerHTML=`<span class="sb-ava">${esc((nm.trim()[0]||"?").toUpperCase())}</span><span class="sb-pt"><b>${esc(nm)}</b><small>${esc(S.login||"")} · ${esc(ROLE_UZ[S.role]||"")}</small></span>`;
+  document.querySelectorAll("section.section").forEach(sec=>{const k=sec.id.slice(2),h=sec.querySelector("h1");if(!h)return;const L=(((S.ui||{}).labels||{})["t:"+k]||"").trim();
+    if(L){if(!h.dataset.ov)h.dataset.orig=h.textContent;h.dataset.ov="1";h.textContent=L}else if(h.dataset.ov){h.textContent=h.dataset.orig;delete h.dataset.ov}});
 }
 function tabs(){return S.role==="chief"?CHIEF_TABS.concat(CHIEF_ADM):S.role==="admin"?EMP_TABS:APP_TABS}
 function route(){
@@ -118,6 +125,7 @@ function route(){
   if(S.role==="admin"&&!(S.adminDoc||{}).org&&!["sozlamalarim","qoidalar","haqida","tekshir"].includes(t))t="kutish";
   ALL_VIEWS.forEach(x=>{const el=document.getElementById("v-"+x);if(el)el.hidden=x!==t});
   $("#hdr").hidden=!S.role||t==="tekshir";
+  document.body.classList.toggle("has-sb",!$("#hdr").hidden);$("#hdr").classList.remove("open");$("#sbBack").hidden=true;$("#sbToggle").setAttribute("aria-expanded","false");
   if(S.role&&t!=="tekshir")renderNav(t);
   render();
   if(S.role==="chief"&&typeof notifyReqs==="function")notifyReqs();
@@ -457,7 +465,7 @@ function renderAppeals(){
       <div class="note">Kod <b class="mono">${esc(a.code)}</b> · ${dt(a.at)}${st2&&st2.row?` · natijasi: ${esc(st2.status)}${st2.row.ok?", "+st2.row.total+" ball":""}`:""}</div>
       <p style="margin:0;white-space:pre-line">${esc(a.text)}</p>
       ${a.answer?`<div class="appeal"><b>Javob</b> <span class="note">${dt(a.answeredAt)}</span><p>${esc(a.answer)}</p></div>`:""}
-      ${chief&&a.status==="open"?`<div class="stack" data-apbox="${esc(a.id)}"><label>Javob (kamida 10 belgi, ishtirokchi va ish beruvchiga ko'rinadi)<textarea rows="3" maxlength="1500" id="ans-${esc(a.id)}"></textarea></label><div class="btnrow"><button class="btn" type="button" data-ans="accepted" data-id="${esc(a.id)}">Qanoatlantirish</button><button class="btn ghost" type="button" data-ans="rejected" data-id="${esc(a.id)}">Rad etish</button>${v.id?`<button class="linkbtn" type="button" data-goto="${esc(v.id)}">Natijani ochish →</button>`:""}</div></div>`:""}
+      ${chief&&a.status==="open"?`<div class="stack" data-apbox="${esc(a.id)}"><label>Javob (kamida 10 belgi, ishtirokchi va ish beruvchiga ko'rinadi)<textarea rows="3" maxlength="1500" id="ans-${esc(a.id)}"></textarea></label><div class="btnrow"><button class="btn" type="button" data-ans="accepted" data-id="${esc(a.id)}">Qanoatlantirish</button><button class="btn ghost" type="button" data-ans="rejected" data-id="${esc(a.id)}">Rad etish</button>${v.id?`<button class="linkbtn" type="button" data-goto="${esc(v.id)}">Natijani ochish →</button>`:""}</div>${aiAppealHtml(a.id)}</div>`:""}
     </article>`}).join("")+`</div>`;
   box.querySelectorAll("[data-ans]").forEach(b=>b.onclick=async()=>{
     const id=b.dataset.id,answer=document.getElementById("ans-"+id).value.trim(),a=S.appeals.find(x=>x.id===id);
@@ -466,6 +474,8 @@ function renderAppeals(){
     try{await fs.doc("appeals/"+id).update({status:b.dataset.ans,answer,answeredAt:Date.now(),answeredBy:S.uid});
       await log("appeal",`Shikoyat (${a.code}) ${b.dataset.ans==="accepted"?"qanoatlantirildi":"rad etildi"}: ${answer}`,a.orgId);toast("Javob yuborildi")}catch(e){toast("Bajarib bo'lmadi");b.disabled=false}});
   box.querySelectorAll("[data-goto]").forEach(b=>b.onclick=()=>openResult(b.dataset.goto));
+  box.querySelectorAll("[data-aiap]").forEach(b=>b.onclick=()=>aiAppeal(b.dataset.aiap));
+  box.querySelectorAll("[data-aiuse]").forEach(b=>b.onclick=()=>{const r=AI.appeal[b.dataset.aiuse],ta=document.getElementById("ans-"+b.dataset.aiuse);if(r&&ta){ta.value=r.draft.slice(0,1500);ta.focus()}});
 }
 document.getElementById("sh-st").addEventListener("input",renderAppeals);
 
@@ -619,6 +629,7 @@ function renderVacs(){
     return `<article class="vac">
       <div class="top"><div><h3>${esc(v.title)}</h3><div class="org">${esc(o.name)}</div></div><div class="salary">${fmt(v.salary)}<small>so'm / oy</small></div></div>
       <div class="tags"><span class="tag">${esc(v.region)}</span><span class="tag">${esc(v.sector)}</span><span class="tag">${EDU[v.edu]}+</span><span class="tag">staj ${v.exp}+ yil</span><span class="tag">test ${v.test}+</span>${(v.req||[]).map(s=>`<span class="tag" title="majburiy">● ${esc(s)}</span>`).join("")}</div>
+      ${v.desc?`<details class="vdesc"><summary>Lavozim tavsifi</summary><p>${esc(v.desc)}</p></details>`:""}
       ${fitHtml}
       <div class="foot"><span><span class="verified">✓ STIR ${esc(o.stir)}</span> · ${daysLeft(v)}</span>${btn}</div></article>`}).join("");
   box.querySelectorAll("[data-apply]").forEach(b=>b.onclick=()=>apply(b.dataset.apply,b));
@@ -902,10 +913,10 @@ function setEditMode(v){
   editingId=v?v.id:null;
   $("#vformTitle").textContent=v?"Vakansiyani tahrirlash":"Yangi vakansiya";$("#vSubmit").textContent=v?"O'zgarishlarni saqlash":"Vakansiyani e'lon qilish";
   $("#vEditCancel").hidden=!v;$("#vEditFlag").hidden=!v;
-  if(v){$("#v-org").value=v.orgId;$("#v-title").value=v.title;$("#v-salary").value=v.salary;$("#v-sector").value=v.sector;$("#v-region").value=v.region;$("#v-edu").value=v.edu;$("#v-exp").value=v.exp;$("#v-test").value=v.test;
+  if(v){$("#v-org").value=v.orgId;$("#v-title").value=v.title;$("#v-salary").value=v.salary;$("#v-sector").value=v.sector;$("#v-region").value=v.region;$("#v-edu").value=v.edu;$("#v-exp").value=v.exp;$("#v-test").value=v.test;if($("#v-desc"))$("#v-desc").value=v.desc||"";
     {const left=Math.max(0,(v.deadline||0)-Date.now());const o=[...$("#v-days").options].map(x=>+x.value);$("#v-days").value=String(o.reduce((b,x)=>Math.abs(x-left)<Math.abs(b-left)?x:b,o[0]));}
     draftV.specs=[...(v.specs||[])];draftV.req=[...(v.req||[])];draftV.pref=[...(v.pref||[])];draftV.langs=[...(v.langs||[])];$("#vform").scrollIntoView({behavior:"smooth",block:"start"})}
-  else{$("#v-title").value="";$("#v-salary").value="";draftV.specs=[];draftV.req=[];draftV.pref=[];draftV.langs=[]}
+  else{$("#v-title").value="";$("#v-salary").value="";if($("#v-desc"))$("#v-desc").value="";draftV.specs=[];draftV.req=[];draftV.pref=[];draftV.langs=[]}
   renderDraft();
 }
 $("#vEditCancel").onclick=()=>setEditMode(null);
@@ -922,7 +933,7 @@ $("#vform").addEventListener("submit",async e=>{
   if(!draftV.specs.length)return fail("Kamida bitta mutaxassislikni tanlang.");
   const durMs=+$("#v-days").value||14*DAY;
   const body={orgId,title,salary,sector:$("#v-sector").value,region:$("#v-region").value,edu:+$("#v-edu").value,exp:Math.max(0,+$("#v-exp").value||0),test:Math.max(0,Math.min(100,+$("#v-test").value||0)),
-    specs:[...draftV.specs],req:[...draftV.req],pref:[...draftV.pref],langs:[...draftV.langs],deadline:Date.now()+durMs};
+    specs:[...draftV.specs],req:[...draftV.req],pref:[...draftV.pref],langs:[...draftV.langs],deadline:Date.now()+durMs,desc:(($("#v-desc")||{}).value||"").trim().slice(0,1500)};
   try{
     if(editingId){const v=S.vacs.find(x=>x.id===editingId);
       if(!v||v.status!=="open"||applicantsOf(v).length)return fail("Bu vakansiyaga ariza tushgan, talablarni endi o'zgartirib bo'lmaydi.");
@@ -1417,17 +1428,34 @@ $("#tb-btn").onclick=async()=>{
 // --- testni boshlashga ruxsat so'rovlari (bosh admin) ---
 const APPROVE_MS=15*60000;
 var reqSeen=null;
+const trSel=new Set();
 function renderTestReqs(){
   const L=[...(S.testreqs||[])].sort((a,b)=>(a.status==="waiting"?0:1)-(b.status==="waiting"?0:1)||(b.at||0)-(a.at||0)).filter(r=>r.status==="waiting"||Date.now()-(r.decidedAt||r.at||0)<3*3600e3);
-  const w=L.filter(r=>r.status==="waiting");
+  const w=L.filter(r=>r.status==="waiting"),wid=w.map(r=>r.id);
+  [...trSel].forEach(id=>{if(!wid.includes(id))trSel.delete(id)});
   $("#trq-count").textContent=w.length?w.length+" ta so'rov javob kutmoqda":"Kutilayotgan so'rov yo'q";
-  $("#trq-list").innerHTML=L.length?`<div class="tablebox"><table class="wide"><thead><tr><th>Vaqt</th><th>Login</th><th>F.I.Sh.</th><th>Face ID</th><th>Qurilma</th><th>Holat</th><th></th></tr></thead><tbody>`+L.map(r=>{
-    const att=S.attempts.find(a=>a.id===r.id),st=r.status==="waiting"?`<span class="pill res">Kutmoqda</span>`:r.status==="approved"?(att?`<span class="pill win">Boshladi</span>`:Date.now()-(r.decidedAt||0)>APPROVE_MS?`<span class="pill closed">Muddati o'tdi</span>`:`<span class="pill open">Ruxsat berildi</span>`):`<span class="pill out">Rad etildi</span>`;
-    return `<tr class="${r.status==="waiting"?"winner":""}"><td class="mono" style="white-space:nowrap">${dt(r.at)}</td><td class="mono">${esc(r.login||"—")}</td><td>${esc(r.name||"—")}</td><td>${r.enrolled?"Ro'yxatga olindi":r.faceDist!=null?`Mos (${r.faceDist})`:"—"}</td><td>${esc(r.device||"")}</td><td>${st}</td>
-      <td>${r.status==="waiting"?`<span class="btnrow"><button class="btn" type="button" data-rqok="${esc(r.id)}">Ruxsat berish</button><button class="btn ghost" type="button" data-rqno="${esc(r.id)}">Rad etish</button></span>`:""}</td></tr>`}).join("")+`</tbody></table></div>`:`<div class="empty">Hozircha so'rov yo'q.</div>`;
-  $("#trq-list").querySelectorAll("[data-rqok],[data-rqno]").forEach(b=>b.onclick=async()=>{
-    const id=b.dataset.rqok||b.dataset.rqno,ok=!!b.dataset.rqok,r=S.testreqs.find(x=>x.id===id);b.disabled=true;
-    try{await fs.doc("testreq/"+id).update({status:ok?"approved":"denied",decidedAt:Date.now(),decidedBy:S.uid});await log("test",`Testga ${ok?"ruxsat berildi":"ruxsat berilmadi"}: ${r?r.login:id}`);toast(ok?"Ruxsat berildi":"Rad etildi")}catch(e){toast("Bajarib bo'lmadi: Firestore qoidalarini yangilang");b.disabled=false}});
+  const nSel=trSel.size,allOn=w.length>0&&nSel===w.length;
+  const bar=w.length?`<div class="trq-bar"><label class="chk"><input type="checkbox" id="trq-all" ${allOn?"checked":""}> Hammasini belgilash</label><span class="note" id="trq-sel">${nSel?nSel+" ta belgilandi":"Hech kim belgilanmagan"}</span><span class="spacer"></span>
+    <button class="btn" type="button" id="trq-ok" ${nSel?"":"disabled"}>Belgilanganlarga ruxsat${nSel?" ("+nSel+")":""}</button><button class="btn ghost" type="button" id="trq-no" ${nSel?"":"disabled"}>Belgilanganlarni rad etish</button><button class="btn ghost" type="button" id="trq-okall">Hammasiga ruxsat (${w.length})</button></div>`:"";
+  $("#trq-list").innerHTML=L.length?bar+`<div class="tablebox"><table class="wide"><thead><tr><th style="width:44px"></th><th>Vaqt</th><th>Login</th><th>F.I.Sh.</th><th>Face ID</th><th>Qurilma</th><th>Holat</th><th></th></tr></thead><tbody>`+L.map(r=>{
+    const att=S.attempts.find(a=>a.id===r.id),wait=r.status==="waiting",st=wait?`<span class="pill res">Kutmoqda</span>`:r.status==="approved"?(att?`<span class="pill win">Boshladi</span>`:Date.now()-(r.decidedAt||0)>APPROVE_MS?`<span class="pill closed">Muddati o'tdi</span>`:`<span class="pill open">Ruxsat berildi</span>`):`<span class="pill out">Rad etildi</span>`;
+    return `<tr class="${wait?"winner":""}${trSel.has(r.id)?" sel":""}"><td>${wait?`<input type="checkbox" class="trq-c" data-id="${esc(r.id)}" aria-label="${esc(r.login||"")} ni belgilash" ${trSel.has(r.id)?"checked":""}>`:""}</td><td class="mono" style="white-space:nowrap">${dt(r.at)}</td><td class="mono">${esc(r.login||"—")}</td><td>${esc(r.name||"—")}</td><td>${r.enrolled?"Ro'yxatga olindi":r.faceDist!=null?`Mos (${r.faceDist})`:"—"}</td><td>${esc(r.device||"")}</td><td>${st}</td>
+      <td>${wait?`<span class="btnrow"><button class="btn" type="button" data-rqok="${esc(r.id)}">Ruxsat berish</button><button class="btn ghost" type="button" data-rqno="${esc(r.id)}">Rad etish</button></span>`:""}</td></tr>`}).join("")+`</tbody></table></div>`:`<div class="empty">Hozircha so'rov yo'q.</div>`;
+  const box=$("#trq-list");
+  async function decide(ids,ok,btn){
+    if(!ids.length)return;if(btn)btn.disabled=true;let done=0,fail=0;
+    await Promise.all(ids.map(id=>fs.doc("testreq/"+id).update({status:ok?"approved":"denied",decidedAt:Date.now(),decidedBy:S.uid}).then(()=>{done++;trSel.delete(id)}).catch(()=>{fail++})));
+    const names=ids.map(id=>{const r=S.testreqs.find(x=>x.id===id);return r?r.login:id}).join(", ");
+    if(done)await log("test",`Testga ${ok?"ruxsat berildi":"ruxsat berilmadi"} (${done} ta): ${names}`);
+    toast(fail?`${done} ta bajarildi, ${fail} tasi bajarilmadi`:(ok?`${done} ta ishtirokchiga ruxsat berildi`:`${done} ta so'rov rad etildi`));
+    renderTestReqs();
+  }
+  box.querySelectorAll("[data-rqok],[data-rqno]").forEach(b=>b.onclick=()=>decide([b.dataset.rqok||b.dataset.rqno],!!b.dataset.rqok,b));
+  box.querySelectorAll(".trq-c").forEach(c=>c.onchange=()=>{c.checked?trSel.add(c.dataset.id):trSel.delete(c.dataset.id);renderTestReqs()});
+  const all=$("#trq-all");if(all)all.onchange=()=>{trSel.clear();if(all.checked)wid.forEach(id=>trSel.add(id));renderTestReqs()};
+  const ok=$("#trq-ok");if(ok)ok.onclick=()=>decide([...trSel],true,ok);
+  const no=$("#trq-no");if(no)no.onclick=()=>decide([...trSel],false,no);
+  const oa=$("#trq-okall");if(oa)oa.onclick=()=>{if(!oa.dataset.sure){oa.dataset.sure="1";oa.textContent=`Tasdiqlang: ${w.length} ta hammasiga ruxsat`;setTimeout(()=>{delete oa.dataset.sure;if(oa.isConnected)oa.textContent=`Hammasiga ruxsat (${w.length})`},5000);return}decide(wid,true,oa)};
 }
 function notifyReqs(){
   const w=(S.testreqs||[]).filter(r=>r.status==="waiting").map(r=>r.id);
@@ -1630,4 +1658,259 @@ async function afterAuth(u,quick){
   // kirgandan keyin har doim "Bo'sh ish o'rinlari" qismi ochiladi; boshqa qismlarga kod bilan o'tiladi
   S.elev=null;const was=!quick&&recalled();remember("applicant");setRole("applicant");track(was?"resume":"login","applicant");
 }
+
+// =================== SUN'IY INTELLEKT (Google Gemini) ===================
+// Kalit Firestore'dagi aicfg/main hujjatida saqlanadi (faqat bosh administrator yozadi, kirgan foydalanuvchi o'qiydi).
+// Kalitni Google Cloud'da faqat sayt manzili (HTTP referrer) va Generative Language API bilan cheklab qo'yish tavsiya etiladi.
+const AI={cfg:null,model:null,busy:false,chat:[],appeal:{}};
+const AI_BASE="https://generativelanguage.googleapis.com/v1beta/";
+const AI_DAY_LIMIT=60; // bitta qurilmadan kuniga so'rovlar (tejash uchun)
+async function aiCfg(force){
+  if(AI.cfg&&!force)return AI.cfg;
+  try{const g=await fs.doc("aicfg/main").get();AI.cfg=g.exists?g.data():{}}catch(e){AI.cfg={}}
+  return AI.cfg;
+}
+function aiQuota(){try{const k="ot-ai-"+new Date().toISOString().slice(0,10),n=+(localStorage.getItem(k)||0);if(n>=AI_DAY_LIMIT&&S.role!=="chief")return false;localStorage.setItem(k,n+1);return true}catch(e){return true}}
+async function aiPickModel(key,pref){
+  if(pref)return pref;
+  try{const c=sessionStorage.getItem("ot-ai-model");if(c)return c}catch(e){}
+  let names=[];
+  try{const r=await fetch(AI_BASE+"models?pageSize=200",{headers:{"x-goog-api-key":key}});const j=await r.json();
+    names=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""))}catch(e){}
+  const bad=/image|tts|live|audio|embed|vision|thinking|exp|preview|lite|nano|pro|gemma/i;
+  const ver=n=>{const m=n.match(/(\d+(?:\.\d+)?)/);return m?+m[1]:0};
+  let cand=names.filter(n=>/^gemini-[\d.]+-flash$/.test(n)).sort((a,b)=>ver(b)-ver(a));
+  if(!cand.length)cand=names.filter(n=>/flash/i.test(n)&&!bad.test(n)).sort((a,b)=>ver(b)-ver(a));
+  if(!cand.length)cand=names.filter(n=>/flash/i.test(n));
+  const pick=cand[0]||names.find(n=>/^gemini/.test(n))||"gemini-flash-latest";
+  try{sessionStorage.setItem("ot-ai-model",pick)}catch(e){}
+  return pick;
+}
+// Asosiy chaqiruv: system — ko'rsatma, msgs — [{role:"user"|"model",text}]
+async function aiAsk(system,msgs,opt){
+  opt=opt||{};const cfg=await aiCfg();
+  if(!cfg.key)throw new Error("nokey");
+  if(cfg.on===false&&!opt.admin)throw new Error("off");
+  if(!aiQuota())throw new Error("quota");
+  const model=await aiPickModel(cfg.key,cfg.model);
+  const body={systemInstruction:{parts:[{text:system}]},contents:msgs.map(m=>({role:m.role==="model"?"model":"user",parts:[{text:m.text}]})),
+    generationConfig:{temperature:opt.temp??0.6,maxOutputTokens:opt.max||1500}};
+  const r=await fetch(AI_BASE+"models/"+encodeURIComponent(model)+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":cfg.key},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){if(r.status===404){try{sessionStorage.removeItem("ot-ai-model")}catch(e){}}const m=(j.error&&j.error.message)||("HTTP "+r.status);const er=new Error(m);er.status=r.status;throw er}
+  const c=(j.candidates||[])[0];const t=c&&c.content&&(c.content.parts||[]).map(p=>p.text||"").join("").trim();
+  if(!t)throw new Error(c&&c.finishReason==="SAFETY"?"AI bu so'rovga javob bermadi.":"AI bo'sh javob qaytardi.");
+  return t;
+}
+function aiErr(e){const m=(e&&e.message)||"";
+  if(m==="nokey")return S.isChief?"AI kaliti kiritilmagan. Administrator → Tizim → Sozlamalar bo'limida Gemini kalitini kiriting.":"AI hali yoqilmagan. Bosh administrator sozlamalarni tugatishi kerak.";
+  if(m==="off")return "AI yordamchi bosh administrator tomonidan vaqtincha o'chirilgan.";
+  if(m==="quota")return "Bugungi AI so'rovlar limiti tugadi. Ertaga qayta urinib ko'ring.";
+  if(e&&e.status===429)return "AI xizmati hozir band (bepul limit). Bir daqiqadan keyin qayta urinib ko'ring.";
+  if(e&&(e.status===400||e.status===403))return "AI kaliti noto'g'ri yoki bu sayt uchun ruxsat berilmagan.";
+  if(/Failed to fetch|NetworkError/i.test(m))return "Internet aloqasi yo'q yoki AI xizmatiga ulanib bo'lmadi.";
+  return "AI xatosi: "+m.slice(0,160);
+}
+// oddiy markdown: **qalin**, ro'yxat, qatorlar
+function aiMd(t){
+  const lines=esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").split(/\n/);let out="",ul=false;
+  for(const l of lines){const m=l.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)/);
+    if(m){if(!ul){out+="<ul>";ul=true}out+="<li>"+m[1]+"</li>";continue}
+    if(ul){out+="</ul>";ul=false}out+=l.trim()?"<p>"+l+"</p>":""}
+  return out+(ul?"</ul>":"");
+}
+const AI_RULES=`Sen "OchiqTanlov" platformasining yordamchisisan. Faqat o'zbek tilida (lotin yozuvida), qisqa, aniq va xushmuomala javob ber.
+OchiqTanlov — O'zbekistondagi davlat tashkilotlari bo'sh ish o'rinlari uchun sayt va Android ilova. G'olibni rahbar emas, ochiq formula aniqlaydi.
+Qoidalar:
+- Ball = 0,50·Test + 0,20·Staj + 0,15·Afzal ko'nikmalar ulushi + 0,10·Ma'lumot + 0,05·Afzal tillar ulushi. Staj: har yil 10 ball, ko'pi bilan 10 yil. Ma'lumot: o'rta maxsus 60, bakalavr 80, magistr 100. Teng ballda test bali, keyin arizani ertaroq topshirgan ustun.
+- Majburiy talablar (ma'lumot, staj, eng kam test bali, majburiy ko'nikmalar, mutaxassislik) bajarilmasa, nomzod "mos emas" bo'ladi.
+- Ariza anonim kod bilan topshiriladi; ish beruvchi ismni ko'rmaydi. Natija ochiq reytingda e'lon qilinadi. G'olib rad etsa, o'rin zaxiraga o'tadi. Natijadan keyin 3 kun ichida shikoyat yozish mumkin, unga bosh administrator javob beradi. G'olibga QR guvohnoma beriladi.
+- Kasbiy test: Face ID orqali tasdiqlanadi, kamera yoqiq turadi, chetga qarash, ikkinchi odam yoki ilovadan chiqish testni yopadi. Testni boshlash uchun bosh administrator ruxsat beradi va belgilangan vaqt oralig'ida topshiriladi.
+- Ilova qismlari: "Bo'sh ish o'rinlari" (vakansiyalar, arizalarim, profil va test), "Ish beruvchi tashkilot" (so'rov yuborib, administrator ruxsati bilan), "Administrator" (maxfiy kod bilan), "Sozlamalar" (parol, Face ID, mavzu).
+Muhim: test savollarining to'g'ri javoblarini bilmaysan va aytma. Natijani o'zgartirish yoki kimnidir g'olib qilish mumkin emasligini tushuntir. Bilmagan narsangni o'ylab topma — "bu haqda ma'lumotim yo'q" de. Shaxsiy ma'lumot so'rama.`;
+function aiContext(){
+  const p=S.profile||{},t=testOf(S.uid),live=S.vacs.filter(v=>v.status==="open"&&!deadlinePassed(v)).slice(0,40);
+  const vac=live.map(v=>`- ${v.title} | ${orgOf(v.orgId).name} | ${fmt(v.salary)} so'm | ${v.region} | ${v.sector} | ma'lumot: ${EDU[v.edu]}+ | staj ${v.exp}+ | test ${v.test}+ | majburiy: ${(v.req||[]).join(", ")||"—"} | afzal: ${(v.pref||[]).join(", ")||"—"} | ${daysLeft(v)}${v.desc?" | tavsif: "+String(v.desc).slice(0,200):""}`).join("\n");
+  const me=profileReady()?`Foydalanuvchi profili: ma'lumot ${EDU[p.edu]||"—"}, staj ${p.exp||0} yil, mutaxassislik ${p.spec??"—"}, ko'nikmalar: ${(p.skills||[]).join(", ")||"—"}, tillar: ${(p.langs||[]).join(", ")||"—"}, test bali: ${t==null?"hali yo'q":t}.`:"Foydalanuvchi profili hali to'ldirilmagan.";
+  const role={applicant:"ish izlovchi",admin:"ish beruvchi",chief:"bosh administrator"}[S.role]||"foydalanuvchi";
+  return `Hozirgi foydalanuvchi roli: ${role}. ${me}\nHozir ochiq vakansiyalar (${live.length} ta):\n${vac||"yo'q"}`;
+}
+
+// ---- 1) AI yordamchi chat (pastki o'ng burchak) ----
+(function(){
+  const fab=document.createElement("button");fab.type="button";fab.className="ai-fab";fab.id="ai-fab";fab.hidden=true;fab.setAttribute("aria-label","AI yordamchi");
+  fab.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" fill="currentColor"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" fill="currentColor"/></svg><span>AI yordamchi</span>';
+  const pane=document.createElement("section");pane.className="ai-pane";pane.id="ai-pane";pane.hidden=true;pane.setAttribute("aria-label","AI yordamchi");
+  pane.innerHTML=`<header><b>AI yordamchi</b><span class="note">Gemini · javoblar xato bo'lishi mumkin</span><button type="button" class="ai-x" id="ai-x" aria-label="Yopish">×</button></header>
+    <div class="ai-log" id="ai-log"></div>
+    <div class="ai-sugg" id="ai-sugg"></div>
+    <form class="ai-form" id="ai-form"><textarea id="ai-in" rows="1" maxlength="1000" placeholder="Savolingizni yozing…"></textarea><button class="btn" type="submit" id="ai-send">Yuborish</button></form>`;
+  document.body.append(fab,pane);
+  const SUG={applicant:["Menga qaysi vakansiya mos?","Ballim qanday hisoblanadi?","Testga qanday tayyorlanay?","Shikoyatni qanday yozaman?"],
+    admin:["Vakansiyani qanday e'lon qilaman?","Tanlovni qachon yakunlayman?","G'olibni nega o'zim tanlay olmayman?"],
+    chief:["Ish beruvchiga qanday ruxsat beraman?","Testni qanday ochaman?","Shikoyatga qanday javob beraman?"]};
+  function draw(){
+    const L=$("#ai-log");
+    L.innerHTML=AI.chat.length?AI.chat.map(m=>`<div class="ai-msg ${m.role==="model"?"bot":"me"}">${m.role==="model"?aiMd(m.text):esc(m.text)}</div>`).join(""):`<div class="ai-msg bot"><p>Assalomu alaykum! Men OchiqTanlov yordamchisiman. Vakansiyalar, ariza, test va ball haqida so'rang.</p></div>`;
+    if(AI.busy)L.insertAdjacentHTML("beforeend",`<div class="ai-msg bot ai-typing"><span></span><span></span><span></span></div>`);
+    L.scrollTop=L.scrollHeight;
+    $("#ai-sugg").innerHTML=AI.chat.length?"":(SUG[S.role]||SUG.applicant).map(q=>`<button type="button" class="chip">${esc(q)}</button>`).join("");
+    $("#ai-sugg").querySelectorAll("button").forEach(b=>b.onclick=()=>send(b.textContent));
+    $("#ai-send").disabled=AI.busy;
+  }
+  async function send(q){
+    q=(q||"").trim();if(!q||AI.busy)return;AI.chat.push({role:"user",text:q});AI.busy=true;draw();
+    try{const t=await aiAsk(AI_RULES+"\n\n"+aiContext(),AI.chat.slice(-12),{temp:0.4,max:900});AI.chat.push({role:"model",text:t})}
+    catch(e){AI.chat.push({role:"model",text:aiErr(e)})}
+    AI.busy=false;draw();
+  }
+  fab.onclick=()=>{pane.hidden=!pane.hidden;fab.classList.toggle("on",!pane.hidden);if(!pane.hidden){draw();setTimeout(()=>$("#ai-in").focus(),50)}};
+  $("#ai-x").onclick=()=>{pane.hidden=true;fab.classList.remove("on")};
+  $("#ai-form").addEventListener("submit",e=>{e.preventDefault();const i=$("#ai-in");send(i.value);i.value=""});
+  $("#ai-in").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#ai-form").requestSubmit()}});
+  // faqat ichkariga kirganda va test oynasi yopiq bo'lsa ko'rinadi
+  setInterval(()=>{const show=!!S.role&&!!S.uid&&$("#exam").hidden;fab.hidden=!show;if(!show){pane.hidden=true;fab.classList.remove("on")}},700);
+})();
+
+// ---- 2) Test savollarini AI bilan yaratish ----
+(function(){
+  const tb=$("#tb-text");if(!tb)return;
+  const box=document.createElement("div");box.className="ai-box stack";
+  box.innerHTML=`<div class="btnrow" style="justify-content:space-between"><b>✨ AI bilan savol yaratish</b><span class="note">Natijani tekshirib, keyin yuklang</span></div>
+    <div class="row3"><label for="ai-q-topic">Mavzu / lavozim<input id="ai-q-topic" maxlength="200" placeholder="Boshlang'ich sinf o'qituvchisi: pedagogika va metodika"></label>
+    <label for="ai-q-n">Savollar soni<input id="ai-q-n" type="number" min="1" max="20" value="5"></label>
+    <label for="ai-q-lvl">Qiyinlik<select id="ai-q-lvl"><option value="oson">Oson</option><option value="o'rtacha" selected>O'rtacha</option><option value="qiyin">Qiyin</option></select></label></div>
+    <div class="btnrow"><button class="btn ghost" type="button" id="ai-q-go">Savollarni yaratish</button><span class="note" id="ai-q-st"></span></div>`;
+  tb.closest("label").before(box);
+  $("#ai-q-go").onclick=async()=>{
+    const topic=$("#ai-q-topic").value.trim(),n=Math.max(1,Math.min(20,+$("#ai-q-n").value||5)),lvl=$("#ai-q-lvl").value,st=$("#ai-q-st"),b=$("#ai-q-go");
+    if(topic.length<3){st.textContent="Mavzuni yozing.";return}
+    b.disabled=true;st.textContent="AI savollar tayyorlamoqda…";
+    const sys=`Sen davlat tashkilotiga ishga qabul uchun kasbiy test tuzuvchi mutaxassissan. O'zbek tilida (lotin) yoz.
+Faqat quyidagi formatda javob ber, boshqa hech qanday so'z, sarlavha yoki izoh yozma:
+Savol matni?
+A) variant
+B) variant *
+C) variant
+D) variant
+Vaqt: 60
+
+Qoidalar: har savolda 4 ta variant, faqat bittasi to'g'ri va uning oxirida " *" bo'lsin; savollar orasida bitta bo'sh qator; "Vaqt:" — soniyada (30–120, qiyinligiga qarab); savollar amaliy, aniq va bir ma'noli bo'lsin; to'g'ri javob o'rni har xil bo'lsin; siyosiy, diniy yoki shaxsiy mavzular bo'lmasin.`;
+    try{
+      let t=await aiAsk(sys,[{role:"user",text:`Mavzu: ${topic}\nSavollar soni: ${n}\nQiyinlik: ${lvl}`}],{temp:0.7,max:3500,admin:true});
+      t=t.replace(/^```[a-z]*\n?|```$/gim,"").trim();
+      const {out,errs}=parseBulk(t,+$("#tb-sec").value||60);
+      tb.value=(tb.value.trim()?tb.value.trim()+"\n\n":"")+t;
+      st.textContent=`${out.length} ta savol tayyor${errs.length?`, ${errs.length} tasida xato — tuzatib yuklang`:""}. Pastdagi matnni tekshirib, "Tekshirib yuklash"ni bosing.`;
+      log("ai",`AI ${out.length} ta test savoli yaratdi: ${topic}`).catch(()=>{});
+    }catch(e){st.textContent=aiErr(e)}
+    b.disabled=false;
+  };
+})();
+
+// ---- 3) Vakansiya tavsifini AI bilan yozish ----
+(function(){
+  const t=$("#v-title");if(!t)return;
+  const wrap=document.createElement("div");wrap.className="stack";wrap.style.gap="6px";
+  wrap.innerHTML=`<label for="v-desc">Lavozim tavsifi va vazifalar (ixtiyoriy)<textarea id="v-desc" rows="5" maxlength="1500" placeholder="Asosiy vazifalar, ish sharoiti, ish vaqti…"></textarea></label>
+    <div class="btnrow"><button class="btn ghost" type="button" id="ai-v-go">✨ AI bilan yozish</button><span class="note" id="ai-v-st"></span></div>`;
+  $("#v-salary").closest("label").after(wrap);
+  $("#ai-v-go").onclick=async()=>{
+    const title=t.value.trim(),st=$("#ai-v-st"),b=$("#ai-v-go");if(!title){st.textContent="Avval lavozim nomini yozing.";return}
+    const o=S.orgs.find(x=>x.id===$("#v-org").value)||{};b.disabled=true;st.textContent="AI yozmoqda…";
+    const sys=`Sen davlat tashkilotlari uchun vakansiya e'lonlarini yozuvchi kadrlar mutaxassisisan. O'zbek tilida (lotin), rasmiy va sodda uslubda yoz.
+Faqat e'lon matnini qaytar (sarlavhasiz, 600–1200 belgi): 1) qisqa kirish jumlasi; 2) "Asosiy vazifalar:" — 4–6 ta qator "- " bilan; 3) "Ish sharoiti:" — 2–3 qator. Maosh, talab va muddatni takrorlama — ular alohida ko'rsatiladi. Kamsituvchi talab (yosh, jins, millat, tashqi ko'rinish) yozma. O'ylab topilgan raqam yoki imtiyoz yozma.`;
+    try{const r=await aiAsk(sys,[{role:"user",text:`Lavozim: ${title}\nTashkilot: ${o.name||"—"}\nSoha: ${$("#v-sector").value}\nHudud: ${$("#v-region").value}\nEng kam ma'lumot: ${$("#v-edu").selectedOptions[0]?$("#v-edu").selectedOptions[0].textContent:""}\nStaj: ${$("#v-exp").value} yil\nMutaxassisliklar: ${draftV.specs.join(", ")||"—"}\nKo'nikmalar: ${draftV.req.concat(draftV.pref).join(", ")||"—"}`}],{temp:0.6,max:1200,admin:true});
+      $("#v-desc").value=r.replace(/\*\*/g,"").slice(0,1500);st.textContent="Tayyor. Kerak bo'lsa tahrirlang.";}
+    catch(e){st.textContent=aiErr(e)}
+    b.disabled=false;
+  };
+})();
+
+// ---- 4) Shikoyatni AI bilan tahlil qilish (bosh administrator) ----
+async function aiAppeal(id){
+  const a=S.appeals.find(x=>x.id===id);if(!a)return;const v=S.vacs.find(x=>x.id===a.vacId)||{};
+  AI.appeal[id]={busy:true};renderAppeals();
+  const snap=((v.decision||{}).snapshot||[]).slice(0,15).map((x,i)=>`${i+1}. ${x.code}${x.code===a.code?" (SHIKOYATCHI)":""}: ${x.ok?"mos, jami "+(x.total??"—"):"mos emas"+(x.why&&x.why.length?" — "+x.why.join("; "):"")}${x.test!=null?", test "+x.test:""}`).join("\n");
+  const sys=`Sen ishga qabul tanlovlari bo'yicha shikoyatlarni xolis tahlil qiluvchi yordamchisan. O'zbek tilida (lotin) yoz. Qaror qabul qilmaysan — faqat bosh administratorga yordam berasan.
+Javob tuzilishi:
+**Qisqa mazmun:** 1–2 jumla.
+**Faktlar:** shikoyatchining natijasi va qoidalar bo'yicha 2–4 qator.
+**Baho:** shikoyat asosli ko'rinadimi yoki yo'qmi va nima uchun (taxminiy, ehtiyotkor).
+**Javob loyihasi:** ishtirokchiga yuboriladigan 2–4 jumlali xushmuomala javob.
+Ball formulasi: 0,50·Test + 0,20·Staj + 0,15·Ko'nikmalar + 0,10·Ma'lumot + 0,05·Tillar. Faqat berilgan ma'lumotga tayan, o'ylab topma.`;
+  const ctx=`Vakansiya: ${v.title||"—"} (${orgOf(v.orgId).name})\nTalablar: ma'lumot ${EDU[v.edu]||"—"}+, staj ${v.exp??"—"}+, test ${v.test??"—"}+, majburiy ko'nikmalar: ${(v.req||[]).join(", ")||"—"}\nYakuniy reyting (anonim):\n${snap||"ma'lumot yo'q"}\n\nShikoyatchi kodi: ${a.code}\nShikoyat matni:\n${a.text}`;
+  try{const t=await aiAsk(sys,[{role:"user",text:ctx}],{temp:0.3,max:1200,admin:true});
+    const m=t.match(/\*\*Javob loyihasi:?\*\*:?\s*([\s\S]+)$/i);AI.appeal[id]={text:t,draft:m?m[1].replace(/\*\*/g,"").trim():""}}
+  catch(e){AI.appeal[id]={err:aiErr(e)}}
+  renderAppeals();
+}
+function aiAppealHtml(id){const r=AI.appeal[id];if(!r)return `<button class="btn ghost" type="button" data-aiap="${esc(id)}">✨ AI tahlil va javob loyihasi</button>`;
+  if(r.busy)return `<div class="ai-box"><span class="note">AI shikoyatni tahlil qilmoqda…</span></div>`;
+  if(r.err)return `<div class="ai-box"><span class="err">${esc(r.err)}</span> <button class="linkbtn" type="button" data-aiap="${esc(id)}">Qayta urinish</button></div>`;
+  return `<div class="ai-box ai-out"><div class="btnrow" style="justify-content:space-between"><b>✨ AI tahlili</b><span class="note">maslahat, qaror emas</span></div>${aiMd(r.text)}${r.draft?`<div><button class="btn ghost" type="button" data-aiuse="${esc(id)}">Javob loyihasini qo'yish</button></div>`:""}</div>`}
+
+// ---- Bosh administrator: AI sozlamalari ----
+(function(){
+  const ver=$("#verForm");if(!ver)return;
+  const f=document.createElement("form");f.className="panel stack";f.id="aiForm";
+  f.innerHTML=`<h2>Sun'iy intellekt (Google Gemini)</h2>
+    <p class="note">Bepul kalit: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> → "Create API key". Xavfsizlik uchun Google Cloud'da kalitni faqat sayt manzili (HTTP referrer) va "Generative Language API" bilan cheklang.</p>
+    <div class="row2"><label for="ai-key">API kalit<input id="ai-key" type="password" autocomplete="off" class="mono" placeholder="AIza…"></label>
+    <label for="ai-model">Model (bo'sh qolsa avtomatik)<input id="ai-model" class="mono" placeholder="avtomatik"></label></div>
+    <label class="chk"><input type="checkbox" id="ai-on" checked> AI yordamchi barcha foydalanuvchilar uchun yoqilgan</label>
+    <dl class="kv" id="ai-info"></dl>
+    <div class="btnrow"><button class="btn" type="submit">Saqlash</button><button class="btn ghost" type="button" id="ai-test">Tekshirish</button><span class="note" id="ai-st"></span></div>`;
+  ver.after(f);
+  async function fill(){const c=await aiCfg(true);$("#ai-key").value="";$("#ai-key").placeholder=c.key?"saqlangan: …"+String(c.key).slice(-4)+" (o'zgartirish uchun yangisini yozing)":"AIza…";$("#ai-model").value=c.model||"";$("#ai-on").checked=c.on!==false;
+    let m="";try{m=sessionStorage.getItem("ot-ai-model")||""}catch(e){}
+    $("#ai-info").innerHTML=`<dt>Holat</dt><dd>${c.key?(c.on===false?"Kalit bor, o'chirilgan":"Yoqilgan"):"Kalit kiritilmagan"}</dd><dt>Ishlatilayotgan model</dt><dd class="mono">${esc(c.model||m||"birinchi so'rovda aniqlanadi")}</dd>`}
+  f.addEventListener("submit",async e=>{e.preventDefault();const st=$("#ai-st");const c=await aiCfg(true);
+    const key=$("#ai-key").value.trim()||c.key||"";if(!key){st.textContent="Kalitni kiriting.";return}
+    try{await fs.doc("aicfg/main").set({key,model:$("#ai-model").value.trim(),on:$("#ai-on").checked,at:Date.now(),by:S.uid});try{sessionStorage.removeItem("ot-ai-model")}catch(e2){}
+      await aiCfg(true);await log("ai","AI sozlamalari yangilandi");st.textContent="Saqlandi";fill()}catch(e2){st.textContent="Saqlab bo'lmadi: Firestore qoidalarini yangilang."}});
+  $("#ai-test").onclick=async()=>{const st=$("#ai-st");st.textContent="Tekshirilmoqda…";
+    try{const t=await aiAsk("Bitta qisqa jumlada o'zbek tilida javob ber.",[{role:"user",text:"Salom! Ishlayapsanmi?"}],{max:60,admin:true});st.textContent="Ishlayapti ✓ — "+t.slice(0,80);fill()}catch(e){st.textContent=aiErr(e)}};
+  const obs=new MutationObserver(()=>{if(!$("#v-sozlamalar").hidden&&S.isChief&&!f.dataset.filled){f.dataset.filled="1";fill()}if($("#v-sozlamalar").hidden)delete f.dataset.filled});
+  obs.observe($("#v-sozlamalar"),{attributes:true,attributeFilter:["hidden"]});
+})();
+
+
+// =================== SIDEBAR (mobil menyu) VA MATNLARNI TAHRIRLASH ===================
+$("#sbToggle").onclick=()=>{const o=!$("#hdr").classList.contains("open");$("#hdr").classList.toggle("open",o);$("#sbBack").hidden=!o;$("#sbToggle").setAttribute("aria-expanded",String(o))};
+$("#sbBack").onclick=()=>{$("#hdr").classList.remove("open");$("#sbBack").hidden=true;$("#sbToggle").setAttribute("aria-expanded","false")};
+$("#modes").addEventListener("click",()=>{$("#hdr").classList.remove("open");$("#sbBack").hidden=true});
+const GATE_DEF={title:$("#gateTitle").textContent,lede:$("#gateLede").textContent};
+function applyUi(){const u=S.ui||{};$("#gateTitle").textContent=(u.gateTitle||"").trim()||GATE_DEF.title;$("#gateLede").textContent=(u.gateLede||"").trim()||GATE_DEF.lede}
+fs.doc("config/ui").onSnapshot(sn=>{S.ui=sn.exists?sn.data():{};applyUi();if(S.role&&!$("#hdr").hidden)renderNav(location.hash.slice(1));if(!$("#v-sozlamalar").hidden)uiFill()},()=>{});
+function uiKeys(){
+  const modes=MODES.map(([k,l])=>["m:"+k,l]);
+  const groups=[];[G_APP,G_EMP,G_CEMP,G_CADM].forEach(G=>G.forEach(g=>{if(!groups.some(x=>x[1]===g[0]))groups.push(["g:"+g[0],g[0]])}));
+  const tabs=[];Object.keys(TAB_LABEL).forEach(k=>{if(!tabs.some(x=>x[0]==="t:"+k))tabs.push(["t:"+k,TAB_LABEL[k]])});
+  return {modes,groups,tabs};
+}
+(function(){
+  const ver=$("#verForm");if(!ver)return;
+  const f=document.createElement("form");f.className="panel stack";f.id="uiForm";
+  f.innerHTML=`<h2>Kirish sahifasi va bo'lim nomlari</h2>
+    <p class="note">Bu yerda yozganingiz hamma foydalanuvchilarda darhol o'zgaradi. Bo'sh qoldirilgan maydon asl matnni ishlatadi.</p>
+    <label for="ui-gt">Kirish sahifasi sarlavhasi<input id="ui-gt" maxlength="160"></label>
+    <label for="ui-gl">Kirish sahifasi matni<textarea id="ui-gl" rows="3" maxlength="600"></textarea></label>
+    <details class="stack"><summary style="cursor:pointer;font-weight:600">Qismlar, bo'limlar va sahifa nomlari</summary><div id="ui-labels" class="ui-labels"></div></details>
+    <div class="btnrow"><button class="btn" type="submit">Saqlash</button><button class="btn ghost" type="button" id="ui-reset">Asl holiga qaytarish</button><span class="note" id="ui-st"></span></div>`;
+  ver.before(f);
+  f.addEventListener("submit",async e=>{e.preventDefault();const labels={};f.querySelectorAll("[data-lk]").forEach(i=>{const v=i.value.trim();if(v&&v!==i.placeholder)labels[i.dataset.lk]=v.slice(0,40)});
+    try{await fs.doc("config/ui").set({gateTitle:$("#ui-gt").value.trim().slice(0,160),gateLede:$("#ui-gl").value.trim().slice(0,600),labels,at:Date.now(),by:S.uid});await log("ui","Kirish sahifasi va bo'lim nomlari yangilandi");$("#ui-st").textContent="Saqlandi";toast("Saqlandi")}
+    catch(e2){$("#ui-st").textContent="Saqlab bo'lmadi: ruxsat yo'q yoki internet yo'q."}});
+  $("#ui-reset").onclick=async()=>{const b=$("#ui-reset");if(!b.dataset.sure){b.dataset.sure="1";b.textContent="Tasdiqlash uchun yana bosing";setTimeout(()=>{delete b.dataset.sure;b.textContent="Asl holiga qaytarish"},5000);return}
+    delete b.dataset.sure;b.textContent="Asl holiga qaytarish";try{await fs.doc("config/ui").set({gateTitle:"",gateLede:"",labels:{},at:Date.now(),by:S.uid});await log("ui","Matnlar asl holiga qaytarildi");$("#ui-st").textContent="Asl holiga qaytarildi"}catch(e){$("#ui-st").textContent="Bajarib bo'lmadi"}};
+})();
+function uiFill(){
+  const f=$("#uiForm");if(!f||f.contains(document.activeElement))return;const u=S.ui||{},L=u.labels||{};
+  $("#ui-gt").value=u.gateTitle||"";$("#ui-gt").placeholder=GATE_DEF.title;$("#ui-gl").value=u.gateLede||"";$("#ui-gl").placeholder=GATE_DEF.lede;
+  const K=uiKeys(),row=([k,d])=>`<label>${esc(d)}<input data-lk="${esc(k)}" maxlength="40" placeholder="${esc(d)}" value="${esc(L[k]||"")}"></label>`;
+  $("#ui-labels").innerHTML=`<p class="sb-cap">Qismlar</p><div class="ui-grid">${K.modes.map(row).join("")}</div><p class="sb-cap">Bo'lim guruhlari</p><div class="ui-grid">${K.groups.map(row).join("")}</div><p class="sb-cap">Sahifalar</p><div class="ui-grid">${K.tabs.map(row).join("")}</div>`;
+}
+new MutationObserver(()=>{if(!$("#v-sozlamalar").hidden)uiFill()}).observe($("#v-sozlamalar"),{attributes:true,attributeFilter:["hidden"]});
+
 })();
