@@ -1671,20 +1671,21 @@ async function aiCfg(force){
   return AI.cfg;
 }
 function aiQuota(){try{const k="ot-ai-"+new Date().toISOString().slice(0,10),n=+(localStorage.getItem(k)||0);if(n>=AI_DAY_LIMIT&&S.role!=="chief")return false;localStorage.setItem(k,n+1);return true}catch(e){return true}}
-async function aiPickModel(key,pref){
-  if(pref)return pref;
-  try{const c=sessionStorage.getItem("ot-ai-model");if(c)return c}catch(e){}
+// Mavjud modellar ro'yxati: eng yangi "flash" birinchi, keyin zaxiradagilar (band bo'lsa navbatdagisiga o'tiladi)
+async function aiModels(key,pref){
+  try{const c=JSON.parse(sessionStorage.getItem("ot-ai-models")||"null");if(c&&c.length)return pref?[pref,...c.filter(x=>x!==pref)]:c}catch(e){}
   let names=[];
   try{const r=await fetch(AI_BASE+"models?pageSize=200",{headers:{"x-goog-api-key":key}});const j=await r.json();
     names=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""))}catch(e){}
-  const bad=/image|tts|live|audio|embed|vision|thinking|exp|preview|lite|nano|pro|gemma/i;
+  const bad=/image|tts|live|audio|embed|vision|thinking|exp|nano|robot|computer/i;
   const ver=n=>{const m=n.match(/(\d+(?:\.\d+)?)/);return m?+m[1]:0};
-  let cand=names.filter(n=>/^gemini-[\d.]+-flash$/.test(n)).sort((a,b)=>ver(b)-ver(a));
-  if(!cand.length)cand=names.filter(n=>/flash/i.test(n)&&!bad.test(n)).sort((a,b)=>ver(b)-ver(a));
-  if(!cand.length)cand=names.filter(n=>/flash/i.test(n));
-  const pick=cand[0]||names.find(n=>/^gemini/.test(n))||"gemini-flash-latest";
-  try{sessionStorage.setItem("ot-ai-model",pick)}catch(e){}
-  return pick;
+  const flash=names.filter(n=>/^gemini-[\d.]+-flash$/.test(n)).sort((a,b)=>ver(b)-ver(a));
+  const lite=names.filter(n=>/^gemini-[\d.]+-flash-lite$/.test(n)).sort((a,b)=>ver(b)-ver(a));
+  const other=names.filter(n=>/flash/i.test(n)&&!bad.test(n)&&!/preview/i.test(n)&&!flash.includes(n)&&!lite.includes(n)).sort((a,b)=>ver(b)-ver(a));
+  let list=[...flash.slice(0,3),...lite.slice(0,2),...other.slice(0,2)];
+  if(!list.length)list=["gemini-flash-latest","gemini-flash-lite-latest"];
+  try{sessionStorage.setItem("ot-ai-models",JSON.stringify(list))}catch(e){}
+  return pref?[pref,...list.filter(x=>x!==pref)]:list;
 }
 // Asosiy chaqiruv: system — ko'rsatma, msgs — [{role:"user"|"model",text}]
 async function aiAsk(system,msgs,opt){
@@ -1692,21 +1693,35 @@ async function aiAsk(system,msgs,opt){
   if(!cfg.key)throw new Error("nokey");
   if(cfg.on===false&&!opt.admin)throw new Error("off");
   if(!aiQuota())throw new Error("quota");
-  const model=await aiPickModel(cfg.key,cfg.model);
-  const body={systemInstruction:{parts:[{text:system}]},contents:msgs.map(m=>({role:m.role==="model"?"model":"user",parts:[{text:m.text}]})),
-    generationConfig:{temperature:opt.temp??0.6,maxOutputTokens:opt.max||1500}};
-  const r=await fetch(AI_BASE+"models/"+encodeURIComponent(model)+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":cfg.key},body:JSON.stringify(body)});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok){if(r.status===404){try{sessionStorage.removeItem("ot-ai-model")}catch(e){}}const m=(j.error&&j.error.message)||("HTTP "+r.status);const er=new Error(m);er.status=r.status;throw er}
-  const c=(j.candidates||[])[0];const t=c&&c.content&&(c.content.parts||[]).map(p=>p.text||"").join("").trim();
-  if(!t)throw new Error(c&&c.finishReason==="SAFETY"?"AI bu so'rovga javob bermadi.":"AI bo'sh javob qaytardi.");
-  return t;
+  let models=(await aiModels(cfg.key,cfg.model)).slice(0,5);
+  if(!cfg.model){try{const ok=sessionStorage.getItem("ot-ai-model");if(ok&&models.includes(ok))models=[ok,...models.filter(x=>x!==ok)]}catch(e){}}
+  const body=JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:msgs.map(m=>({role:m.role==="model"?"model":"user",parts:[{text:m.text}]})),
+    generationConfig:{temperature:opt.temp??0.6,maxOutputTokens:opt.max||1500}});
+  let last=null;
+  for(let i=0;i<models.length;i++){
+    const model=models[i];
+    for(let attempt=0;attempt<2;attempt++){
+      let r,j;
+      try{r=await fetch(AI_BASE+"models/"+encodeURIComponent(model)+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":cfg.key},body});j=await r.json().catch(()=>({}))}
+      catch(e){last=e;break}
+      if(r.ok){const c=(j.candidates||[])[0];const t=c&&c.content&&(c.content.parts||[]).map(p=>p.text||"").join("").trim();
+        if(t){AI.used=model;try{sessionStorage.setItem("ot-ai-model",model)}catch(e){}return t}
+        last=new Error(c&&c.finishReason==="SAFETY"?"AI bu so'rovga javob bermadi.":"AI bo'sh javob qaytardi.");break}
+      const m=(j.error&&j.error.message)||("HTTP "+r.status);last=new Error(m);last.status=r.status;
+      const busy=r.status===503||r.status===500||/high demand|overloaded|unavailable/i.test(m);
+      if(busy&&attempt===0){await new Promise(res=>setTimeout(res,1200));continue}   // bir marta qayta urinish
+      if(busy||r.status===404||r.status===429)break;                               // keyingi modelga o'tish
+      throw last;                                                                   // kalit xatosi va h.k.
+    }
+  }
+  throw last||new Error("AI javob bermadi");
 }
 function aiErr(e){const m=(e&&e.message)||"";
   if(m==="nokey")return S.isChief?"AI kaliti kiritilmagan. Administrator → Tizim → Sozlamalar bo'limida Gemini kalitini kiriting.":"AI hali yoqilmagan. Bosh administrator sozlamalarni tugatishi kerak.";
   if(m==="off")return "AI yordamchi bosh administrator tomonidan vaqtincha o'chirilgan.";
   if(m==="quota")return "Bugungi AI so'rovlar limiti tugadi. Ertaga qayta urinib ko'ring.";
   if(e&&e.status===429)return "AI xizmati hozir band (bepul limit). Bir daqiqadan keyin qayta urinib ko'ring.";
+  if(e&&(e.status===503||e.status===500||/high demand|overloaded/i.test(m)))return "Google AI serverlari hozir juda band. Bir necha daqiqadan keyin qayta urinib ko'ring.";
   if(e&&(e.status===400||e.status===403))return "AI kaliti noto'g'ri yoki bu sayt uchun ruxsat berilmagan.";
   if(/Failed to fetch|NetworkError/i.test(m))return "Internet aloqasi yo'q yoki AI xizmatiga ulanib bo'lmadi.";
   return "AI xatosi: "+m.slice(0,160);
@@ -1867,10 +1882,10 @@ function aiAppealHtml(id){const r=AI.appeal[id];if(!r)return `<button class="btn
     $("#ai-info").innerHTML=`<dt>Holat</dt><dd>${c.key?(c.on===false?"Kalit bor, o'chirilgan":"Yoqilgan"):"Kalit kiritilmagan"}</dd><dt>Ishlatilayotgan model</dt><dd class="mono">${esc(c.model||m||"birinchi so'rovda aniqlanadi")}</dd>`}
   f.addEventListener("submit",async e=>{e.preventDefault();const st=$("#ai-st");const c=await aiCfg(true);
     const key=$("#ai-key").value.trim()||c.key||"";if(!key){st.textContent="Kalitni kiriting.";return}
-    try{await fs.doc("aicfg/main").set({key,model:$("#ai-model").value.trim(),on:$("#ai-on").checked,at:Date.now(),by:S.uid});try{sessionStorage.removeItem("ot-ai-model")}catch(e2){}
+    try{await fs.doc("aicfg/main").set({key,model:$("#ai-model").value.trim(),on:$("#ai-on").checked,at:Date.now(),by:S.uid});try{sessionStorage.removeItem("ot-ai-model");sessionStorage.removeItem("ot-ai-models")}catch(e2){}
       await aiCfg(true);await log("ai","AI sozlamalari yangilandi");st.textContent="Saqlandi";fill()}catch(e2){st.textContent="Saqlab bo'lmadi: Firestore qoidalarini yangilang."}});
   $("#ai-test").onclick=async()=>{const st=$("#ai-st");st.textContent="Tekshirilmoqda…";
-    try{const t=await aiAsk("Bitta qisqa jumlada o'zbek tilida javob ber.",[{role:"user",text:"Salom! Ishlayapsanmi?"}],{max:60,admin:true});st.textContent="Ishlayapti ✓ — "+t.slice(0,80);fill()}catch(e){st.textContent=aiErr(e)}};
+    try{const t=await aiAsk("Bitta qisqa jumlada o'zbek tilida javob ber.",[{role:"user",text:"Salom! Ishlayapsanmi?"}],{max:60,admin:true});st.textContent="Ishlayapti ✓ ("+(AI.used||"")+") — "+t.slice(0,80);fill()}catch(e){st.textContent=aiErr(e)}};
   const obs=new MutationObserver(()=>{if(!$("#v-sozlamalar").hidden&&S.isChief&&!f.dataset.filled){f.dataset.filled="1";fill()}if($("#v-sozlamalar").hidden)delete f.dataset.filled});
   obs.observe($("#v-sozlamalar"),{attributes:true,attributeFilter:["hidden"]});
 })();

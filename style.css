@@ -457,3 +457,5 @@ tr.sel{background:color-mix(in srgb,var(--accent) 10%,transparent)!important}
   #hdr.open{z-index:70}
 }
 #nav .sub a{box-shadow:none!important}
+label.chk{flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;text-align:left;font-size:14px}
+label.chk input{flex:none;width:18px;height:18px}
