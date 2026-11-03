@@ -1724,7 +1724,7 @@ function aiErr(e){const m=(e&&e.message)||"";
   if(e&&(e.status===503||e.status===500||/high demand|overloaded/i.test(m)))return "Google AI serverlari hozir juda band. Bir necha daqiqadan keyin qayta urinib ko'ring.";
   if(e&&(e.status===400||e.status===403))return "AI kaliti noto'g'ri yoki bu sayt uchun ruxsat berilmagan.";
   if(/Failed to fetch|NetworkError/i.test(m))return "Internet aloqasi yo'q yoki AI xizmatiga ulanib bo'lmadi.";
-  return "AI xatosi: "+m.slice(0,160);
+  console.warn("AI:",m);return "AI hozir javob bera olmadi. Birozdan keyin qayta urinib ko'ring.";
 }
 // oddiy markdown: **qalin**, ro'yxat, qatorlar
 function aiMd(t){
@@ -1751,22 +1751,28 @@ function aiContext(){
   return `Hozirgi foydalanuvchi roli: ${role}. ${me}\nHozir ochiq vakansiyalar (${live.length} ta):\n${vac||"yo'q"}`;
 }
 
-// ---- 1) AI yordamchi chat (pastki o'ng burchak) ----
+function aiAdminCtx(){
+  const vs=S.vacs||[],open=vs.filter(v=>v.status==="open"),closed=vs.filter(v=>v.status==="closed");
+  const per=open.map(v=>`- ${v.title} (${orgOf(v.orgId).name}): ${applicantsOf(v).length} ariza, ${daysLeft(v)}`).join("\n");
+  const ap=(S.appeals||[]),qn=(S.questions||[]).length,tr=(S.testreqs||[]).filter(r=>r.status==="waiting").length,res=Object.keys(S.results||{}).length;
+  return `\n\nUmumiy statistika (shaxsiy ma'lumotsiz): tashkilotlar ${(S.orgs||[]).length}; vakansiyalar: ochiq ${open.length}, yakunlangan ${closed.length}; ish beruvchilar ${(S.admins||[]).length} (ruxsat kutayotgan ${(S.admins||[]).filter(a=>!a.org).length}); test savollari bankida ${qn} ta savol; test topshirganlar ${res}; testga ruxsat kutayotganlar ${tr}; shikoyatlar ${ap.length} (javob kutayotgan ${ap.filter(a=>a.status==="open").length}).\nOchiq vakansiyalar bo'yicha arizalar:\n${per||"yo'q"}`;
+}
+// ---- 1) AI tahlilchi chat (faqat bosh administrator, Administrator qismida) ----
 (function(){
   const fab=document.createElement("button");fab.type="button";fab.className="ai-fab";fab.id="ai-fab";fab.hidden=true;fab.setAttribute("aria-label","AI yordamchi");
-  fab.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" fill="currentColor"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" fill="currentColor"/></svg><span>AI yordamchi</span>';
+  fab.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" fill="currentColor"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" fill="currentColor"/></svg><span>AI tahlilchi</span>';
   const pane=document.createElement("section");pane.className="ai-pane";pane.id="ai-pane";pane.hidden=true;pane.setAttribute("aria-label","AI yordamchi");
-  pane.innerHTML=`<header><b>AI yordamchi</b><span class="note">Gemini · javoblar xato bo'lishi mumkin</span><button type="button" class="ai-x" id="ai-x" aria-label="Yopish">×</button></header>
+  pane.innerHTML=`<header><b>AI tahlilchi</b><span class="note">Gemini · javoblar xato bo'lishi mumkin</span><button type="button" class="ai-x" id="ai-x" aria-label="Yopish">×</button></header>
     <div class="ai-log" id="ai-log"></div>
     <div class="ai-sugg" id="ai-sugg"></div>
     <form class="ai-form" id="ai-form"><textarea id="ai-in" rows="1" maxlength="1000" placeholder="Savolingizni yozing…"></textarea><button class="btn" type="submit" id="ai-send">Yuborish</button></form>`;
   document.body.append(fab,pane);
   const SUG={applicant:["Menga qaysi vakansiya mos?","Ballim qanday hisoblanadi?","Testga qanday tayyorlanay?","Shikoyatni qanday yozaman?"],
     admin:["Vakansiyani qanday e'lon qilaman?","Tanlovni qachon yakunlayman?","G'olibni nega o'zim tanlay olmayman?"],
-    chief:["Ish beruvchiga qanday ruxsat beraman?","Testni qanday ochaman?","Shikoyatga qanday javob beraman?"]};
+    chief:["Umumiy holatni tahlil qil","Qaysi vakansiyalarga ariza kam?","Test savollari bankini qanday yaxshilayman?","Shikoyatlarni qanday ko'rib chiqaman?"]};
   function draw(){
     const L=$("#ai-log");
-    L.innerHTML=AI.chat.length?AI.chat.map(m=>`<div class="ai-msg ${m.role==="model"?"bot":"me"}">${m.role==="model"?aiMd(m.text):esc(m.text)}</div>`).join(""):`<div class="ai-msg bot"><p>Assalomu alaykum! Men OchiqTanlov yordamchisiman. Vakansiyalar, ariza, test va ball haqida so'rang.</p></div>`;
+    L.innerHTML=AI.chat.length?AI.chat.map(m=>`<div class="ai-msg ${m.role==="model"?"bot":"me"}">${m.role==="model"?aiMd(m.text):esc(m.text)}</div>`).join(""):`<div class="ai-msg bot"><p>Assalomu alaykum! Men bosh administrator uchun tahlil yordamchisiman. Ilovadagi umumiy statistika, test va shikoyatlar bo'yicha savol bering — men faqat tahlil va maslahat beraman, hech narsani o'zgartirmayman.</p></div>`;
     if(AI.busy)L.insertAdjacentHTML("beforeend",`<div class="ai-msg bot ai-typing"><span></span><span></span><span></span></div>`);
     L.scrollTop=L.scrollHeight;
     $("#ai-sugg").innerHTML=AI.chat.length?"":(SUG[S.role]||SUG.applicant).map(q=>`<button type="button" class="chip">${esc(q)}</button>`).join("");
@@ -1775,7 +1781,7 @@ function aiContext(){
   }
   async function send(q){
     q=(q||"").trim();if(!q||AI.busy)return;AI.chat.push({role:"user",text:q});AI.busy=true;draw();
-    try{const t=await aiAsk(AI_RULES+"\n\n"+aiContext(),AI.chat.slice(-12),{temp:0.4,max:900});AI.chat.push({role:"model",text:t})}
+    try{const t=await aiAsk(AI_RULES+"\n\nSen hozir BOSH ADMINISTRATOR bilan gaplashyapsan: faqat tahlil, statistik xulosa va maslahat ber; hech qanday qarorni o'zing qabul qilma.\n\n"+aiContext()+aiAdminCtx(),AI.chat.slice(-12),{temp:0.3,max:1200,admin:true});AI.chat.push({role:"model",text:t})}
     catch(e){AI.chat.push({role:"model",text:aiErr(e)})}
     AI.busy=false;draw();
   }
@@ -1784,62 +1790,70 @@ function aiContext(){
   $("#ai-form").addEventListener("submit",e=>{e.preventDefault();const i=$("#ai-in");send(i.value);i.value=""});
   $("#ai-in").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#ai-form").requestSubmit()}});
   // faqat ichkariga kirganda va test oynasi yopiq bo'lsa ko'rinadi
-  setInterval(()=>{const show=!!S.role&&!!S.uid&&$("#exam").hidden;fab.hidden=!show;if(!show){pane.hidden=true;fab.classList.remove("on")}},700);
+  setInterval(()=>{const show=S.role==="chief"&&S.isChief&&S.elev==="chief"&&$("#exam").hidden;fab.hidden=!show;if(!show){pane.hidden=true;fab.classList.remove("on")}},700);
 })();
 
-// ---- 2) Test savollarini AI bilan yaratish ----
+// ---- 2) Test matnini AI bilan tahlil qilib, test bo'limiga yuklash (faqat bosh administrator) ----
+// AI savol o'ylab topmaydi: administrator kiritgan savol va javoblarni tartibga soladi, xatolarni topadi.
 (function(){
   const tb=$("#tb-text");if(!tb)return;
   const box=document.createElement("div");box.className="ai-box stack";
-  box.innerHTML=`<div class="btnrow" style="justify-content:space-between"><b>✨ AI bilan savol yaratish</b><span class="note">Natijani tekshirib, keyin yuklang</span></div>
-    <div class="row3"><label for="ai-q-topic">Mavzu / lavozim<input id="ai-q-topic" maxlength="200" placeholder="Boshlang'ich sinf o'qituvchisi: pedagogika va metodika"></label>
-    <label for="ai-q-n">Savollar soni<input id="ai-q-n" type="number" min="1" max="20" value="5"></label>
-    <label for="ai-q-lvl">Qiyinlik<select id="ai-q-lvl"><option value="oson">Oson</option><option value="o'rtacha" selected>O'rtacha</option><option value="qiyin">Qiyin</option></select></label></div>
-    <div class="btnrow"><button class="btn ghost" type="button" id="ai-q-go">Savollarni yaratish</button><span class="note" id="ai-q-st"></span></div>`;
+  box.innerHTML=`<div class="btnrow" style="justify-content:space-between"><b>✨ AI yordamida test matnini tayyorlash</b><span class="note">AI savol o'ylab topmaydi — faqat siz kiritgan matnni tahlil qiladi</span></div>
+    <p class="note" style="margin:0">Savollar va javoblarni istalgan ko'rinishda qo'ying (Word, PDF yoki Telegramdan nusxa, javoblar kaliti oxirida bo'lishi ham mumkin). AI ularni tizim formatiga o'tkazadi, to'g'ri javoblarni belgilaydi va xatolarni ko'rsatadi.</p>
+    <label for="ai-q-raw">Test matni va javoblar<textarea id="ai-q-raw" rows="7" maxlength="30000" placeholder="1. 2 000 000 so'mning 15 foizi qancha?&#10;a) 150 000  b) 300 000  c) 30 000&#10;...&#10;Javoblar: 1-b, 2-a"></textarea></label>
+    <div class="btnrow"><button class="btn ghost" type="button" id="ai-q-go">AI bilan tahlil qilish</button><button class="btn" type="button" id="ai-q-load" hidden>Test bo'limiga yuklash</button><span class="note" id="ai-q-st"></span></div>
+    <div id="ai-q-rep" class="ai-rep" hidden></div>`;
   tb.closest("label").before(box);
+  const rep=(out,errs,notes)=>{const r=$("#ai-q-rep");r.hidden=false;
+    r.innerHTML=`<p><b>${out.length} ta savol yuklashga tayyor.</b>${errs.length?` <span class="err">${errs.length} tasida muammo — pastdagi matnda tuzating:</span>`:" Xato topilmadi."}</p>`+
+      (errs.length?`<ul>${errs.slice(0,15).map(e=>`<li>${esc(e)}</li>`).join("")}</ul>`:"")+(notes?`<p class="note">AI izohi: ${esc(notes)}</p>`:"");
+    $("#ai-q-load").hidden=!out.length;$("#ai-q-load").textContent=errs.length?`Xatosizlarini yuklash (${out.length})`:`Test bo'limiga yuklash (${out.length})`};
   $("#ai-q-go").onclick=async()=>{
-    const topic=$("#ai-q-topic").value.trim(),n=Math.max(1,Math.min(20,+$("#ai-q-n").value||5)),lvl=$("#ai-q-lvl").value,st=$("#ai-q-st"),b=$("#ai-q-go");
-    if(topic.length<3){st.textContent="Mavzuni yozing.";return}
-    b.disabled=true;st.textContent="AI savollar tayyorlamoqda…";
-    const sys=`Sen davlat tashkilotiga ishga qabul uchun kasbiy test tuzuvchi mutaxassissan. O'zbek tilida (lotin) yoz.
-Faqat quyidagi formatda javob ber, boshqa hech qanday so'z, sarlavha yoki izoh yozma:
+    const raw=$("#ai-q-raw").value.trim(),st=$("#ai-q-st"),b=$("#ai-q-go");
+    if(raw.length<10){st.textContent="Avval test matnini qo'ying.";return}
+    b.disabled=true;$("#ai-q-load").hidden=true;$("#ai-q-rep").hidden=true;st.textContent="AI matnni tahlil qilmoqda…";
+    const sys=`Sen test matnlarini tartibga soluvchi yordamchisan. Senga administrator kiritgan test savollari va javoblari beriladi.
+Vazifang — ularni AYNAN quyidagi formatga o'tkazish:
 Savol matni?
 A) variant
 B) variant *
 C) variant
-D) variant
 Vaqt: 60
 
-Qoidalar: har savolda 4 ta variant, faqat bittasi to'g'ri va uning oxirida " *" bo'lsin; savollar orasida bitta bo'sh qator; "Vaqt:" — soniyada (30–120, qiyinligiga qarab); savollar amaliy, aniq va bir ma'noli bo'lsin; to'g'ri javob o'rni har xil bo'lsin; siyosiy, diniy yoki shaxsiy mavzular bo'lmasin.`;
+Qat'iy qoidalar:
+- Savol va variantlar matnini o'zgartirma, qisqartirma va yangi savol qo'shma; faqat raqamlash, ortiqcha belgi va bo'sh joylarni tozala, aniq imlo xatosini tuzatishing mumkin.
+- To'g'ri javobni FAQAT matnning o'zidan ol (javoblar kaliti, belgi, qalin yozuv, "to'g'ri javob:" va h.k.). To'g'ri variant oxiriga " *" qo'y. Har savolda faqat bitta "*".
+- Agar matnda to'g'ri javob ko'rsatilmagan bo'lsa, o'zing tanlama: o'sha savolni "*" siz qoldir.
+- Variant harflari A), B), C), D)... ketma-ket bo'lsin. Savollar orasida bitta bo'sh qator.
+- Agar matnda vaqt berilgan bo'lsa "Vaqt: N" qatorini yoz, aks holda yozma.
+- Eng oxirida alohida qatorda "IZOH:" so'zidan keyin topilgan muammolarni qisqa yoz (masalan: "5-savolda javob ko'rsatilmagan", "8-savolda 2 ta to'g'ri javob bor edi"). Muammo bo'lmasa "IZOH: yo'q".
+Boshqa hech narsa yozma.`;
     try{
-      let t=await aiAsk(sys,[{role:"user",text:`Mavzu: ${topic}\nSavollar soni: ${n}\nQiyinlik: ${lvl}`}],{temp:0.7,max:3500,admin:true});
-      t=t.replace(/^```[a-z]*\n?|```$/gim,"").trim();
-      const {out,errs}=parseBulk(t,+$("#tb-sec").value||60);
-      tb.value=(tb.value.trim()?tb.value.trim()+"\n\n":"")+t;
-      st.textContent=`${out.length} ta savol tayyor${errs.length?`, ${errs.length} tasida xato — tuzatib yuklang`:""}. Pastdagi matnni tekshirib, "Tekshirib yuklash"ni bosing.`;
-      log("ai",`AI ${out.length} ta test savoli yaratdi: ${topic}`).catch(()=>{});
+      let t=await aiAsk(sys,[{role:"user",text:raw.slice(0,30000)}],{temp:0.1,max:8000,admin:true});
+      t=t.replace(/^```[a-z]*\n?|```\s*$/gim,"").trim();
+      let notes="";const im=t.match(/\n?\s*IZOH:\s*([\s\S]*)$/i);if(im){notes=im[1].trim();t=t.slice(0,im.index).trim();if(/^yo['ʻ’`]?q\.?$/i.test(notes))notes=""}
+      tb.value=t;const {out,errs}=parseBulk(t,+$("#tb-sec").value||60);
+      rep(out,errs,notes);st.textContent="Natijani pastdagi oynada ko'rib chiqing.";
+      tb.closest("details").open=true;
     }catch(e){st.textContent=aiErr(e)}
     b.disabled=false;
   };
+  tb.addEventListener("input",()=>{if(!$("#ai-q-rep").hidden){const {out,errs}=parseBulk(tb.value,+$("#tb-sec").value||60);rep(out,errs,"")}});
+  $("#ai-q-load").onclick=async()=>{
+    const {out}=parseBulk(tb.value,+$("#tb-sec").value||60);if(!out.length)return;
+    // faqat xatosiz bloklarni qoldirib, mavjud yuklash tugmasi orqali yuklaymiz
+    tb.value=out.map(q=>[q.q,...q.o.map((o,i)=>String.fromCharCode(65+i)+") "+o+(i===q.a?" *":"")),"Vaqt: "+q.sec].join("\n")).join("\n\n");
+    $("#ai-q-load").hidden=true;$("#ai-q-rep").hidden=true;$("#ai-q-raw").value="";$("#ai-q-st").textContent="";
+    $("#tb-btn").click();log("ai",`AI yordamida ${out.length} ta savol tayyorlandi`).catch(()=>{});
+  };
 })();
 
-// ---- 3) Vakansiya tavsifini AI bilan yozish ----
+// ---- 3) Vakansiya tavsifi maydoni ----
 (function(){
   const t=$("#v-title");if(!t)return;
-  const wrap=document.createElement("div");wrap.className="stack";wrap.style.gap="6px";
-  wrap.innerHTML=`<label for="v-desc">Lavozim tavsifi va vazifalar (ixtiyoriy)<textarea id="v-desc" rows="5" maxlength="1500" placeholder="Asosiy vazifalar, ish sharoiti, ish vaqti…"></textarea></label>
-    <div class="btnrow"><button class="btn ghost" type="button" id="ai-v-go">✨ AI bilan yozish</button><span class="note" id="ai-v-st"></span></div>`;
+  const wrap=document.createElement("label");wrap.setAttribute("for","v-desc");
+  wrap.innerHTML=`Lavozim tavsifi va vazifalar (ixtiyoriy)<textarea id="v-desc" rows="5" maxlength="1500" placeholder="Asosiy vazifalar, ish sharoiti, ish vaqti…"></textarea>`;
   $("#v-salary").closest("label").after(wrap);
-  $("#ai-v-go").onclick=async()=>{
-    const title=t.value.trim(),st=$("#ai-v-st"),b=$("#ai-v-go");if(!title){st.textContent="Avval lavozim nomini yozing.";return}
-    const o=S.orgs.find(x=>x.id===$("#v-org").value)||{};b.disabled=true;st.textContent="AI yozmoqda…";
-    const sys=`Sen davlat tashkilotlari uchun vakansiya e'lonlarini yozuvchi kadrlar mutaxassisisan. O'zbek tilida (lotin), rasmiy va sodda uslubda yoz.
-Faqat e'lon matnini qaytar (sarlavhasiz, 600–1200 belgi): 1) qisqa kirish jumlasi; 2) "Asosiy vazifalar:" — 4–6 ta qator "- " bilan; 3) "Ish sharoiti:" — 2–3 qator. Maosh, talab va muddatni takrorlama — ular alohida ko'rsatiladi. Kamsituvchi talab (yosh, jins, millat, tashqi ko'rinish) yozma. O'ylab topilgan raqam yoki imtiyoz yozma.`;
-    try{const r=await aiAsk(sys,[{role:"user",text:`Lavozim: ${title}\nTashkilot: ${o.name||"—"}\nSoha: ${$("#v-sector").value}\nHudud: ${$("#v-region").value}\nEng kam ma'lumot: ${$("#v-edu").selectedOptions[0]?$("#v-edu").selectedOptions[0].textContent:""}\nStaj: ${$("#v-exp").value} yil\nMutaxassisliklar: ${draftV.specs.join(", ")||"—"}\nKo'nikmalar: ${draftV.req.concat(draftV.pref).join(", ")||"—"}`}],{temp:0.6,max:1200,admin:true});
-      $("#v-desc").value=r.replace(/\*\*/g,"").slice(0,1500);st.textContent="Tayyor. Kerak bo'lsa tahrirlang.";}
-    catch(e){st.textContent=aiErr(e)}
-    b.disabled=false;
-  };
 })();
 
 // ---- 4) Shikoyatni AI bilan tahlil qilish (bosh administrator) ----
@@ -1870,7 +1884,7 @@ function aiAppealHtml(id){const r=AI.appeal[id];if(!r)return `<button class="btn
   const ver=$("#verForm");if(!ver)return;
   const f=document.createElement("form");f.className="panel stack";f.id="aiForm";
   f.innerHTML=`<h2>Sun'iy intellekt (Google Gemini)</h2>
-    <p class="note">Bepul kalit: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> → "Create API key". Xavfsizlik uchun Google Cloud'da kalitni faqat sayt manzili (HTTP referrer) va "Generative Language API" bilan cheklang.</p>
+    <p class="note">Bepul kalit: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> → "Create API key". Kalitni faqat bosh administrator ko'radi. AI faqat Administrator qismida: tahlil va test matnini tayyorlash uchun ishlaydi.</p>
     <div class="row2"><label for="ai-key">API kalit<input id="ai-key" type="password" autocomplete="off" class="mono" placeholder="AIza…"></label>
     <label for="ai-model">Model (bo'sh qolsa avtomatik)<input id="ai-model" class="mono" placeholder="avtomatik"></label></div>
     <label class="chk"><input type="checkbox" id="ai-on" checked> AI yordamchi barcha foydalanuvchilar uchun yoqilgan</label>
