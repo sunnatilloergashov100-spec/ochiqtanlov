@@ -1,6 +1,6 @@
 (function(){
 // Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
-{const BUILD=12,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+{const BUILD=13,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
   if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
   document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
@@ -14,7 +14,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=12; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=13; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
@@ -85,10 +85,11 @@ const APP_TABS=[["vakansiyalar","Vakansiyalar"],["arizalar","Arizalarim"],["prof
 const EMP_TABS=[["boshqaruv","Boshqaruv"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
 const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"],["ish-beruvchilar","Ish beruvchilar"],["testlar","Test"]];
 const CHIEF_ADM=[["boshqaruv","Boshqaruv"],["tashkilotlar","Tashkilotlar"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["sozlamalar","Sozlamalar"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
+APP_TABS.push(["chat","Xabarlar"]);EMP_TABS.push(["chat","Xabarlar"]);CHIEF_ADM.push(["chat","Xabarlar"]);
 APP_TABS.push(["sozlamalarim","Sozlamalar"],["kutish","Ish beruvchi so'rovi"]);EMP_TABS.push(["sozlamalarim","Sozlamalar"]);CHIEF_ADM.push(["sozlamalarim","Sozlamalar"]);
-const ALL_VIEWS=["kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
+const ALL_VIEWS=["chat","kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
 // Ilova uch qismga bo'linadi; har qism ichida bo'limlar guruhlangan
-const MODES=[["applicant","Bo'sh ish o'rinlari"],["admin","Ish beruvchi tashkilot"],["chief","Administrator"],["settings","Sozlamalar"]];
+const MODES=[["applicant","Bo'sh ish o'rinlari"],["admin","Ish beruvchi tashkilot"],["chief","Administrator"],["chat","Xabarlar"],["settings","Sozlamalar"]];
 const GEAR='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
 const G_APP=[["Vakansiyalar",["vakansiyalar","arizalar"]],["Profil va test",["profil"]],["Ma'lumot",["statistika","qoidalar","haqida"]]];
 const G_EMP=[["Vakansiyalar",["boshqaruv","boshqaruv-vak","arizalar-adm","natijalar"]],["Shikoyatlar",["shikoyatlar"]],["Hisobot",["statistika","jurnal"]],["Ma'lumot",["qoidalar","haqida"]]];
@@ -97,22 +98,22 @@ const G_CADM=[["Monitoring",["monitoring","kirishlar","foydalanuvchilar"]],["Tes
 const G_SET=[["Sozlamalar",["sozlamalarim"]]];
 const TAB_LABEL={...Object.fromEntries(APP_TABS.concat(EMP_TABS,CHIEF_TABS,CHIEF_ADM)),sozlamalar:"Tizim sozlamalari"};
 const inG=(G,t)=>G.some(g=>g[1].includes(t));
-function curMode(t){if(t==="sozlamalarim")return "settings";if(t==="kutish")return "admin";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
-function groupsFor(t){if(t==="sozlamalarim")return G_SET;if(t==="kutish")return [["Ish beruvchi so'rovi",["kutish"]]];if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
+function curMode(t){if(t==="chat")return "chat";if(t==="sozlamalarim")return "settings";if(t==="kutish")return "admin";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
+function groupsFor(t){if(t==="chat")return [["Xabarlar",["chat"]]];if(t==="sozlamalarim")return G_SET;if(t==="kutish")return [["Ish beruvchi so'rovi",["kutish"]]];if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
 // Bo'lim nomlari: bosh administrator config/ui ichida o'zgartira oladi
 const LBL=(k,d)=>{const L=((S.ui||{}).labels)||{};return (L[k]&&String(L[k]).trim())||d};
-const MODE_ICON={applicant:'<path d="M11 4a7 7 0 1 0 4.2 12.6L20 21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',admin:'<path d="M4 20V8l8-4 8 4v12M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',chief:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>'};
+const MODE_ICON={chat:'<path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',applicant:'<path d="M11 4a7 7 0 1 0 4.2 12.6L20 21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',admin:'<path d="M4 20V8l8-4 8 4v12M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',chief:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>'};
 function renderNav(t){
   const m=curMode(t);
   $("#modes").innerHTML=MODES.map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===m}"${k==="settings"?` class="gear"`:""}>${k==="settings"?GEAR:`<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${MODE_ICON[k]}</svg>`}<span>${esc(LBL("m:"+k,l))}</span>${k==="admin"&&S.isChief&&(S.admins||[]).some(a=>!a.org)?` <span class="bdg">${(S.admins||[]).filter(a=>!a.org).length}</span>`:""}</button>`).join("");
   const G=groupsFor(t),gi=Math.max(0,G.findIndex(g=>g[1].includes(t)));
-  const hide=m==="settings"||t==="kutish";$("#nav").hidden=hide;$("#sbNavCap").hidden=hide;
+  const hide=m==="settings"||m==="chat"||t==="kutish";$("#nav").hidden=hide;$("#sbNavCap").hidden=hide;
   const pend=S.isChief?(S.admins||[]).filter(a=>!a.org).length:0,bdg=n=>n?` <span class="bdg">${n}</span>`:"";
   $("#nav").innerHTML=`<div class="grp">${G.map((g,i)=>{const on=i===gi;
     return `<a class="g" href="#${g[1][0]}" ${on?'aria-current="page"':""}>${esc(LBL("g:"+g[0],g[0]))}${g[1].includes("ish-beruvchilar")?bdg(pend):""}</a>`+
       (on&&g[1].length>1?`<div class="sub">${g[1].map(k=>`<a href="#${k}" ${k===t?'aria-current="page"':""}>${esc(LBL("t:"+k,TAB_LABEL[k]))}${k==="ish-beruvchilar"?bdg(pend):""}</a>`).join("")}</div>`:"")}).join("")}</div>`;
   const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||S.login||"";
-  $("#sbProf").innerHTML=`<span class="sb-ava">${esc((nm.trim()[0]||"?").toUpperCase())}</span><span class="sb-pt"><b>${esc(nm)}</b><small>${esc(S.login||"")} · ${esc(ROLE_UZ[S.role]||"")}</small></span>`;
+  const my=(window.CHAT&&CHAT.pub[S.uid])||{};$("#sbProf").innerHTML=`<span class="sb-ava">${my.av?`<img src="${esc(my.av)}" alt="">`:esc(((my.name||nm).trim()[0]||"?").toUpperCase())}</span><span class="sb-pt"><b>${esc(my.name||nm)}</b><small>${esc(S.login||"")} · ${esc(ROLE_UZ[S.role]||"")}</small></span>`;
   document.querySelectorAll("section.section").forEach(sec=>{const k=sec.id.slice(2),h=sec.querySelector("h1");if(!h)return;const L=(((S.ui||{}).labels||{})["t:"+k]||"").trim();
     if(L){if(!h.dataset.ov)h.dataset.orig=h.textContent;h.dataset.ov="1";h.textContent=L}else if(h.dataset.ov){h.textContent=h.dataset.orig;delete h.dataset.ov}});
 }
@@ -248,6 +249,7 @@ $("#modes").addEventListener("click",e=>{
   const b=e.target.closest("button[data-mode]");if(!b)return;const m=b.dataset.mode;
   const go=(r,h)=>{if(h)history.replaceState(null,"","#"+h);remember(r);if(S.role!==r){setRole(r);track("login",r)}else route()};
   if(m==="settings")return go(S.role,"sozlamalarim");
+  if(m==="chat")return go(S.role,"chat");
   if(m==="applicant"){S.elev=null;return go("applicant","vakansiyalar")}
   // Ish beruvchi: kod yo'q — so'rov yuboradi, bosh administrator ruxsat bergach kiradi
   if(m==="admin"&&!S.isChief){S.elev=null;if((S.adminDoc||{}).org)return go("admin","boshqaruv");return go("applicant","kutish")}
@@ -525,6 +527,7 @@ function render(){
   if(t==="testlar")renderTestAdmin();
   if(t==="qoidalar"){}
   if(t==="sozlamalarim")renderMySettings();
+  if(t==="chat")renderChat();
   if(t==="kutish")renderRequest();
 }
 // ---------- ISH BERUVCHI SO'ROVI (kodsiz; bosh administrator ruxsat beradi) ----------
@@ -1841,7 +1844,7 @@ function aiAdminCtx(){
   $("#ai-form").addEventListener("submit",e=>{e.preventDefault();const i=$("#ai-in");send(i.value);i.value=""});
   $("#ai-in").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#ai-form").requestSubmit()}});
   // faqat ichkariga kirganda va test oynasi yopiq bo'lsa ko'rinadi
-  setInterval(()=>{const show=S.role==="chief"&&S.isChief&&S.elev==="chief"&&$("#exam").hidden;fab.hidden=!show;if(!show){pane.hidden=true;fab.classList.remove("on")}},700);
+  setInterval(()=>{const show=S.role==="chief"&&S.isChief&&S.elev==="chief"&&$("#exam").hidden&&location.hash!=="#chat";fab.hidden=!show;if(!show){pane.hidden=true;fab.classList.remove("on")}},700);
 })();
 
 // ---- 2) Test matnini AI bilan tahlil qilib, test bo'limiga yuklash (faqat bosh administrator) ----
@@ -2029,5 +2032,269 @@ $("#codeChange").addEventListener("submit",async e=>{
   catch(e2){fail("O'zgartirib bo'lmadi: Firestore qoidalarini yangilang (ilova egasi qoidasi).")}
   b.disabled=false;
 });
+
+
+// =================== XABARLAR: shaxsiy chat, guruh, kanal (Telegram uslubida) ===================
+// Ma'lumotlar: pub/{uid} — ochiq profil (ism, @nom, bio, avatar); usernames/{nom} — nom bandligi;
+// chats/{cid} — suhbat; chats/{cid}/msgs/{mid} — xabarlar; chatfiles/{id} — rasm/fayl (to'liq nusxa).
+const CHAT={pub:{},chats:[],cur:null,msgs:[],filter:"all",view:"list",unsubList:null,unsubMsgs:null,uid:null,allPub:null,files:{},sending:false,panel:null,pubUnsub:null};
+window.CHAT=CHAT;
+const CH_MAX_FILE=700*1024;           // fayl: 700 KB gacha (Firestore hujjat chegarasi 1 MB)
+const UN_RE=/^[a-z][a-z0-9_]{4,31}$/;
+const chReadKey=cid=>"ot-chr-"+S.uid+"-"+cid;
+function chRead(cid){try{return +localStorage.getItem(chReadKey(cid))||0}catch(e){return 0}}
+function chMarkRead(cid,at){try{localStorage.setItem(chReadKey(cid),String(at||Date.now()))}catch(e){}}
+function chTime(t){const d=new Date(t),n=new Date();if(d.toDateString()===n.toDateString())return d.toTimeString().slice(0,5);const y=new Date(n-864e5);if(d.toDateString()===y.toDateString())return "kecha";return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")}
+function chDay(t){const d=new Date(t),n=new Date();if(d.toDateString()===n.toDateString())return "Bugun";const y=new Date(n-864e5);if(d.toDateString()===y.toDateString())return "Kecha";return dt(t).slice(0,10)}
+function chSize(n){return n>1048576?(Math.round(n/104857.6)/10)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
+const CH_COLORS=["#E17076","#7BC862","#E5A64E","#65AADD","#A695E7","#EE7AAE","#6EC9CB","#FAA774"];
+function chColor(id){let h=0;for(const c of String(id||""))h=(h*31+c.charCodeAt(0))|0;return CH_COLORS[Math.abs(h)%CH_COLORS.length]}
+function chAva(o,size){size=size||44;const t=(o&&(o.title||o.name))||"?",id=(o&&(o.id||o.uid))||t;
+  return o&&o.av?`<span class="ch-ava" style="width:${size}px;height:${size}px"><img src="${esc(o.av)}" alt=""></span>`:`<span class="ch-ava" style="width:${size}px;height:${size}px;background:${chColor(id)};font-size:${Math.round(size*.4)}px">${esc((t.trim()[0]||"?").toUpperCase())}</span>`}
+// rasmni siqish (canvas)
+function chImg(file,max,q){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{let w=im.naturalWidth,h=im.naturalHeight;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
+  const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);URL.revokeObjectURL(u);let qq=q,d=c.toDataURL("image/jpeg",qq);while(d.length>950000&&qq>0.35){qq-=0.1;d=c.toDataURL("image/jpeg",qq)}res({data:d,w,h})};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("img"))};im.src=u})}
+function chSquare(file,size){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const s=Math.min(im.naturalWidth,im.naturalHeight),c=document.createElement("canvas");c.width=c.height=size;
+  c.getContext("2d").drawImage(im,(im.naturalWidth-s)/2,(im.naturalHeight-s)/2,s,s,0,0,size,size);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",0.82))};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("img"))};im.src=u})}
+
+// ---- ochiq profillar ----
+async function chPub(uid){if(CHAT.pub[uid])return CHAT.pub[uid];try{const g=await fs.doc("pub/"+uid).get();CHAT.pub[uid]=g.exists?{uid,...g.data()}:{uid,name:(S.contacts[uid]||{}).name||"Foydalanuvchi"}}catch(e){CHAT.pub[uid]={uid,name:"Foydalanuvchi"}}return CHAT.pub[uid]}
+async function chAllPub(force){if(CHAT.allPub&&!force)return CHAT.allPub;try{const q=await fs.collection("pub").get();CHAT.allPub=q.docs.map(d=>({uid:d.id,...d.data()}));CHAT.allPub.forEach(p=>CHAT.pub[p.uid]=p)}catch(e){CHAT.allPub=[]}return CHAT.allPub}
+// kirgan foydalanuvchi uchun ochiq profil yo'q bo'lsa — yaratamiz
+async function chEnsureMe(){
+  if(!S.uid)return;if(CHAT.pubUnsub&&CHAT.uid===S.uid)return;
+  if(CHAT.pubUnsub)CHAT.pubUnsub();CHAT.uid=S.uid;
+  CHAT.pubUnsub=fs.doc("pub/"+S.uid).onSnapshot(async sn=>{
+    if(!sn.exists){const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||S.login||"Foydalanuvchi";
+      try{await fs.doc("pub/"+S.uid).set({name:nm,username:"",bio:"",av:"",at:Date.now()})}catch(e){}return}
+    CHAT.pub[S.uid]={uid:S.uid,...sn.data()};if(!$("#hdr").hidden&&S.role)renderNav(location.hash.slice(1));if(!$("#v-sozlamalarim").hidden)tgFill()},()=>{});
+  chListen();
+}
+// ---- chatlar ro'yxati ----
+function chListen(){
+  if(CHAT.unsubList)CHAT.unsubList();
+  const q=fs.collection("chats").where("members","array-contains",S.uid);
+  CHAT.unsubList=q.onSnapshot(sn=>{
+    const prev=CHAT.chats;CHAT.chats=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.lastAt||b.createdAt||0)-(a.lastAt||a.createdAt||0));
+    // yangi xabar bildirishnomasi
+    CHAT.chats.forEach(c=>{const p=prev.find(x=>x.id===c.id);if(p&&c.lastAt>(p.lastAt||0)&&c.last&&c.last.by!==S.uid&&!(location.hash==="#chat"&&CHAT.cur===c.id&&document.visibilityState==="visible"))toast("✉ "+(c.type==="dm"?(c.last.name||"Yangi xabar"):c.title)+": "+String(c.last.t||"").slice(0,60))});
+    chBadge();CHAT.chats.filter(c=>c.type==="dm").forEach(c=>{const o=c.members.find(m=>m!==S.uid);if(o&&!CHAT.pub[o])chPub(o).then(()=>{if(location.hash==="#chat")chDrawList()})});
+    if(location.hash==="#chat"){chDrawList();if(CHAT.cur&&!CHAT.chats.some(c=>c.id===CHAT.cur)&&!CHAT.peek){CHAT.cur=null;chDrawMain()}else if(CHAT.cur)chDrawHead()}
+  },e=>console.warn("chats",e));
+}
+function chUnread(c){return c.lastAt&&c.last&&c.last.by!==S.uid&&c.lastAt>chRead(c.id)}
+function chBadge(){const n=CHAT.chats.filter(chUnread).length,b=document.querySelector('#modes button[data-mode="chat"]');if(!b)return;let x=b.querySelector(".bdg");if(n){if(!x){x=document.createElement("span");x.className="bdg";b.append(x)}x.textContent=n}else if(x)x.remove()}
+function chTitle(c){if(c.type!=="dm")return c.title||"Suhbat";const o=c.members.find(m=>m!==S.uid)||S.uid,p=CHAT.pub[o];return p?(p.name||"Foydalanuvchi"):"…"}
+function chAvaOf(c,size){if(c.type!=="dm")return chAva({id:c.id,title:c.title,av:c.av},size);const o=c.members.find(m=>m!==S.uid)||S.uid,p=CHAT.pub[o]||{uid:o,name:"?"};return chAva({...p,id:o},size)}
+const CH_TYPE={dm:"",group:"👥 ",channel:"📢 "};
+function chDrawList(){
+  const box=$("#ch-items");if(!box)return;const q=$("#ch-q").value.trim().toLowerCase(),f=CHAT.filter;
+  const L=CHAT.chats.filter(c=>(f==="all"||c.type===f)&&(!q||chTitle(c).toLowerCase().includes(q)));
+  box.innerHTML=L.length?L.map(c=>{const u=chUnread(c),last=c.last||{},who=c.type==="group"&&last.by&&last.by!==S.uid?(last.name||"").split(" ")[0]+": ":last.by===S.uid?"Siz: ":"";
+    const prev=last.kind==="img"?"🖼 Rasm":last.kind==="file"?"📎 "+(last.t||"Fayl"):(last.t||(c.type==="channel"?"Kanal yaratildi":c.type==="group"?"Guruh yaratildi":"Suhbat boshlandi"));
+    return `<button type="button" class="ch-item${CHAT.cur===c.id?" on":""}" data-cid="${esc(c.id)}">${chAvaOf(c,48)}<span class="ch-it"><span class="ch-r1"><b>${CH_TYPE[c.type]||""}${esc(chTitle(c))}</b><small>${c.lastAt?chTime(c.lastAt):""}</small></span><span class="ch-r2"><span class="ch-prev">${esc(who+prev)}</span>${u?`<span class="ch-dot">●</span>`:""}</span></span></button>`}).join("")
+    :`<div class="ch-empty"><p>${q?"Hech narsa topilmadi.":"Hali suhbat yo'q."}</p><button class="btn" type="button" data-act="new">Yangi suhbat boshlash</button></div>`;
+  box.querySelectorAll("[data-cid]").forEach(b=>b.onclick=()=>chOpen(b.dataset.cid));
+  const nb=box.querySelector('[data-act="new"]');if(nb)nb.onclick=()=>chPanel("new");
+}
+// ---- suhbatni ochish ----
+function chOpen(cid,peek){
+  if(CHAT.unsubMsgs){CHAT.unsubMsgs();CHAT.unsubMsgs=null}
+  CHAT.cur=cid;CHAT.peek=peek||null;CHAT.panel=null;CHAT.msgs=[];$("#chat").classList.add("open");chDrawList();chDrawMain();
+  let ref=fs.collection("chats/"+cid+"/msgs");if(typeof ref.orderBy==="function")ref=ref.orderBy("at","desc").limit(200);
+  CHAT.unsubMsgs=ref.onSnapshot(sn=>{CHAT.msgs=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.at||0)-(b.at||0));
+    CHAT.msgs.forEach(m=>{if(m.by&&!CHAT.pub[m.by])chPub(m.by).then(()=>chDrawMsgs())});
+    chDrawMsgs();const c=chCur();if(c&&location.hash==="#chat"&&document.visibilityState==="visible"){chMarkRead(cid,c.lastAt||Date.now());chBadge();chDrawList()}},e=>{console.warn("msgs",e);chDrawMsgs("Xabarlarni o'qib bo'lmadi.")});
+}
+function chCur(){return CHAT.chats.find(c=>c.id===CHAT.cur)||CHAT.peek}
+const isChAdmin=c=>c&&(c.admins||[]).includes(S.uid);
+function chDrawMain(){
+  const m=$("#ch-main");if(!m)return;
+  if(CHAT.panel)return chDrawPanel();
+  const c=chCur();
+  if(!c){m.innerHTML=`<div class="ch-blank"><div class="ch-blank-ico">💬</div><h2>Xabarlar</h2><p class="note">Suhbatni tanlang yoki yangisini boshlang: shaxsiy xabar, guruh yoki kanal.</p><button class="btn" type="button" id="ch-b-new">Yangi suhbat</button></div>`;$("#ch-b-new").onclick=()=>chPanel("new");return}
+  const canWrite=c.type!=="channel"||isChAdmin(c),member=(c.members||[]).includes(S.uid);
+  m.innerHTML=`<header class="ch-head" id="ch-head"></header><div class="ch-msgs" id="ch-msgs"></div>
+    ${member&&canWrite?`<form class="ch-comp" id="ch-comp"><button type="button" class="ch-ic" id="ch-att" title="Rasm yoki fayl" aria-label="Rasm yoki fayl biriktirish"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7L10 17.7a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><textarea id="ch-in" rows="1" maxlength="4000" placeholder="Xabar yozing…"></textarea><button class="ch-send" type="submit" id="ch-send" aria-label="Yuborish"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 11l18-8-8 18-2-7z" fill="currentColor"/></svg></button></form>`
+      :member?`<div class="ch-ro">📢 Bu kanal — faqat administratorlar yozadi.<button class="linkbtn" type="button" id="ch-leave2">Kanaldan chiqish</button></div>`
+      :`<div class="ch-ro"><button class="btn" type="button" id="ch-join">Kanalga qo'shilish</button></div>`}`;
+  chDrawHead();chDrawMsgs();
+  const comp=$("#ch-comp");if(comp){const ta=$("#ch-in");
+    comp.addEventListener("submit",e=>{e.preventDefault();chSendText()});
+    ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!/Android|iPhone/i.test(navigator.userAgent)){e.preventDefault();chSendText()}});
+    ta.addEventListener("input",()=>{ta.style.height="auto";ta.style.height=Math.min(140,ta.scrollHeight)+"px"});
+    $("#ch-att").onclick=()=>$("#ch-file").click();setTimeout(()=>ta.focus(),30)}
+  const j=$("#ch-join");if(j)j.onclick=()=>chJoin(c);
+  const l2=$("#ch-leave2");if(l2)l2.onclick=()=>chLeave(c);
+}
+function chDrawHead(){const h=$("#ch-head"),c=chCur();if(!h||!c)return;
+  let sub="";if(c.type==="dm"){const o=c.members.find(x=>x!==S.uid)||S.uid,p=CHAT.pub[o]||{};sub=p.username?"@"+p.username:(p.bio||"shaxsiy suhbat")}
+  else sub=c.type==="channel"?`kanal · ${(c.members||[]).length} obunachi`:`${(c.members||[]).length} a'zo`;
+  h.innerHTML=`<button class="ch-ic ch-back" type="button" id="ch-back" aria-label="Orqaga">←</button>${chAvaOf(c,42)}<div class="ch-ht"><b>${CH_TYPE[c.type]||""}${esc(chTitle(c))}</b><small>${esc(sub)}</small></div><button class="ch-ic" type="button" id="ch-info" aria-label="Ma'lumot">ⓘ</button>`;
+  $("#ch-back").onclick=()=>{$("#chat").classList.remove("open");CHAT.cur=null;if(CHAT.unsubMsgs){CHAT.unsubMsgs();CHAT.unsubMsgs=null}chDrawList();chDrawMain()};
+  $("#ch-info").onclick=()=>chPanel("info");
+}
+function chDrawMsgs(err){
+  const box=$("#ch-msgs"),c=chCur();if(!box||!c)return;const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<80;
+  if(err){box.innerHTML=`<div class="ch-sys">${esc(err)}</div>`;return}
+  let day="",html="",prevBy=null;
+  if(!CHAT.msgs.length)html=`<div class="ch-sys">${c.type==="channel"?"Kanalda hali post yo'q.":"Hali xabar yo'q. Birinchi bo'lib yozing!"}</div>`;
+  CHAT.msgs.forEach(m=>{const d=chDay(m.at||Date.now());if(d!==day){day=d;html+=`<div class="ch-day"><span>${esc(d)}</span></div>`;prevBy=null}
+    const me=m.by===S.uid,p=CHAT.pub[m.by]||{name:m.name||"…"},showName=c.type==="group"&&!me&&prevBy!==m.by;prevBy=m.by;
+    let body="";
+    if(m.kind==="img")body=`<button type="button" class="ch-img" data-fid="${esc(m.fid||"")}" aria-label="Rasmni kattalashtirish"><img src="${esc(m.thumb||"")}" alt="Rasm" loading="lazy" style="aspect-ratio:${m.w&&m.h?m.w+"/"+m.h:"4/3"}"></button>`;
+    if(m.kind==="file")body=`<button type="button" class="ch-fileb" data-fid="${esc(m.fid||"")}" data-fname="${esc(m.fname||"fayl")}"><span class="ch-fico">📄</span><span><b>${esc(m.fname||"Fayl")}</b><small>${chSize(m.fsize||0)} · yuklab olish</small></span></button>`;
+    if(m.t&&m.kind!=="file")body+=`<div class="ch-txt">${chLinks(m.t)}</div>`;
+    const canDel=me||isChAdmin(c);
+    html+=`<div class="ch-row${me?" me":""}">${!me&&c.type==="group"?(showName?`<span class="ch-mava">${chAva({...p,id:m.by},32)}</span>`:`<span class="ch-mava"></span>`):""}<div class="ch-bub${m.kind==="img"?" media":""}">${showName?`<b class="ch-name" style="color:${chColor(m.by)}">${esc(p.name||"")}</b>`:""}${c.type==="channel"&&!me?`<b class="ch-name" style="color:${chColor(c.id)}">${esc(c.title)}</b>`:""}${body}<span class="ch-meta">${(m.at?new Date(m.at).toTimeString().slice(0,5):"")}${me?" ✓":""}${canDel?`<button type="button" class="ch-del" data-mid="${esc(m.id)}" aria-label="O'chirish" title="O'chirish">×</button>`:""}</span></div></div>`});
+  box.innerHTML=html;
+  if(atBottom||box.dataset.cid!==c.id){box.scrollTop=box.scrollHeight;box.dataset.cid=c.id}
+  box.querySelectorAll(".ch-img").forEach(b=>b.onclick=()=>chShowImg(b.dataset.fid,b.querySelector("img").src));
+  box.querySelectorAll(".ch-fileb").forEach(b=>b.onclick=()=>chDownload(b.dataset.fid,b.dataset.fname));
+  box.querySelectorAll(".ch-del").forEach(b=>b.onclick=async e=>{e.stopPropagation();if(!b.dataset.sure){b.dataset.sure="1";b.textContent="o'chirilsinmi?";setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent="×"}},3000);return}
+    try{await fs.doc("chats/"+c.id+"/msgs/"+b.dataset.mid).delete()}catch(er){toast("O'chirib bo'lmadi")}});
+  box.querySelectorAll("img").forEach(i=>i.addEventListener("load",()=>{if(atBottom||box.dataset.fresh)box.scrollTop=box.scrollHeight},{once:true}));
+}
+function chLinks(t){return esc(t).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/(^|\s)@([a-z][a-z0-9_]{4,31})/g,'$1<b>@$2</b>').replace(/\n/g,"<br>")}
+// ---- yuborish ----
+async function chPost(data,lastText,kind){
+  const c=chCur();if(!c)return false;const me=CHAT.pub[S.uid]||{};const at=Date.now();
+  const msg={by:S.uid,name:me.name||(S.contacts[S.uid]||{}).name||S.login||"",at,kind,...data};
+  try{await fs.collection("chats/"+c.id+"/msgs").add(msg);
+    await fs.doc("chats/"+c.id).update({last:{t:String(lastText||"").slice(0,120),by:S.uid,name:msg.name,kind},lastAt:at}).catch(()=>{});
+    chMarkRead(c.id,at);return true}
+  catch(e){console.warn(e);toast("Xabar yuborilmadi: internet yoki ruxsatni tekshiring");return false}
+}
+async function chSendText(){const ta=$("#ch-in");if(!ta)return;const t=ta.value.trim();if(!t||CHAT.sending)return;CHAT.sending=true;ta.value="";ta.style.height="auto";
+  const ok=await chPost({t},t,"text");if(!ok)ta.value=t;CHAT.sending=false;ta.focus()}
+$("#ch-file").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;const c=chCur();if(!c)return;
+  const isImg=/^image\/(png|jpe?g|webp|gif|bmp)$/i.test(f.type);
+  try{
+    if(isImg){toast("Rasm yuborilmoqda…");const full=await chImg(f,1600,0.8),th=await chImg(f,420,0.6);
+      const ref=await fs.collection("chatfiles").add({by:S.uid,cid:c.id,name:f.name,type:"image/jpeg",size:Math.round(full.data.length*0.75),data:full.data,at:Date.now()});
+      await chPost({fid:ref.id,thumb:th.data,w:full.w,h:full.h,t:""},"Rasm","img")}
+    else{if(f.size>CH_MAX_FILE){toast(`Fayl juda katta (${chSize(f.size)}). Hozircha ${chSize(CH_MAX_FILE)} gacha fayl yuborish mumkin.`);return}
+      toast("Fayl yuborilmoqda…");const data=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+      const ref=await fs.collection("chatfiles").add({by:S.uid,cid:c.id,name:f.name,type:f.type||"application/octet-stream",size:f.size,data,at:Date.now()});
+      await chPost({fid:ref.id,fname:f.name.slice(0,120),fsize:f.size,ftype:f.type||""},f.name,"file")}
+  }catch(er){console.warn(er);toast("Yuborib bo'lmadi: fayl juda katta yoki internet yo'q")}
+});
+async function chFile(fid){if(CHAT.files[fid])return CHAT.files[fid];const g=await fs.doc("chatfiles/"+fid).get();if(!g.exists)throw new Error("nofile");CHAT.files[fid]=g.data();return CHAT.files[fid]}
+async function chShowImg(fid,thumb){
+  const lb=document.createElement("div");lb.className="ch-lb";lb.innerHTML=`<img src="${esc(thumb)}" alt="Rasm"><button type="button" class="ch-lbx" aria-label="Yopish">×</button><button type="button" class="btn ch-lbd">Yuklab olish</button>`;document.body.append(lb);
+  const close=()=>lb.remove();lb.onclick=e=>{if(e.target===lb||e.target.classList.contains("ch-lbx"))close()};
+  document.addEventListener("keydown",function k(e){if(e.key==="Escape"){close();document.removeEventListener("keydown",k)}});
+  try{if(fid){const f=await chFile(fid);lb.querySelector("img").src=f.data;lb.querySelector(".ch-lbd").onclick=()=>chSave(f.data,f.name||"rasm.jpg")}}catch(e){lb.querySelector(".ch-lbd").hidden=true}
+}
+function chSave(data,name){if(/; wv\)/.test(navigator.userAgent)){toast("Telefondagi ilovada fayl yuklab olinmaydi — saytni brauzerda oching");return}
+  const a=document.createElement("a");a.href=data;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),300)}
+async function chDownload(fid,name){try{toast("Fayl yuklanmoqda…");const f=await chFile(fid);chSave(f.data,f.name||name)}catch(e){toast("Faylni olib bo'lmadi")}}
+// ---- yangi suhbat / ma'lumot panellari ----
+function chPanel(kind){CHAT.panel=kind;$("#chat").classList.add("open");chDrawMain()}
+async function chDrawPanel(){
+  const m=$("#ch-main"),k=CHAT.panel,back=`<button class="ch-ic" type="button" id="ch-pback" aria-label="Orqaga">←</button>`;
+  const bindBack=()=>{$("#ch-pback").onclick=()=>{CHAT.panel=null;if(!chCur())$("#chat").classList.remove("open");chDrawMain()}};
+  if(k==="new"){
+    m.innerHTML=`<header class="ch-head">${back}<div class="ch-ht"><b>Yangi suhbat</b></div></header><div class="ch-pan">
+      <div class="ch-opts"><button type="button" data-p="dm">💬<b>Shaxsiy xabar</b><small>Bitta odam bilan</small></button><button type="button" data-p="group">👥<b>Guruh</b><small>Bir necha kishi yozishadi</small></button><button type="button" data-p="channel">📢<b>Kanal</b><small>Siz yozasiz, boshqalar o'qiydi</small></button><button type="button" data-p="find">🔎<b>Kanallarni topish</b><small>Ochiq kanallarga qo'shiling</small></button></div></div>`;
+    bindBack();m.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>chPanel(b.dataset.p));return}
+  if(k==="dm"){
+    m.innerHTML=`<header class="ch-head">${back}<div class="ch-ht"><b>Shaxsiy xabar</b><small>Kimga yozasiz?</small></div></header><div class="ch-pan"><input id="ch-us" type="search" placeholder="Ism yoki @foydalanuvchi_nomi"><div id="ch-ul" class="ch-ul"><p class="note">Yuklanmoqda…</p></div></div>`;
+    bindBack();const all=(await chAllPub(true)).filter(p=>p.uid!==S.uid);
+    const draw=()=>{const q=$("#ch-us").value.trim().toLowerCase().replace(/^@/,"");const L=all.filter(p=>!q||(p.name||"").toLowerCase().includes(q)||(p.username||"").includes(q)).slice(0,60);
+      $("#ch-ul").innerHTML=L.length?L.map(p=>`<button type="button" class="ch-u" data-u="${esc(p.uid)}">${chAva(p,42)}<span><b>${esc(p.name||"Foydalanuvchi")}</b><small>${p.username?"@"+esc(p.username):"foydalanuvchi nomi yo'q"}${p.bio?" · "+esc(p.bio):""}</small></span></button>`).join(""):`<p class="note">Hech kim topilmadi.</p>`;
+      $("#ch-ul").querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>chStartDm(b.dataset.u))};
+    $("#ch-us").oninput=draw;draw();setTimeout(()=>$("#ch-us").focus(),30);return}
+  if(k==="group"||k==="channel"){
+    const isG=k==="group";
+    m.innerHTML=`<header class="ch-head">${back}<div class="ch-ht"><b>${isG?"Yangi guruh":"Yangi kanal"}</b></div></header><form class="ch-pan stack" id="ch-cf">
+      <div class="ch-cfa"><div class="tg-ava" id="ch-cav" style="width:72px;height:72px">${isG?"👥":"📢"}</div><label class="btn ghost" for="ch-cav-in">Rasm</label><input type="file" id="ch-cav-in" accept="image/*" hidden></div>
+      <label for="ch-ct">${isG?"Guruh nomi":"Kanal nomi"}<input id="ch-ct" maxlength="60" required></label>
+      <label for="ch-ca">Tavsif (ixtiyoriy)<textarea id="ch-ca" rows="2" maxlength="300"></textarea></label>
+      ${isG?"":`<label class="chk"><input type="checkbox" id="ch-cpub" checked> Ochiq kanal — har kim topib qo'shila oladi</label>`}
+      <div><label>${isG?"A'zolar":"Obunachilar (ixtiyoriy)"}</label><input id="ch-cs" type="search" placeholder="Ism yoki @nom bo'yicha qidirish"><div id="ch-cl" class="ch-ul ch-pick"></div></div>
+      <p class="err" id="ch-cerr" hidden></p><div><button class="btn" type="submit">${isG?"Guruh yaratish":"Kanal yaratish"}</button></div></form>`;
+    bindBack();const all=(await chAllPub(true)).filter(p=>p.uid!==S.uid),sel=new Set();let av="";
+    const draw=()=>{const q=$("#ch-cs").value.trim().toLowerCase().replace(/^@/,"");const L=all.filter(p=>!q||(p.name||"").toLowerCase().includes(q)||(p.username||"").includes(q)).slice(0,60);
+      $("#ch-cl").innerHTML=L.map(p=>`<label class="ch-u"><input type="checkbox" data-u="${esc(p.uid)}" ${sel.has(p.uid)?"checked":""}>${chAva(p,36)}<span><b>${esc(p.name||"")}</b><small>${p.username?"@"+esc(p.username):""}</small></span></label>`).join("")||`<p class="note">Hech kim topilmadi.</p>`;
+      $("#ch-cl").querySelectorAll("[data-u]").forEach(i=>i.onchange=()=>{i.checked?sel.add(i.dataset.u):sel.delete(i.dataset.u)})};
+    $("#ch-cs").oninput=draw;draw();
+    $("#ch-cav-in").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{av=await chSquare(f,160);$("#ch-cav").innerHTML=`<img src="${av}" alt="">`}catch(er){toast("Rasmni o'qib bo'lmadi")}};
+    $("#ch-cf").addEventListener("submit",async e=>{e.preventDefault();const t=$("#ch-ct").value.trim(),er=$("#ch-cerr");er.hidden=true;
+      if(t.length<2){er.textContent="Nomini yozing.";er.hidden=false;return}if(isG&&!sel.size){er.textContent="Kamida bitta a'zo tanlang.";er.hidden=false;return}
+      const id=(isG?"g":"c")+Date.now().toString(36)+Math.random().toString(36).slice(2,6),at=Date.now();
+      const doc={type:k,title:t.slice(0,60),about:$("#ch-ca").value.trim().slice(0,300),members:[S.uid,...sel],admins:[S.uid],owner:S.uid,av,createdAt:at,lastAt:at,last:{t:isG?"Guruh yaratildi":"Kanal yaratildi",by:S.uid,name:(CHAT.pub[S.uid]||{}).name||"",kind:"sys"}};
+      if(!isG)doc.public=$("#ch-cpub").checked;
+      try{await fs.doc("chats/"+id).set(doc);CHAT.panel=null;chOpen(id,{id,...doc});toast(isG?"Guruh yaratildi":"Kanal yaratildi")}catch(er2){er.textContent="Yaratib bo'lmadi: Firestore qoidalarini yangilang.";er.hidden=false}});
+    return}
+  if(k==="find"){
+    m.innerHTML=`<header class="ch-head">${back}<div class="ch-ht"><b>Ochiq kanallar</b></div></header><div class="ch-pan"><div id="ch-fl" class="ch-ul"><p class="note">Yuklanmoqda…</p></div></div>`;bindBack();
+    let L=[];try{const q=await fs.collection("chats").where("public","==",true).get();L=q.docs.map(d=>({id:d.id,...d.data()}))}catch(e){}
+    $("#ch-fl").innerHTML=L.length?L.map(c=>`<div class="ch-u">${chAva({id:c.id,title:c.title,av:c.av},42)}<span><b>📢 ${esc(c.title)}</b><small>${(c.members||[]).length} obunachi${c.about?" · "+esc(c.about):""}</small></span>${(c.members||[]).includes(S.uid)?`<button class="btn ghost" type="button" data-open="${esc(c.id)}">Ochish</button>`:`<button class="btn" type="button" data-join="${esc(c.id)}">Qo'shilish</button>`}</div>`).join(""):`<p class="note">Hozircha ochiq kanal yo'q. O'zingiz yarating!</p>`;
+    $("#ch-fl").querySelectorAll("[data-join]").forEach(b=>b.onclick=()=>chJoin(L.find(x=>x.id===b.dataset.join)));
+    $("#ch-fl").querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>chOpen(b.dataset.open));return}
+  if(k==="info"){
+    const c=chCur();if(!c){CHAT.panel=null;return chDrawMain()}const adm=isChAdmin(c);
+    for(const u of c.members||[])if(!CHAT.pub[u])await chPub(u);
+    let other=null;if(c.type==="dm")other=CHAT.pub[c.members.find(x=>x!==S.uid)||S.uid]||{};
+    m.innerHTML=`<header class="ch-head">${back}<div class="ch-ht"><b>Ma'lumot</b></div></header><div class="ch-pan">
+      <div class="ch-card">${chAvaOf(c,96)}<h2>${esc(chTitle(c))}</h2><p class="note">${c.type==="dm"?(other.username?"@"+esc(other.username):""):c.type==="channel"?`Kanal · ${(c.members||[]).length} obunachi${c.public?" · ochiq":""}`:`Guruh · ${(c.members||[]).length} a'zo`}</p>${(c.type==="dm"?other.bio:c.about)?`<p>${esc(c.type==="dm"?other.bio:c.about)}</p>`:""}</div>
+      ${c.type!=="dm"?`<p class="sb-cap">${c.type==="channel"?"Obunachilar":"A'zolar"}</p><div class="ch-ul">${(c.members||[]).map(u=>{const p=CHAT.pub[u]||{};return `<div class="ch-u">${chAva({...p,id:u},38)}<span><b>${esc(p.name||"…")}${u===S.uid?" (siz)":""}</b><small>${(c.admins||[]).includes(u)?(u===c.owner?"egasi":"administrator"):(p.username?"@"+esc(p.username):"")}</small></span>${adm&&u!==S.uid&&u!==c.owner?`<button class="btn ghost" type="button" data-rm="${esc(u)}">Chiqarish</button>`:""}</div>`}).join("")}</div>
+        ${adm?`<div class="stack"><p class="sb-cap">Qo'shish</p><input id="ch-ad" type="search" placeholder="Ism yoki @nom"><div id="ch-adl" class="ch-ul"></div></div>`:""}`:""}
+      <div class="btnrow" style="margin-top:12px">${c.type!=="dm"&&c.owner!==S.uid?`<button class="btn ghost" type="button" id="ch-leave">${c.type==="channel"?"Kanaldan chiqish":"Guruhdan chiqish"}</button>`:""}${c.owner===S.uid?`<button class="btn danger" type="button" id="ch-delc">${c.type==="channel"?"Kanalni o'chirish":"Guruhni o'chirish"}</button>`:""}</div></div>`;
+    bindBack();
+    m.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{try{await fs.doc("chats/"+c.id).update({members:(c.members||[]).filter(x=>x!==b.dataset.rm),admins:(c.admins||[]).filter(x=>x!==b.dataset.rm)});toast("Chiqarildi");setTimeout(()=>chDrawPanel(),300)}catch(e){toast("Bajarib bo'lmadi")}});
+    const lv=$("#ch-leave");if(lv)lv.onclick=()=>chLeave(c);
+    const dl=$("#ch-delc");if(dl)dl.onclick=async()=>{if(!dl.dataset.sure){dl.dataset.sure="1";dl.textContent="Tasdiqlash uchun yana bosing";return}try{await fs.doc("chats/"+c.id).delete();CHAT.panel=null;CHAT.cur=null;$("#chat").classList.remove("open");chDrawMain();toast("O'chirildi")}catch(e){toast("Bajarib bo'lmadi")}};
+    const ad=$("#ch-ad");if(ad){const all=await chAllPub();const draw=()=>{const q=ad.value.trim().toLowerCase().replace(/^@/,"");if(!q){$("#ch-adl").innerHTML="";return}
+      const L=all.filter(p=>!(c.members||[]).includes(p.uid)&&((p.name||"").toLowerCase().includes(q)||(p.username||"").includes(q))).slice(0,20);
+      $("#ch-adl").innerHTML=L.map(p=>`<div class="ch-u">${chAva(p,36)}<span><b>${esc(p.name||"")}</b><small>${p.username?"@"+esc(p.username):""}</small></span><button class="btn" type="button" data-add="${esc(p.uid)}">Qo'shish</button></div>`).join("")||`<p class="note">Topilmadi.</p>`;
+      $("#ch-adl").querySelectorAll("[data-add]").forEach(b=>b.onclick=async()=>{try{await fs.doc("chats/"+c.id).update({members:[...(c.members||[]),b.dataset.add]});toast("Qo'shildi");setTimeout(()=>chDrawPanel(),300)}catch(e){toast("Bajarib bo'lmadi")}})};ad.oninput=draw}
+  }
+}
+async function chStartDm(uid){
+  const id="dm_"+[S.uid,uid].sort().join("_");let ex=CHAT.chats.find(c=>c.id===id);
+  if(!ex){try{const g=await fs.doc("chats/"+id).get();if(g.exists)ex={id,...g.data()}}catch(e){}}
+  if(!ex){const at=Date.now(),doc={type:"dm",members:[S.uid,uid].sort(),admins:[],createdAt:at,lastAt:0,last:null};
+    try{await fs.doc("chats/"+id).set(doc);ex={id,...doc}}catch(e){toast("Suhbatni boshlab bo'lmadi: Firestore qoidalarini yangilang");return}}
+  CHAT.panel=null;chOpen(id,ex);
+}
+async function chJoin(c){if(!c)return;try{await fs.doc("chats/"+c.id).update({members:[...(c.members||[]),S.uid]});toast("Kanalga qo'shildingiz");CHAT.panel=null;chOpen(c.id,{...c,members:[...(c.members||[]),S.uid]})}catch(e){toast("Qo'shilib bo'lmadi")}}
+async function chLeave(c){try{await fs.doc("chats/"+c.id).update({members:(c.members||[]).filter(x=>x!==S.uid),admins:(c.admins||[]).filter(x=>x!==S.uid)});CHAT.panel=null;CHAT.cur=null;$("#chat").classList.remove("open");chDrawMain();toast("Chiqdingiz")}catch(e){toast("Bajarib bo'lmadi")}}
+function renderChat(){chEnsureMe();chDrawList();chDrawMain()}
+$("#ch-new").onclick=()=>chPanel("new");
+$("#ch-q").oninput=()=>chDrawList();
+$("#ch-tabs").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;CHAT.filter=b.dataset.f;$("#ch-tabs").querySelectorAll("button").forEach(x=>x.setAttribute("aria-selected",x===b?"true":"false"));chDrawList()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&location.hash==="#chat"&&CHAT.cur){const c=chCur();if(c){chMarkRead(c.id,c.lastAt||Date.now());chBadge();chDrawList()}}});
+// kirgandan keyin chat tinglovchisini ishga tushirish (yangi xabar belgisi uchun)
+setInterval(()=>{if(S.uid&&S.role&&(!CHAT.pubUnsub||CHAT.uid!==S.uid))chEnsureMe();if(!S.uid&&CHAT.pubUnsub){CHAT.pubUnsub();CHAT.pubUnsub=null;if(CHAT.unsubList){CHAT.unsubList();CHAT.unsubList=null}if(CHAT.unsubMsgs){CHAT.unsubMsgs();CHAT.unsubMsgs=null}CHAT.chats=[];CHAT.cur=null;CHAT.pub={};CHAT.allPub=null}},1500);
+
+// ---- Telegram uslubidagi profil (Sozlamalar) ----
+let tgAv=null;
+function tgFill(){const p=CHAT.pub[S.uid]||{},f=$("#tgProf");if(!f||f.contains(document.activeElement))return;
+  $("#tg-name").value=p.name||(S.contacts[S.uid]||{}).name||"";$("#tg-user").value=p.username||"";$("#tg-bio").value=p.bio||"";tgAv=null;tgDrawAva(p.av)}
+function tgDrawAva(av){const p=CHAT.pub[S.uid]||{};$("#tg-ava").innerHTML=av?`<img src="${esc(av)}" alt="Profil rasmi">`:`<span style="background:${chColor(S.uid)}">${esc(((p.name||S.login||"?").trim()[0]||"?").toUpperCase())}</span>`;$("#tg-ava-del").hidden=!av}
+$("#tg-ava-in").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;try{tgAv=await chSquare(f,256);tgDrawAva(tgAv);$("#tg-ok").textContent="Saqlash tugmasini bosing"}catch(er){toast("Rasmni o'qib bo'lmadi")}});
+$("#tg-ava-del").onclick=()=>{tgAv="";tgDrawAva("");$("#tg-ok").textContent="Saqlash tugmasini bosing"};
+$("#tgProf").addEventListener("submit",async e=>{
+  e.preventDefault();const err=$("#tg-err"),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;$("#tg-ok").textContent="";
+  const p=CHAT.pub[S.uid]||{},name=$("#tg-name").value.trim(),un=$("#tg-user").value.trim().toLowerCase().replace(/^@/,""),bio=$("#tg-bio").value.trim();
+  if(name.length<2)return fail("Ismingizni yozing.");
+  if(un&&!UN_RE.test(un))return fail("Foydalanuvchi nomi 5–32 belgi bo'lsin: lotin harfi bilan boshlansin, faqat harf, raqam va _.");
+  const b=$("#tg-save");b.disabled=true;
+  try{
+    if(un!==(p.username||"")){
+      if(un){const g=await fs.doc("usernames/"+un).get().catch(()=>null);if(g&&g.exists&&g.data().uid!==S.uid){b.disabled=false;return fail("Bu nom band. Boshqasini tanlang.")}
+        await fs.doc("usernames/"+un).set({uid:S.uid,at:Date.now()})}
+      if(p.username)await fs.doc("usernames/"+p.username).delete().catch(()=>{});
+    }
+    const upd={name:name.slice(0,60),username:un,bio:bio.slice(0,160),at:Date.now()};if(tgAv!==null)upd.av=tgAv;
+    await fs.doc("pub/"+S.uid).set({name:upd.name,username:un,bio:upd.bio,av:tgAv!==null?tgAv:(p.av||""),at:upd.at});
+    CHAT.pub[S.uid]={...p,...upd,uid:S.uid};tgAv=null;$("#tg-ok").textContent="Saqlandi";toast("Profil saqlandi");renderNav(location.hash.slice(1));
+  }catch(er){console.warn(er);fail("Saqlab bo'lmadi: bu nom band yoki Firestore qoidalari yangilanmagan.")}
+  b.disabled=false;
+});
+new MutationObserver(()=>{if(!$("#v-sozlamalarim").hidden){chEnsureMe();tgFill()}}).observe($("#v-sozlamalarim"),{attributes:true,attributeFilter:["hidden"]});
 
 })();

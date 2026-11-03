@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B7A62">
-<meta name="ot-build" content="12">
+<meta name="ot-build" content="13">
 <title>OchiqTanlov</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -169,8 +169,33 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
   </section>
 
   <!-- HAR BIR FOYDALANUVCHI: SOZLAMALAR -->
+  <!-- XABARLAR (chat) -->
+  <section id="v-chat" class="section" hidden>
+    <div class="chat" id="chat">
+      <aside class="ch-side">
+        <div class="ch-top"><input id="ch-q" type="search" placeholder="Qidirish…" aria-label="Chatlarni qidirish"><button class="btn ch-plus" type="button" id="ch-new" aria-label="Yangi chat">+</button></div>
+        <div class="ch-tabs" id="ch-tabs" role="tablist"><button type="button" data-f="all" aria-selected="true">Hammasi</button><button type="button" data-f="dm">Shaxsiy</button><button type="button" data-f="group">Guruhlar</button><button type="button" data-f="channel">Kanallar</button></div>
+        <div class="ch-items" id="ch-items"></div>
+      </aside>
+      <div class="ch-main" id="ch-main"></div>
+    </div>
+    <input type="file" id="ch-file" hidden>
+  </section>
+
   <section id="v-sozlamalarim" class="section" hidden>
     <div><h1>Sozlamalar</h1><p class="lede">Hisobingiz, xavfsizlik va ilova ko'rinishi.</p></div>
+    <form class="panel tg-prof" id="tgProf">
+      <div class="tg-ava-wrap"><div class="tg-ava" id="tg-ava"></div><label class="btn ghost tg-ava-btn" for="tg-ava-in">Rasm tanlash</label><input type="file" id="tg-ava-in" accept="image/*" hidden><button class="linkbtn" type="button" id="tg-ava-del">Rasmni o'chirish</button></div>
+      <div class="stack" style="flex:1;min-width:240px">
+        <h2 style="margin:0">Profil</h2>
+        <label for="tg-name">Ism (chatda ko'rinadi)<input id="tg-name" maxlength="60" required></label>
+        <label for="tg-user">Foydalanuvchi nomi<div class="tg-user"><span>@</span><input id="tg-user" maxlength="32" autocomplete="off" placeholder="sunnatillo"></div></label>
+        <p class="note" style="margin:0">5–32 belgi: lotin harfi, raqam va _ ; harf bilan boshlansin. Boshqalar sizni shu nom bilan topadi.</p>
+        <label for="tg-bio">O'zim haqimda<textarea id="tg-bio" rows="2" maxlength="160" placeholder="Masalan: Matematika o'qituvchisi, Jizzax"></textarea></label>
+        <p class="err" id="tg-err" hidden></p>
+        <div class="btnrow"><button class="btn" type="submit" id="tg-save">Profilni saqlash</button><span class="note" id="tg-ok"></span></div>
+      </div>
+    </form>
     <div class="grid2">
       <div class="panel stack">
         <h2>Hisob</h2>
