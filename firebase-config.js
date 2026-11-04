@@ -16,4 +16,4 @@ window.OT_CONFIGURED = true;
 window.OT_APP_URL = "https://sunnatilloergashov100-spec.github.io/ochiqtanlov/";
 
 // Telefondagi APK versiyasi (har yangi APK chiqarilganda 1 ga oshiriladi). Majburiy yangilanish shu raqam bilan tekshiriladi.
-window.OT_APK_VERSION = 9;
+window.OT_APK_VERSION = 10;
