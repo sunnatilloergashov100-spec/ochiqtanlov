@@ -637,3 +637,99 @@ button.ij-conrow.new{border-color:var(--accent);box-shadow:0 0 0 3px var(--accen
 .ij-x{flex:none;padding:0;display:grid;place-items:center}
 .ij-main{max-height:460px}
 .ij-sheet textarea{font:inherit;color:var(--ink);width:100%;resize:vertical}
+
+/* =====================================================================
+   MAVZU: MILLIY NAQSH (C varianti) — kobalt ko'k, feruza, oltin; girih naqsh
+   ===================================================================== */
+:root{
+  --paper:#F5F1E8; --card:#FFFFFF; --ink:#1A2433; --muted:#4E5A6B; --line:#E3D9C5;
+  --accent:#1B3A6B; --accent-ink:#FFFFFF; --accent-soft:#E4EAF4;
+  --admin:#0F6E72; --admin-soft:#E1F0F0;
+  --teal:#0F6E72; --teal-soft:#E1F0F0; --gold-o:#C9971C; --cobalt:#1B3A6B; --cobalt-2:#244A85;
+  --f-display:"Montserrat","Noto Sans",system-ui,sans-serif;
+  --f-body:"Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ring:0 0 0 3px rgba(27,58,107,.18);
+  --girih:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%231B3A6B'/%3E%3Cpath d='M40 8L48 32L72 40L48 48L40 72L32 48L8 40L32 32Z' fill='none' stroke='%232FA4A8' stroke-width='2'/%3E%3Crect x='26' y='26' width='28' height='28' transform='rotate(45 40 40)' fill='none' stroke='%23C9971C' stroke-width='1.5'/%3E%3Ccircle cx='40' cy='40' r='4' fill='%23C9971C'/%3E%3Cpath d='M0 0L12 12M80 0L68 12M0 80L12 68M80 80L68 68' stroke='%232FA4A8' stroke-width='2'/%3E%3C/svg%3E");
+  --girih-s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M28 6L34 22L50 28L34 34L28 50L22 34L6 28L22 22Z' fill='none' stroke='%232FA4A8' stroke-width='1.8'/%3E%3Ccircle cx='28' cy='28' r='3' fill='%23C9971C'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0D1524; --card:#152038; --ink:#EEF1F6; --muted:#A9B5C8; --line:#2A3A58;
+  --accent:#E0B04A; --accent-ink:#1A1608; --accent-soft:#2F2A17; --admin:#5CC4C8; --admin-soft:#123536;
+  --teal:#5CC4C8; --teal-soft:#123536; --cobalt:#12274A; --cobalt-2:#1B3A6B; --ring:0 0 0 3px rgba(224,176,74,.25)}}
+:root[data-theme="dark"]{
+  --paper:#0D1524; --card:#152038; --ink:#EEF1F6; --muted:#A9B5C8; --line:#2A3A58;
+  --accent:#E0B04A; --accent-ink:#1A1608; --accent-soft:#2F2A17; --admin:#5CC4C8; --admin-soft:#123536;
+  --teal:#5CC4C8; --teal-soft:#123536; --cobalt:#12274A; --cobalt-2:#1B3A6B; --ring:0 0 0 3px rgba(224,176,74,.25)}
+
+h1,h2,h3,.brand{font-family:var(--f-display)}
+h1{font-weight:800;color:var(--cobalt-2)}
+:root[data-theme="dark"] h1{color:var(--ink)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) h1{color:var(--ink)}}
+.panel h2{color:inherit}
+.lede{color:var(--muted)}
+
+/* --- tashqi: kirish ekrani — tepada girih naqsh, forma peshtoq (ravoq) shaklida --- */
+body:not(.has-sb){background:
+  var(--girih) 0 0/80px 80px repeat-x,
+  var(--girih) 0 80px/80px 80px repeat-x,
+  var(--girih) 0 160px/80px 80px repeat-x,
+  var(--paper)}
+.gate{position:relative;max-width:560px;margin:96px auto 40px;padding:76px 36px 30px;background:var(--card);border:3px solid var(--gold-o);border-radius:280px 280px 26px 26px;box-shadow:0 20px 44px -12px rgba(27,58,107,.28);text-align:center}
+.gate::before{content:"";display:block;width:40px;height:40px;margin:-48px auto 12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 7.1L22 12l-7.1 2.9L12 22l-2.9-7.1L2 12l7.1-2.9z' fill='none' stroke='%23138A8E' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23C9971C'/%3E%3C/svg%3E") center/contain no-repeat}
+.gate>.brand{justify-content:center;color:var(--cobalt-2);font-weight:800}
+.gate h1{font-size:clamp(22px,3.2vw,30px);line-height:1.2;color:var(--cobalt-2)}
+.gate .lede{margin-inline:auto}
+.gate .auth,.gate .quick,.gate #roleStep{text-align:left;align-items:stretch}
+.gate .authbox{max-width:none;box-shadow:none;border:0;padding:0;background:none}
+.gate .quick{box-shadow:none;background:var(--paper)}
+.gate-verify{text-align:center}
+.gate-verify a{color:var(--teal)}
+:root[data-theme="dark"] .gate h1,:root[data-theme="dark"] .gate>.brand{color:var(--ink)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .gate h1,:root:not([data-theme="light"]) .gate>.brand{color:var(--ink)}}
+@media (max-width:620px){
+  body:not(.has-sb){background:var(--girih) 0 0/64px 64px repeat-x,var(--girih) 0 64px/64px 64px repeat-x,var(--paper)}
+  .gate{margin:64px 12px 28px;padding:64px 20px 24px;border-radius:200px 200px 22px 22px}
+}
+
+/* --- ichki: chap menyu kobalt rangda, tepasida naqsh lentasi --- */
+@media (min-width:1000px){
+  body.has-sb #hdr{background:var(--cobalt);border-right:0;color:#fff}
+  body.has-sb #hdr::before{content:"";display:block;height:56px;background:var(--girih-s) 0 0/56px 56px repeat-x,var(--cobalt)}
+  body.has-sb #hdr .brand{color:#fff}
+  body.has-sb #hdr .wrap{min-height:calc(100% - 56px)}
+}
+@media (max-width:999.98px){
+  #hdr{border-bottom:3px solid var(--gold-o)!important}
+  .sb-body{background:var(--cobalt)!important;border-right:0!important;color:#fff}
+  .sb-body::before{content:"";display:block;height:46px;margin:-18px -14px 6px;background:var(--girih-s) 0 0/46px 46px repeat-x}
+}
+.sb-body .sb-cap,body.has-sb #hdr .sb-cap{color:#B9C7DE}
+.sb-prof{background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.14)!important;color:#fff!important}
+.sb-prof:hover{border-color:var(--gold-o)!important}
+.sb-prof .sb-pt small{color:#C8D4E8}
+.sb-ava{background:var(--gold-o)!important;color:#1B3A6B!important}
+#hdr .modes{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:none!important}
+#hdr .modes button{color:#DCE5F2!important;background:none}
+#hdr .modes button:hover{background:rgba(255,255,255,.08)!important;color:#fff!important}
+#hdr .modes button[aria-pressed="true"]{background:var(--paper)!important;color:#1B3A6B!important;box-shadow:inset 3px 0 0 var(--gold-o)!important;font-weight:700}
+:root[data-theme="dark"] #hdr .modes button[aria-pressed="true"]{background:#F5F1E8!important}
+#hdr .bdg{background:var(--gold-o);color:#1B3A6B}
+#nav .grp a.g{color:#DCE5F2!important}
+#nav .grp a.g:hover{background:rgba(255,255,255,.08)!important;color:#fff!important}
+#nav .grp a.g[aria-current="page"]{background:rgba(201,151,28,.18)!important;color:#F3D58A!important}
+#nav .sub{border-left-color:rgba(255,255,255,.18)!important}
+#nav .sub a{color:#C8D4E8!important}
+#nav .sub a[aria-current="page"]{color:#fff!important;background:rgba(255,255,255,.08)!important}
+#hdr .sb-out{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.3)!important;box-shadow:none!important}
+#hdr .sb-out:hover{border-color:var(--gold-o)!important}
+
+/* --- kartalar: tepasida oltin chiziq, peshtoq shaklidagi belgilar --- */
+.vac,.ij-card{border-top:4px solid var(--gold-o)}
+.vac:hover{border-color:color-mix(in srgb,var(--teal) 40%,var(--line));border-top-color:var(--gold-o)}
+.kpi{border-top:3px solid var(--teal)}
+.panel{border-color:var(--line)}
+.pill.open,.pill.res{background:var(--teal-soft);color:var(--teal)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.empty{border-style:dashed;border-color:color-mix(in srgb,var(--gold-o) 55%,var(--line))}
+button.btn.ghost,a.btn.ghost{border-color:color-mix(in srgb,var(--teal) 35%,var(--line))}
+.gate-verify a,.linkbtn{color:var(--teal)}
