@@ -1,6 +1,6 @@
 (function(){
 // Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
-{const BUILD=16,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+{const BUILD=17,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
   if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
   document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
@@ -14,7 +14,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=16; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=17; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
@@ -584,6 +584,7 @@ function renderMySettings(){
   $("#st-acc").innerHTML=`<dt>Login</dt><dd class="mono">${esc(S.login||"—")}</dd><dt>F.I.Sh.</dt><dd>${esc(c.name||(S.profile||{}).name||"—")}</dd><dt>Telefon</dt><dd class="mono">${esc(c.phone||"—")}</dd><dt>Huquqlar</dt><dd>${["Ish topshiruvchi"].concat(S.isAdmin&&!S.isChief?["Ish beruvchi"]:S.adminDoc&&!S.isChief?["Ish beruvchi (ruxsat kutilmoqda)"]:[]).concat(S.isChief?["Bosh administrator"]:[]).join(", ")}</dd>`;
   $("#st-app").innerHTML=`<dt>Sayt versiyasi</dt><dd class="mono">${WEB_VER}</dd><dt>Qurilma</dt><dd>${APK_VER==null?"Brauzer":"Android ilova · APK v"+(APK_VER||"6 yoki eski")}</dd>`;
   $("#st-sys").hidden=!S.isChief;
+  $("#st-reface").hidden=!S.isChief;
   fs.doc("faces/"+S.uid).get().then(g=>{$("#st-face").textContent=g.exists?"Yuzingiz ro'yxatga olingan. Test boshlanishida u bilan solishtiriladi.":"Yuz hali ro'yxatga olinmagan."}).catch(()=>{});
   applyTheme();
 }
@@ -600,6 +601,7 @@ $("#st-pass").addEventListener("submit",async e=>{
   btn.disabled=false;
 });
 $("#st-reface").onclick=async()=>{
+  if(!S.isChief){toast("Face ID'ni faqat bosh administrator tiklay oladi — unga murojaat qiling");return}
   if(!confirm("Face ID qayta ro'yxatga olinadi. Kamera ochiladi va yuzingiz yangidan saqlanadi. Davom etasizmi?"))return;
   const btn=$("#st-reface");btn.disabled=true;
   try{await fs.doc("faces/"+S.uid).delete();try{sessionStorage.removeItem(fgKey(S.uid))}catch(e){}
@@ -1283,12 +1285,7 @@ async function startExam(){
     if(fd>FACE_MATCH){exFail("Face ID: yuz mos kelmadi","Kameradagi yuz ro'yxatga olingan yuzga mos kelmadi. Test faqat akkaunt egasining o'zi topshirishi mumkin. Xatolik bo'lsa, bosh administratorga murojaat qiling.");
       log("test",`Face ID mos kelmadi: ${S.login} (masofa ${fd.toFixed(2)})`).catch(()=>{});return}}
   EX.ref=desc;
-  let qs=[];
-  try{msg("Savollar yuklanmoqda…");const g=await fs.collection("questions").get();qs=g.docs.map(d=>({id:d.id,...d.data()})).filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2)}catch(e){}
-  if(!EX)return;
-  const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),qs.length);
-  if(!qs.length){exFail("Savollar yo'q","Bosh administrator hali savollarni yuklamagan.");return}
-  EX.qs=shuffle(qs).slice(0,n);
+  // Savollar bankini faqat bosh administrator ruxsat bergandan keyin o'qish mumkin (Firestore qoidasi) — oldindan ko'rib bo'lmaydi
   if(!testWindow().ok){exFail("Test vaqti emas","Test faqat bosh administrator belgilagan vaqt oralig'ida topshiriladi.");return}
   // Bosh administrator ruxsatini so'rash
   const c=S.contacts[S.uid]||{};
@@ -1303,8 +1300,18 @@ async function startExam(){
   EX.reqUnsub=fs.doc("testreq/"+S.uid).onSnapshot(sn=>{
     if(!EX||EX.phase!=="prep")return;const r=sn.exists?sn.data():null;if(!r)return;
     if(r.status==="denied"){EX.reqUnsub();exFail("Ruxsat berilmadi","Bosh administrator testni boshlashga ruxsat bermadi. Batafsil ma'lumot uchun unga murojaat qiling.");return}
-    if(r.status==="approved"){EX.reqUnsub();beginRun(n,enrolled,fd)}
+    if(r.status==="approved"){EX.reqUnsub();loadQs().then(n=>{if(n)beginRun(n,enrolled,fd)})}
   },()=>{});
+}
+async function loadQs(){
+  exUI(`<div class="ex-card"><h2>Ruxsat berildi ✓</h2><p>Savollar yuklanmoqda…</p></div>`);
+  let qs=[];
+  try{const g=await fs.collection("questions").get();qs=g.docs.map(d=>({id:d.id,...d.data()})).filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2)}
+  catch(e){if(EX)exFail("Savollar yuklanmadi","Ruxsat muddati o'tgan bo'lishi mumkin. Qayta urinib ko'ring yoki bosh administratorga murojaat qiling.");return 0}
+  if(!EX)return 0;
+  if(!qs.length){exFail("Savollar yo'q","Bosh administrator hali savollarni yuklamagan.");return 0}
+  const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),qs.length);
+  EX.qs=shuffle(qs).slice(0,n);return n;
 }
 async function beginRun(n,enrolled,fd){
   if(!EX)return;
@@ -1316,7 +1323,9 @@ async function beginRun(n,enrolled,fd){
   $("#ex-go").onclick=async()=>{
     $("#ex-go").disabled=true;
     EX.startedAt=Date.now();
-    try{await fs.doc("attempts/"+S.uid).set({uid:S.uid,login:S.login||"",startedAt:EX.startedAt,status:"running",qids:EX.qs.map(q=>q.id),answers:{},face:{enrolled,dist:fd==null?null:Math.round(fd*1000)/1000},device:devText(device())})}
+    // jami vaqt (har savol o'z vaqti) + 60 soniya zaxira; server shu muddatdan keyin javob qabul qilmaydi
+    EX.deadline=EX.startedAt+EX.qs.reduce((s,q)=>s+Math.min(600,Math.max(5,+q.sec||60))*1000,0)+60000;
+    try{await fs.doc("attempts/"+S.uid).set({uid:S.uid,login:S.login||"",startedAt:EX.startedAt,deadline:EX.deadline,status:"running",qids:EX.qs.map(q=>q.id),answers:{},face:{enrolled,dist:fd==null?null:Math.round(fd*1000)/1000},device:devText(device())})}
     catch(e){exFail("Test boshlanmadi","Ruxsat muddati (15 daqiqa) o'tgan, test vaqti tugagan yoki siz testni allaqachon topshirgansiz.");return}
     EX.phase="run";
     try{if(document.documentElement.requestFullscreen){await document.documentElement.requestFullscreen();EX.fs=true}}catch(e){}
@@ -1373,13 +1382,14 @@ function showQ(i){
 }
 async function finishExam(){
   if(!EX||EX.phase!=="run")return;EX.phase="end";disarmGuards();clearTimeout(EX.ptimer);clearInterval(EX.qtimer);stopCam();exCam("Kamera o'chirildi");$("#ex-timer").textContent="";
-  try{await fs.doc("attempts/"+S.uid).update({answers:EX.answers,status:"done",finishedAt:Date.now()})}catch(e){}
+  try{await fs.doc("attempts/"+S.uid).update({answers:EX.answers,status:"done",finishedAt:Date.now()})}
+  catch(e){try{await fs.doc("attempts/"+S.uid).update({status:"done",finishedAt:Date.now()})}catch(_){}} // muddat o'tgan bo'lsa — javoblarsiz yakunlash
   exUI(`<div class="ex-card"><h2>Test yakunlandi ✓</h2><p>Javoblaringiz qabul qilindi. Natija bosh administrator tizimida avtomatik hisoblanadi va "Profil va test" bo'limida paydo bo'ladi.</p><div><button class="btn" type="button" id="ex-x">Yopish</button></div></div>`);
   $("#ex-x").onclick=exClose;
 }
 function terminate(reason){
   if(!EX||EX.phase!=="run")return;EX.phase="end";disarmGuards();clearTimeout(EX.ptimer);clearInterval(EX.qtimer);stopCam();$("#ex-timer").textContent="";exCam("To'xtatildi","warn");
-  fs.doc("attempts/"+S.uid).update({answers:EX.answers,status:"terminated",reason,finishedAt:Date.now()}).catch(()=>{});
+  fs.doc("attempts/"+S.uid).update({answers:EX.answers,status:"terminated",reason,finishedAt:Date.now()}).catch(()=>fs.doc("attempts/"+S.uid).update({status:"terminated",reason,finishedAt:Date.now()}).catch(()=>{}));
   try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}
   exFail("Test to'xtatildi",reason+". Test qoidalariga ko'ra natija 0 ball bo'lib hisoblanadi. Texnik sabab bo'lsa, bosh administratorga murojaat qiling.");
 }
@@ -1489,13 +1499,14 @@ function gradeSoon(){clearTimeout(gradeT);gradeT=setTimeout(gradeAll,700)}
 async function gradeAll(){
   if(!S.isChief||grading)return;grading=true;
   try{for(const a of S.attempts){
-    if(a.status==="running")continue;const r=S.results[a.id];if(r&&r.attemptAt===a.startedAt)continue;
+    const expired=a.status==="running"&&a.deadline&&Date.now()>a.deadline+120000;
+    if(a.status==="running"&&!expired)continue;const r=S.results[a.id];if(r&&r.attemptAt===a.startedAt&&r.status===(expired?"timeout":a.status))continue;
     const qids=a.qids||[],ans=a.answers||{};let correct=0,earned=0,maxPts=0;
     qids.forEach(id=>{const q=S.questions.find(x=>x.id===id);maxPts+=(q&&+q.pts)||1});
     if(a.status!=="terminated")qids.forEach(id=>{const k=S.qkeys[id],an=ans[id],q=S.questions.find(x=>x.id===id);const lim=((q&&+q.sec)||60)*1000+5000;if(k&&an&&an.i!=null&&an.i===k.a&&(an.t||0)<=lim){correct++;earned+=(q&&+q.pts)||1}});
     earned=Math.round(earned*100)/100;maxPts=Math.round(maxPts*100)/100;
     const test=a.status==="terminated"||!qids.length||!maxPts?0:Math.round(100*earned/maxPts);
-    await fs.doc("results/"+a.id).set({test,correct,total:qids.length,earned,maxPts,attemptAt:a.startedAt,status:a.status,reason:a.reason||"",gradedAt:Date.now(),login:a.login||""});
+    await fs.doc("results/"+a.id).set({test,correct,total:qids.length,earned,maxPts,attemptAt:a.startedAt,status:expired?"timeout":a.status,reason:expired?"Vaqt tugadi — test yakunlanmagan":(a.reason||""),gradedAt:Date.now(),login:a.login||""});
   }}catch(e){console.warn(e)}
   grading=false;
 }
@@ -1533,7 +1544,7 @@ async function exportTestXlsx(btn){
   let rk=0;const head=["O'rin","F.I.Sh.","Login","To'plangan ball","Maksimal ball","Foiz (%)","To'g'ri javoblar","Jami savol","Holat","Boshlagan vaqti","Davomiyligi (daqiqa)"];
   const data=TR_ROWS.map(x=>{const fr=x.r.attemptAt===x.a.startedAt,done=x.score!=null&&x.a.status==="done";
     return [done?++rk:"",x.name||"",x.login||"",fr?(x.r.earned??x.r.correct):"",fr?(x.r.maxPts??x.r.total):"",x.score==null?"":x.score,fr?x.r.correct:"",fr?x.r.total:"",
-      x.a.status==="running"?"Topshiryapti":x.a.status==="terminated"?"To'xtatilgan: "+(x.a.reason||""):"Yakunlangan",dt(x.a.startedAt),x.dur?Math.round(x.dur/60000*10)/10:""]});
+      x.a.status==="running"?((x.r||{}).status==="timeout"?"Vaqt tugadi (yakunlanmagan)":"Topshiryapti"):x.a.status==="terminated"?"To'xtatilgan: "+(x.a.reason||""):"Yakunlangan",dt(x.a.startedAt),x.dur?Math.round(x.dur/60000*10)/10:""]});
   const name="Test_reytingi_"+new Date().toISOString().slice(0,10);
   const inApp=/; wv\)/.test(navigator.userAgent);
   if(inApp){downloadCsv(name+".csv",[head,...data].map(r=>r.join("\t")).join("\n"));return}
@@ -1566,7 +1577,7 @@ function renderTestAdmin(){
   let rk=0;const fresh=x=>x.r.attemptAt===x.a.startedAt,ptsOf=x=>fresh(x)?{e:x.r.earned??x.r.correct,m:x.r.maxPts??x.r.total}:{e:"—",m:"—"};
   TR_ROWS=rows;
   $("#tr-list").innerHTML=(rows.length?`<div class="btnrow" style="margin-bottom:10px"><button class="btn" type="button" id="tr-xlsx">Reytingni Excel'ga yuklab olish</button><span class="note">F.I.Sh., ball va o'rin bilan</span></div>`:"")+(rows.length?`<div class="tablebox"><table class="wide"><thead><tr><th class="num">O'rin</th><th>Login</th><th>F.I.Sh.</th><th class="num">Ball</th><th class="num">Foiz</th><th class="num">To'g'ri</th><th>Holat</th><th>Face ID</th><th>Boshlagan</th><th class="num">Davomiyligi</th><th></th></tr></thead><tbody>`+rows.map(x=>{
-    const st=x.a.status==="running"?`<span class="pill open">Topshiryapti</span>`:x.a.status==="terminated"?`<span class="pill out">To'xtatilgan</span><div class="why">${esc(x.a.reason||"")}</div>`:`<span class="pill win">Yakunlangan</span>`;
+    const st=x.a.status==="running"?((x.r||{}).status==="timeout"?`<span class="pill out">Vaqt tugadi</span>`:`<span class="pill open">Topshiryapti</span>`):x.a.status==="terminated"?`<span class="pill out">To'xtatilgan</span><div class="why">${esc(x.a.reason||"")}</div>`:`<span class="pill win">Yakunlangan</span>`;
     const fc=x.a.face||{};const faceTxt=fc.enrolled?"Ro'yxatga olindi":fc.dist!=null?`Mos (${fc.dist})`:"—";
     const place=x.score!=null&&x.a.status==="done"?++rk:"—";
     return `<tr class="${place===1?"winner":""}"><td class="num">${place}</td><td class="mono">${esc(x.login||"—")}</td><td>${esc(x.name||"—")}</td><td class="num"><b>${x.score==null?(x.a.status==="running"?"…":"hisoblanmoqda"):`${ptsOf(x).e} / ${ptsOf(x).m}`}</b></td><td class="num">${x.score==null?"—":x.score+"%"}</td><td class="num">${fresh(x)?`${x.r.correct}/${x.r.total}`:"—"}</td><td>${st}</td><td>${faceTxt}</td><td class="mono" style="white-space:nowrap">${dt(x.a.startedAt)}</td><td class="num">${x.dur?Math.round(x.dur/60000*10)/10+" daq":"—"}</td>
