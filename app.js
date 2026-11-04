@@ -1,6 +1,6 @@
 (function(){
 // Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
-{const BUILD=14,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+{const BUILD=15,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
   if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
   document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
@@ -14,7 +14,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=14; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=15; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
@@ -1740,7 +1740,7 @@ async function aiCfg(force){
 function aiQuota(){try{const k="ot-ai-"+new Date().toISOString().slice(0,10),n=+(localStorage.getItem(k)||0);if(n>=AI_DAY_LIMIT&&S.role!=="chief")return false;localStorage.setItem(k,n+1);return true}catch(e){return true}}
 // Mavjud modellar ro'yxati: eng yangi "flash" birinchi, keyin zaxiradagilar (band bo'lsa navbatdagisiga o'tiladi)
 async function aiModels(key,pref){
-  try{const c=JSON.parse(sessionStorage.getItem("ot-ai-models")||"null");if(c&&c.length)return pref?[pref,...c.filter(x=>x!==pref)]:c}catch(e){}
+  try{const c=JSON.parse(localStorage.getItem("ot-ai-models")||"null");if(c&&c.list&&c.list.length&&Date.now()-c.at<864e5)return pref?[pref,...c.list.filter(x=>x!==pref)]:c.list}catch(e){}
   let names=[];
   try{const r=await fetch(AI_BASE+"models?pageSize=200",{headers:{"x-goog-api-key":key}});const j=await r.json();
     names=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""))}catch(e){}
@@ -1751,7 +1751,7 @@ async function aiModels(key,pref){
   const other=names.filter(n=>/flash/i.test(n)&&!bad.test(n)&&!/preview/i.test(n)&&!flash.includes(n)&&!lite.includes(n)).sort((a,b)=>ver(b)-ver(a));
   let list=[...flash.slice(0,3),...lite.slice(0,2),...other.slice(0,2)];
   if(!list.length)list=["gemini-flash-latest","gemini-flash-lite-latest"];
-  try{sessionStorage.setItem("ot-ai-models",JSON.stringify(list))}catch(e){}
+  if(names.length)try{localStorage.setItem("ot-ai-models",JSON.stringify({at:Date.now(),list}))}catch(e){}
   return pref?[pref,...list.filter(x=>x!==pref)]:list;
 }
 // Asosiy chaqiruv: system — ko'rsatma, msgs — [{role:"user"|"model",text}]
@@ -1761,27 +1761,49 @@ async function aiAsk(system,msgs,opt){
   if(cfg.on===false&&!opt.admin)throw new Error("off");
   if(!aiQuota())throw new Error("quota");
   let models=(await aiModels(cfg.key,cfg.model)).slice(0,5);
-  if(!cfg.model){try{const ok=sessionStorage.getItem("ot-ai-model");if(ok&&models.includes(ok))models=[ok,...models.filter(x=>x!==ok)]}catch(e){}}
-  const body=JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:msgs.map(m=>({role:m.role==="model"?"model":"user",parts:[{text:m.text}]})),
-    generationConfig:{temperature:opt.temp??0.6,maxOutputTokens:opt.max||1500}});
+  if(!cfg.model){try{const ok=localStorage.getItem("ot-ai-model");if(ok&&models.includes(ok))models=[ok,...models.filter(x=>x!==ok)]}catch(e){}}
+  const base={systemInstruction:{parts:[{text:system}]},contents:msgs.map(m=>({role:m.role==="model"?"model":"user",parts:[{text:m.text}]}))};
   let last=null;
   for(let i=0;i<models.length;i++){
-    const model=models[i];
-    for(let attempt=0;attempt<2;attempt++){
+    const model=models[i];let think=opt.fast?aiThink(model):null;
+    for(let attempt=0;attempt<3;attempt++){
+      const gc={temperature:opt.temp??0.6,maxOutputTokens:opt.max||1500};if(think)gc.thinkingConfig=think;
+      const body=JSON.stringify({...base,generationConfig:gc}),stream=!!opt.onText;
       let r,j;
-      try{r=await fetch(AI_BASE+"models/"+encodeURIComponent(model)+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":cfg.key},body});j=await r.json().catch(()=>({}))}
+      try{r=await fetch(AI_BASE+"models/"+encodeURIComponent(model)+(stream?":streamGenerateContent?alt=sse":":generateContent"),{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":cfg.key},body})}
       catch(e){last=e;break}
-      if(r.ok){const c=(j.candidates||[])[0];const t=c&&c.content&&(c.content.parts||[]).map(p=>p.text||"").join("").trim();
-        if(t){AI.used=model;try{sessionStorage.setItem("ot-ai-model",model)}catch(e){}return t}
-        last=new Error(c&&c.finishReason==="SAFETY"?"AI bu so'rovga javob bermadi.":"AI bo'sh javob qaytardi.");break}
+      if(r.ok){
+        let t="",reason="";
+        if(stream&&r.body&&/event-stream/i.test(r.headers.get("content-type")||"")){
+          // javob bo'lak-bo'lak keladi: har bo'lakni darhol ekranga chiqaramiz
+          const rd=r.body.getReader(),dec=new TextDecoder();let buf="";
+          try{for(;;){const {done,value}=await rd.read();buf+=done?"\n":dec.decode(value,{stream:true});
+            let k;while((k=buf.indexOf("\n"))>=0){const line=buf.slice(0,k).trim();buf=buf.slice(k+1);if(!line.startsWith("data:"))continue;
+              try{const d=JSON.parse(line.slice(5)),c=(d.candidates||[])[0];if(c){if(c.finishReason)reason=c.finishReason;const part=((c.content||{}).parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");if(part){t+=part;opt.onText(t)}}}catch(e){}}if(done)break}}
+          catch(e){if(!t){last=e;break}}
+        }else{j=await r.json().catch(()=>({}));const arr=Array.isArray(j)?j:[j];
+          for(const d of arr){const c=(d.candidates||[])[0];if(c){if(c.finishReason)reason=c.finishReason;t+=((c.content||{}).parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("")}}
+          if(t&&opt.onText)opt.onText(t)}
+        t=t.trim();
+        if(t){AI.used=model;try{localStorage.setItem("ot-ai-model",model)}catch(e){}return t}
+        last=new Error(reason==="SAFETY"?"AI bu so'rovga javob bermadi.":"AI bo'sh javob qaytardi.");break}
+      j=await r.json().catch(()=>({}));if(Array.isArray(j))j=j[0]||{};
       const m=(j.error&&j.error.message)||("HTTP "+r.status);last=new Error(m);last.status=r.status;
+      if(r.status===400&&think&&/think/i.test(m)){think=null;continue}                // model "o'ylash" sozlamasini qo'llamasa — usiz
       const busy=r.status===503||r.status===500||/high demand|overloaded|unavailable/i.test(m);
-      if(busy&&attempt===0){await new Promise(res=>setTimeout(res,1200));continue}   // bir marta qayta urinish
-      if(busy||r.status===404||r.status===429)break;                               // keyingi modelga o'tish
-      throw last;                                                                   // kalit xatosi va h.k.
+      if(busy&&attempt===0){await new Promise(res=>setTimeout(res,800));continue}   // bir marta qayta urinish
+      if(busy||r.status===404||r.status===429)break;                              // keyingi modelga o'tish
+      throw last;                                                                  // kalit xatosi va h.k.
     }
   }
   throw last||new Error("AI javob bermadi");
+}
+// Tezlik uchun "o'ylash" (thinking) bosqichini o'chiramiz yoki eng kam darajaga tushiramiz
+function aiThink(model){
+  if(/flash-lite/i.test(model))return null;                       // lite modellarda o'ylash yo'q
+  if(/gemini-2\.5-flash/i.test(model))return {thinkingBudget:0};
+  if(/gemini-(?:[3-9]|\d\d)|flash-latest/i.test(model))return {thinkingLevel:"minimal"};
+  return null;
 }
 function aiErr(e){const m=(e&&e.message)||"";
   if(m==="nokey")return S.isChief?"AI kaliti kiritilmagan. Administrator → Tizim → Sozlamalar bo'limida Gemini kalitini kiriting.":"AI hali yoqilmagan. Bosh administrator sozlamalarni tugatishi kerak.";
@@ -1848,8 +1870,12 @@ function aiAdminCtx(){
   }
   async function send(q){
     q=(q||"").trim();if(!q||AI.busy)return;AI.chat.push({role:"user",text:q});AI.busy=true;draw();
-    try{const t=await aiAsk(AI_RULES+"\n\nSen hozir BOSH ADMINISTRATOR bilan gaplashyapsan: faqat tahlil, statistik xulosa va maslahat ber; hech qanday qarorni o'zing qabul qilma.\n\n"+aiContext()+aiAdminCtx(),AI.chat.slice(-12),{temp:0.3,max:1200,admin:true});AI.chat.push({role:"model",text:t})}
-    catch(e){AI.chat.push({role:"model",text:aiErr(e)})}
+    let live=null;const hist=AI.chat.slice(-12);
+    const onText=t=>{if(!live){live={role:"model",text:""};AI.chat.push(live);AI.busy=false;draw();AI.busy=true}live.text=t;$("#ai-send").disabled=true;
+      const el=$("#ai-log .ai-msg.bot:last-child");if(el){el.innerHTML=aiMd(t);const L=$("#ai-log");if(L.scrollHeight-L.scrollTop-L.clientHeight<120)L.scrollTop=L.scrollHeight}};
+    try{const t=await aiAsk(AI_RULES+"\n\nSen hozir BOSH ADMINISTRATOR bilan gaplashyapsan: faqat tahlil, statistik xulosa va maslahat ber; hech qanday qarorni o'zing qabul qilma. Javobni qisqa va aniq yoz.\n\n"+aiContext()+aiAdminCtx(),hist,{temp:0.3,max:1200,admin:true,fast:true,onText});
+      if(live)live.text=t;else AI.chat.push({role:"model",text:t})}
+    catch(e){if(live&&live.text)live.text+="\n\n("+aiErr(e)+")";else{if(live)AI.chat.splice(AI.chat.indexOf(live),1);AI.chat.push({role:"model",text:aiErr(e)})}}
     AI.busy=false;draw();
   }
   fab.onclick=()=>{pane.hidden=!pane.hidden;fab.classList.toggle("on",!pane.hidden);if(!pane.hidden){draw();setTimeout(()=>$("#ai-in").focus(),50)}};
@@ -1937,7 +1963,7 @@ Javob tuzilishi:
 **Javob loyihasi:** ishtirokchiga yuboriladigan 2–4 jumlali xushmuomala javob.
 Ball formulasi: 0,50·Test + 0,20·Staj + 0,15·Ko'nikmalar + 0,10·Ma'lumot + 0,05·Tillar. Faqat berilgan ma'lumotga tayan, o'ylab topma.`;
   const ctx=`Vakansiya: ${v.title||"—"} (${orgOf(v.orgId).name})\nTalablar: ma'lumot ${EDU[v.edu]||"—"}+, staj ${v.exp??"—"}+, test ${v.test??"—"}+, majburiy ko'nikmalar: ${(v.req||[]).join(", ")||"—"}\nYakuniy reyting (anonim):\n${snap||"ma'lumot yo'q"}\n\nShikoyatchi kodi: ${a.code}\nShikoyat matni:\n${a.text}`;
-  try{const t=await aiAsk(sys,[{role:"user",text:ctx}],{temp:0.3,max:1200,admin:true});
+  try{const t=await aiAsk(sys,[{role:"user",text:ctx}],{temp:0.3,max:1200,admin:true,fast:true});
     const m=t.match(/\*\*Javob loyihasi:?\*\*:?\s*([\s\S]+)$/i);AI.appeal[id]={text:t,draft:m?m[1].replace(/\*\*/g,"").trim():""}}
   catch(e){AI.appeal[id]={err:aiErr(e)}}
   renderAppeals();
@@ -1960,14 +1986,14 @@ function aiAppealHtml(id){const r=AI.appeal[id];if(!r)return `<button class="btn
     <div class="btnrow"><button class="btn" type="submit">Saqlash</button><button class="btn ghost" type="button" id="ai-test">Tekshirish</button><span class="note" id="ai-st"></span></div>`;
   ver.after(f);
   async function fill(){const c=await aiCfg(true);$("#ai-key").value="";$("#ai-key").placeholder=c.key?"saqlangan: …"+String(c.key).slice(-4)+" (o'zgartirish uchun yangisini yozing)":"AIza…";$("#ai-model").value=c.model||"";$("#ai-on").checked=c.on!==false;
-    let m="";try{m=sessionStorage.getItem("ot-ai-model")||""}catch(e){}
+    let m="";try{m=localStorage.getItem("ot-ai-model")||""}catch(e){}
     $("#ai-info").innerHTML=`<dt>Holat</dt><dd>${c.key?(c.on===false?"Kalit bor, o'chirilgan":"Yoqilgan"):"Kalit kiritilmagan"}</dd><dt>Ishlatilayotgan model</dt><dd class="mono">${esc(c.model||m||"birinchi so'rovda aniqlanadi")}</dd>`}
   f.addEventListener("submit",async e=>{e.preventDefault();const st=$("#ai-st");const c=await aiCfg(true);
     const key=$("#ai-key").value.trim()||c.key||"";if(!key){st.textContent="Kalitni kiriting.";return}
-    try{await fs.doc("aicfg/main").set({key,model:$("#ai-model").value.trim(),on:$("#ai-on").checked,at:Date.now(),by:S.uid});try{sessionStorage.removeItem("ot-ai-model");sessionStorage.removeItem("ot-ai-models")}catch(e2){}
+    try{await fs.doc("aicfg/main").set({key,model:$("#ai-model").value.trim(),on:$("#ai-on").checked,at:Date.now(),by:S.uid});try{localStorage.removeItem("ot-ai-model");localStorage.removeItem("ot-ai-models")}catch(e2){}
       await aiCfg(true);await log("ai","AI sozlamalari yangilandi");st.textContent="Saqlandi";fill()}catch(e2){st.textContent="Saqlab bo'lmadi: Firestore qoidalarini yangilang."}});
   $("#ai-test").onclick=async()=>{const st=$("#ai-st");st.textContent="Tekshirilmoqda…";
-    try{const t=await aiAsk("Bitta qisqa jumlada o'zbek tilida javob ber.",[{role:"user",text:"Salom! Ishlayapsanmi?"}],{max:60,admin:true});st.textContent="Ishlayapti ✓ ("+(AI.used||"")+") — "+t.slice(0,80);fill()}catch(e){st.textContent=aiErr(e)}};
+    try{const t=await aiAsk("Bitta qisqa jumlada o'zbek tilida javob ber.",[{role:"user",text:"Salom! Ishlayapsanmi?"}],{max:60,admin:true,fast:true});st.textContent="Ishlayapti ✓ ("+(AI.used||"")+") — "+t.slice(0,80);fill()}catch(e){st.textContent=aiErr(e)}};
   const obs=new MutationObserver(()=>{if(!$("#v-sozlamalar").hidden&&S.isChief&&!f.dataset.filled){f.dataset.filled="1";fill()}if($("#v-sozlamalar").hidden)delete f.dataset.filled});
   obs.observe($("#v-sozlamalar"),{attributes:true,attributeFilter:["hidden"]});
 })();
