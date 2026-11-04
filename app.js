@@ -1,6 +1,6 @@
 (function(){
 // Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
-{const BUILD=18,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+{const BUILD=19,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
   if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
   document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
@@ -14,7 +14,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=18; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=19; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
@@ -2144,6 +2144,8 @@ function chListen(){
 }
 function chUnread(c){return c.lastAt&&c.last&&c.last.by!==S.uid&&c.lastAt>chRead(c.id)}
 function chBadge(){const n=CHAT.chats.filter(chUnread).length,b=document.querySelector('#modes button[data-mode="chat"]');if(!b)return;let x=b.querySelector(".bdg");if(n){if(!x){x=document.createElement("span");x.className="bdg";b.append(x)}x.textContent=n}else if(x)x.remove()}
+function chPeer(c){return c&&c.type==="dm"?(c.members.find(m=>m!==S.uid)||S.uid):null}
+function chOfb(uid){return uid&&typeof obBadge==="function"?obBadge(uid,false):""}
 function chTitle(c){if(c.type!=="dm")return c.title||"Suhbat";const o=c.members.find(m=>m!==S.uid)||S.uid,p=CHAT.pub[o];return p?(p.name||"Foydalanuvchi"):"…"}
 function chAvaOf(c,size){if(c.type!=="dm")return chAva({id:c.id,title:c.title,av:c.av},size);const o=c.members.find(m=>m!==S.uid)||S.uid,p=CHAT.pub[o]||{uid:o,name:"?"};return chAva({...p,id:o},size)}
 const CH_TYPE={dm:"",group:"👥 ",channel:"📢 "};
@@ -2152,7 +2154,7 @@ function chDrawList(){
   const L=CHAT.chats.filter(c=>(f==="all"||c.type===f)&&(!q||chTitle(c).toLowerCase().includes(q)));
   box.innerHTML=L.length?L.map(c=>{const u=chUnread(c),last=c.last||{},who=c.type==="group"&&last.by&&last.by!==S.uid?(last.name||"").split(" ")[0]+": ":last.by===S.uid?"Siz: ":"";
     const prev=last.kind==="img"?"🖼 Rasm":last.kind==="file"?"📎 "+(last.t||"Fayl"):(last.t||(c.type==="channel"?"Kanal yaratildi":c.type==="group"?"Guruh yaratildi":"Suhbat boshlandi"));
-    return `<button type="button" class="ch-item${CHAT.cur===c.id?" on":""}" data-cid="${esc(c.id)}">${chAvaOf(c,48)}<span class="ch-it"><span class="ch-r1"><b>${CH_TYPE[c.type]||""}${esc(chTitle(c))}</b><small>${c.lastAt?chTime(c.lastAt):""}</small></span><span class="ch-r2"><span class="ch-prev">${esc(who+prev)}</span>${u?`<span class="ch-dot">●</span>`:""}</span></span></button>`}).join("")
+    return `<button type="button" class="ch-item${CHAT.cur===c.id?" on":""}" data-cid="${esc(c.id)}">${chAvaOf(c,48)}<span class="ch-it"><span class="ch-r1"><b>${CH_TYPE[c.type]||""}${esc(chTitle(c))}${chOfb(chPeer(c))}</b><small>${c.lastAt?chTime(c.lastAt):""}</small></span><span class="ch-r2"><span class="ch-prev">${esc(who+prev)}</span>${u?`<span class="ch-dot">●</span>`:""}</span></span></button>`}).join("")
     :`<div class="ch-empty"><p>${q?"Hech narsa topilmadi.":"Hali suhbat yo'q."}</p><button class="btn" type="button" data-act="new">Yangi suhbat boshlash</button></div>`;
   box.querySelectorAll("[data-cid]").forEach(b=>b.onclick=()=>chOpen(b.dataset.cid));
   const nb=box.querySelector('[data-act="new"]');if(nb)nb.onclick=()=>chPanel("new");
@@ -2190,7 +2192,7 @@ function chDrawMain(){
 function chDrawHead(){const h=$("#ch-head"),c=chCur();if(!h||!c)return;
   let sub="";if(c.type==="dm"){const o=c.members.find(x=>x!==S.uid)||S.uid,p=CHAT.pub[o]||{};sub=p.username?"@"+p.username:(p.bio||"shaxsiy suhbat")}
   else sub=c.type==="channel"?`kanal · ${(c.members||[]).length} obunachi`:`${(c.members||[]).length} a'zo`;
-  h.innerHTML=`<button class="ch-ic ch-back" type="button" id="ch-back" aria-label="Orqaga">←</button>${chAvaOf(c,42)}<div class="ch-ht"><b>${CH_TYPE[c.type]||""}${esc(chTitle(c))}</b><small>${esc(sub)}</small></div><button class="ch-ic" type="button" id="ch-info" aria-label="Ma'lumot">ⓘ</button>`;
+  h.innerHTML=`<button class="ch-ic ch-back" type="button" id="ch-back" aria-label="Orqaga">←</button>${chAvaOf(c,42)}<div class="ch-ht"><b>${CH_TYPE[c.type]||""}${esc(chTitle(c))}${chOfb(chPeer(c))}</b><small>${esc(sub)}</small></div><button class="ch-ic" type="button" id="ch-info" aria-label="Ma'lumot">ⓘ</button>`;
   $("#ch-back").onclick=()=>{$("#chat").classList.remove("open");CHAT.cur=null;if(CHAT.unsubMsgs){CHAT.unsubMsgs();CHAT.unsubMsgs=null}chDrawList();chDrawMain()};
   $("#ch-info").onclick=()=>chPanel("info");
 }
@@ -2206,7 +2208,7 @@ function chDrawMsgs(err){
     if(m.kind==="file")body=`<button type="button" class="ch-fileb" data-fid="${esc(m.fid||"")}" data-fname="${esc(m.fname||"fayl")}"><span class="ch-fico">📄</span><span><b>${esc(m.fname||"Fayl")}</b><small>${chSize(m.fsize||0)} · yuklab olish</small></span></button>`;
     if(m.t&&m.kind!=="file")body+=`<div class="ch-txt">${chLinks(m.t)}</div>`;
     const canDel=me||isChAdmin(c);
-    html+=`<div class="ch-row${me?" me":""}">${!me&&c.type==="group"?(showName?`<span class="ch-mava">${chAva({...p,id:m.by},32)}</span>`:`<span class="ch-mava"></span>`):""}<div class="ch-bub${m.kind==="img"?" media":""}">${showName?`<b class="ch-name" style="color:${chColor(m.by)}">${esc(p.name||"")}</b>`:""}${c.type==="channel"&&!me?`<b class="ch-name" style="color:${chColor(c.id)}">${esc(c.title)}</b>`:""}${body}<span class="ch-meta">${(m.at?new Date(m.at).toTimeString().slice(0,5):"")}${me?" ✓":""}${canDel?`<button type="button" class="ch-del" data-mid="${esc(m.id)}" aria-label="O'chirish" title="O'chirish">×</button>`:""}</span></div></div>`});
+    html+=`<div class="ch-row${me?" me":""}">${!me&&c.type==="group"?(showName?`<span class="ch-mava">${chAva({...p,id:m.by},32)}</span>`:`<span class="ch-mava"></span>`):""}<div class="ch-bub${m.kind==="img"?" media":""}">${showName?`<b class="ch-name" style="color:${chColor(m.by)}">${esc(p.name||"")}${chOfb(m.by)}</b>`:""}${c.type==="channel"&&!me?`<b class="ch-name" style="color:${chColor(c.id)}">${esc(c.title)}</b>`:""}${body}<span class="ch-meta">${(m.at?new Date(m.at).toTimeString().slice(0,5):"")}${me?" ✓":""}${canDel?`<button type="button" class="ch-del" data-mid="${esc(m.id)}" aria-label="O'chirish" title="O'chirish">×</button>`:""}</span></div></div>`});
   box.innerHTML=html;
   if(atBottom||box.dataset.cid!==c.id){box.scrollTop=box.scrollHeight;box.dataset.cid=c.id}
   box.querySelectorAll(".ch-img").forEach(b=>b.onclick=()=>chShowImg(b.dataset.fid,b.querySelector("img").src));
@@ -2263,7 +2265,7 @@ async function chDrawPanel(){
     m.innerHTML=`<header class="ch-head">${back}<div class="ch-ht"><b>Shaxsiy xabar</b><small>Kimga yozasiz?</small></div></header><div class="ch-pan"><input id="ch-us" type="search" placeholder="Ism yoki @foydalanuvchi_nomi"><div id="ch-ul" class="ch-ul"><p class="note">Yuklanmoqda…</p></div></div>`;
     bindBack();const all=(await chAllPub(true)).filter(p=>p.uid!==S.uid);
     const draw=()=>{const q=$("#ch-us").value.trim().toLowerCase().replace(/^@/,"");const L=all.filter(p=>!q||(p.name||"").toLowerCase().includes(q)||(p.username||"").includes(q)).slice(0,60);
-      $("#ch-ul").innerHTML=L.length?L.map(p=>`<button type="button" class="ch-u" data-u="${esc(p.uid)}">${chAva(p,42)}<span><b>${esc(p.name||"Foydalanuvchi")}</b><small>${p.username?"@"+esc(p.username):"foydalanuvchi nomi yo'q"}${p.bio?" · "+esc(p.bio):""}</small></span></button>`).join(""):`<p class="note">Hech kim topilmadi.</p>`;
+      $("#ch-ul").innerHTML=L.length?L.map(p=>`<button type="button" class="ch-u" data-u="${esc(p.uid)}">${chAva(p,42)}<span><b>${esc(p.name||"Foydalanuvchi")}${chOfb(p.uid)}</b><small>${p.username?"@"+esc(p.username):"foydalanuvchi nomi yo'q"}${p.bio?" · "+esc(p.bio):""}</small></span></button>`).join(""):`<p class="note">Hech kim topilmadi.</p>`;
       $("#ch-ul").querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>chStartDm(b.dataset.u))};
     $("#ch-us").oninput=draw;draw();setTimeout(()=>$("#ch-us").focus(),30);return}
   if(k==="group"||k==="channel"){
@@ -2277,7 +2279,7 @@ async function chDrawPanel(){
       <p class="err" id="ch-cerr" hidden></p><div><button class="btn" type="submit">${isG?"Guruh yaratish":"Kanal yaratish"}</button></div></form>`;
     bindBack();const all=(await chAllPub(true)).filter(p=>p.uid!==S.uid),sel=new Set();let av="";
     const draw=()=>{const q=$("#ch-cs").value.trim().toLowerCase().replace(/^@/,"");const L=all.filter(p=>!q||(p.name||"").toLowerCase().includes(q)||(p.username||"").includes(q)).slice(0,60);
-      $("#ch-cl").innerHTML=L.map(p=>`<label class="ch-u"><input type="checkbox" data-u="${esc(p.uid)}" ${sel.has(p.uid)?"checked":""}>${chAva(p,36)}<span><b>${esc(p.name||"")}</b><small>${p.username?"@"+esc(p.username):""}</small></span></label>`).join("")||`<p class="note">Hech kim topilmadi.</p>`;
+      $("#ch-cl").innerHTML=L.map(p=>`<label class="ch-u"><input type="checkbox" data-u="${esc(p.uid)}" ${sel.has(p.uid)?"checked":""}>${chAva(p,36)}<span><b>${esc(p.name||"")}${chOfb(p.uid)}</b><small>${p.username?"@"+esc(p.username):""}</small></span></label>`).join("")||`<p class="note">Hech kim topilmadi.</p>`;
       $("#ch-cl").querySelectorAll("[data-u]").forEach(i=>i.onchange=()=>{i.checked?sel.add(i.dataset.u):sel.delete(i.dataset.u)})};
     $("#ch-cs").oninput=draw;draw();
     $("#ch-cav-in").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{av=await chSquare(f,160);$("#ch-cav").innerHTML=`<img src="${av}" alt="">`}catch(er){toast("Rasmni o'qib bo'lmadi")}};
@@ -2300,7 +2302,7 @@ async function chDrawPanel(){
     let other=null;if(c.type==="dm")other=CHAT.pub[c.members.find(x=>x!==S.uid)||S.uid]||{};
     m.innerHTML=`<header class="ch-head">${back}<div class="ch-ht"><b>Ma'lumot</b></div></header><div class="ch-pan">
       <div class="ch-card">${chAvaOf(c,96)}<h2>${esc(chTitle(c))}</h2><p class="note">${c.type==="dm"?(other.username?"@"+esc(other.username):""):c.type==="channel"?`Kanal · ${(c.members||[]).length} obunachi${c.public?" · ochiq":""}`:`Guruh · ${(c.members||[]).length} a'zo`}</p>${(c.type==="dm"?other.bio:c.about)?`<p>${esc(c.type==="dm"?other.bio:c.about)}</p>`:""}</div>
-      ${c.type!=="dm"?`<p class="sb-cap">${c.type==="channel"?"Obunachilar":"A'zolar"}</p><div class="ch-ul">${(c.members||[]).map(u=>{const p=CHAT.pub[u]||{};return `<div class="ch-u">${chAva({...p,id:u},38)}<span><b>${esc(p.name||"…")}${u===S.uid?" (siz)":""}</b><small>${(c.admins||[]).includes(u)?(u===c.owner?"egasi":"administrator"):(p.username?"@"+esc(p.username):"")}</small></span>${adm&&u!==S.uid&&u!==c.owner?`<button class="btn ghost" type="button" data-rm="${esc(u)}">Chiqarish</button>`:""}</div>`}).join("")}</div>
+      ${c.type!=="dm"?`<p class="sb-cap">${c.type==="channel"?"Obunachilar":"A'zolar"}</p><div class="ch-ul">${(c.members||[]).map(u=>{const p=CHAT.pub[u]||{};return `<div class="ch-u">${chAva({...p,id:u},38)}<span><b>${esc(p.name||"…")}${chOfb(u)}${u===S.uid?" (siz)":""}</b><small>${(c.admins||[]).includes(u)?(u===c.owner?"egasi":"administrator"):(p.username?"@"+esc(p.username):"")}</small></span>${adm&&u!==S.uid&&u!==c.owner?`<button class="btn ghost" type="button" data-rm="${esc(u)}">Chiqarish</button>`:""}</div>`}).join("")}</div>
         ${adm?`<div class="stack"><p class="sb-cap">Qo'shish</p><input id="ch-ad" type="search" placeholder="Ism yoki @nom"><div id="ch-adl" class="ch-ul"></div></div>`:""}`:""}
       <div class="btnrow" style="margin-top:12px">${c.type!=="dm"&&c.owner!==S.uid?`<button class="btn ghost" type="button" id="ch-leave">${c.type==="channel"?"Kanaldan chiqish":"Guruhdan chiqish"}</button>`:""}${c.owner===S.uid?`<button class="btn danger" type="button" id="ch-delc">${c.type==="channel"?"Kanalni o'chirish":"Guruhni o'chirish"}</button>`:""}</div></div>`;
     bindBack();
@@ -2309,7 +2311,7 @@ async function chDrawPanel(){
     const dl=$("#ch-delc");if(dl)dl.onclick=async()=>{if(!dl.dataset.sure){dl.dataset.sure="1";dl.textContent="Tasdiqlash uchun yana bosing";return}try{await fs.doc("chats/"+c.id).delete();CHAT.panel=null;CHAT.cur=null;$("#chat").classList.remove("open");chDrawMain();toast("O'chirildi")}catch(e){toast("Bajarib bo'lmadi")}};
     const ad=$("#ch-ad");if(ad){const all=await chAllPub();const draw=()=>{const q=ad.value.trim().toLowerCase().replace(/^@/,"");if(!q){$("#ch-adl").innerHTML="";return}
       const L=all.filter(p=>!(c.members||[]).includes(p.uid)&&((p.name||"").toLowerCase().includes(q)||(p.username||"").includes(q))).slice(0,20);
-      $("#ch-adl").innerHTML=L.map(p=>`<div class="ch-u">${chAva(p,36)}<span><b>${esc(p.name||"")}</b><small>${p.username?"@"+esc(p.username):""}</small></span><button class="btn" type="button" data-add="${esc(p.uid)}">Qo'shish</button></div>`).join("")||`<p class="note">Topilmadi.</p>`;
+      $("#ch-adl").innerHTML=L.map(p=>`<div class="ch-u">${chAva(p,36)}<span><b>${esc(p.name||"")}${chOfb(p.uid)}</b><small>${p.username?"@"+esc(p.username):""}</small></span><button class="btn" type="button" data-add="${esc(p.uid)}">Qo'shish</button></div>`).join("")||`<p class="note">Topilmadi.</p>`;
       $("#ch-adl").querySelectorAll("[data-add]").forEach(b=>b.onclick=async()=>{try{await fs.doc("chats/"+c.id).update({members:[...(c.members||[]),b.dataset.add]});toast("Qo'shildi");setTimeout(()=>chDrawPanel(),300)}catch(e){toast("Bajarib bo'lmadi")}})};ad.oninput=draw}
   }
 }

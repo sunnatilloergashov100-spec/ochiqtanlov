@@ -780,3 +780,11 @@ button.btn.ghost,a.btn.ghost{border-color:color-mix(in srgb,var(--teal) 35%,var(
 .kt-rm{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--bad);font-size:18px;cursor:pointer}
 @media (max-width:640px){.kt-ih{display:none}.kt-ir{grid-template-columns:1fr 1fr 36px;padding:8px;border:1px solid var(--line);border-radius:12px}.kt-ir [data-in]{grid-column:1/-1}.kt-ir [data-ig]{grid-column:1/-1}}
 .kv a{color:var(--teal)}
+/* chat: avatar har doim aylana (flex ichida cho'zilmasin) */
+.ch-ava{flex:0 0 auto!important;aspect-ratio:1/1;max-width:none}
+.ch-u>span:not(.ch-ava){flex:1 1 auto;min-width:0}
+.ch-u>span.ch-ava{flex:0 0 auto!important;display:inline-grid}
+.ch-u b,.ch-r1 b,.ch-ht b{display:inline-flex;align-items:center;flex-wrap:nowrap;min-width:0}
+.ch-r1 b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-u .ofb,.ch-r1 .ofb,.ch-ht .ofb,.ch-name .ofb,.sb-pt .ofb{margin-left:5px}
+.ofb svg{width:15px;height:15px}
