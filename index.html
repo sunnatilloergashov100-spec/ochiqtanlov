@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B7A62">
-<meta name="ot-build" content="13">
+<meta name="ot-build" content="14">
 <title>OchiqTanlov</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -170,6 +170,31 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 
   <!-- HAR BIR FOYDALANUVCHI: SOZLAMALAR -->
   <!-- XABARLAR (chat) -->
+  <section id="v-ijara" class="section" hidden>
+    <div class="ij-top"><div><h1>Ijara xonadonlari</h1><p class="lede">Talabalar va oilalar uchun ijaraga xonadonlar: narxi, rasmi, videosi, kimga mo'ljallangani va necha kishi sig'ishi. Kelishilsa, shartnoma shu yerda tuziladi.</p></div><button class="btn" type="button" data-ij-new>+ E'lon joylash</button></div>
+    <div class="filters ij-filters">
+      <input id="ij-q" type="search" placeholder="Qidirish: ko'cha, mo'ljal, tuman…" aria-label="Qidirish">
+      <select id="ij-g" aria-label="Kim uchun"><option value="">Kim uchun: hammasi</option><option value="qiz">Qizlar uchun</option><option value="ogil">Yigitlar uchun</option><option value="oila">Oila uchun</option></select>
+      <select id="ij-reg" aria-label="Hudud"></select>
+      <input id="ij-max" type="number" min="0" step="100000" inputmode="numeric" placeholder="Narx: gacha (so'm)" aria-label="Eng ko'p narx">
+      <select id="ij-sort" aria-label="Saralash"><option value="new">Avval yangilari</option><option value="cheap">Avval arzonlari</option><option value="free">Ko'p bo'sh joy</option></select>
+    </div>
+    <p class="note" id="ij-count"></p>
+    <div class="ij-grid" id="ij-grid"></div>
+  </section>
+
+  <section id="v-ijara-mening" class="section" hidden>
+    <div class="ij-top"><div><h1>Mening e'lonlarim</h1><p class="lede">Joylagan e'lonlaringiz, kelgan va yuborgan so'rovlar.</p></div><button class="btn" type="button" data-ij-new>+ E'lon joylash</button></div>
+    <div class="panel stack"><h2 style="margin:0">Kelgan so'rovlar</h2><div class="stack" id="ij-inc"></div></div>
+    <div class="stack"><h2 style="margin:0">E'lonlarim</h2><div id="ij-mine"></div></div>
+    <div class="panel stack"><h2 style="margin:0">Yuborgan so'rovlarim</h2><div class="stack" id="ij-out"></div></div>
+  </section>
+
+  <section id="v-ijara-shartnoma" class="section" hidden>
+    <div><h1>Shartnomalar</h1><p class="lede">Uy egasi so'rovni qabul qilgach shartnoma tuziladi: avval egasi, keyin ijarachi elektron imzolaydi. Chop etish yoki Word faylini olish mumkin.</p></div>
+    <div class="stack" id="ij-cons"></div>
+  </section>
+
   <section id="v-chat" class="section" hidden>
     <div class="chat" id="chat">
       <aside class="ch-side">
@@ -589,6 +614,7 @@ C) Boshqa bo'limga yo'naltirish</pre>
   <div class="exam-cam" id="ex-cam"><video id="ex-video" autoplay muted playsinline></video><span id="ex-cam-st">Kamera</span></div>
   <div class="exam-body wrap" id="ex-body"></div>
 </div>
+<div class="modal ij-modal" id="ij-modal" hidden role="dialog" aria-modal="true" aria-label="Ijara"><div class="sheet ij-sheet" id="ij-sheet"></div></div>
 <div class="modal" id="cert" hidden role="dialog" aria-modal="true" aria-label="Natija guvohnomasi"><div class="sheet" id="certBody"></div></div>
 <div class="toast" id="toast" hidden></div>
 
