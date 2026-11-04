@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1B3A6B">
-<meta name="ot-build" content="17">
+<meta name="ot-build" content="18">
 <title>OchiqTanlov</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -170,6 +170,40 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
 
   <!-- HAR BIR FOYDALANUVCHI: SOZLAMALAR -->
   <!-- XABARLAR (chat) -->
+  <section id="v-obuna" class="section" hidden>
+    <div><h1>Rasmiy profil (obuna)</h1><p class="lede">Obuna bilan ijara e'lonlari, ovqatlanish joylari, o'quv markazlari va xizmatlarni o'zingiz joylaysiz va tahrirlaysiz; ish beruvchi tashkilot bo'limi ochiladi. Profilingizda «Rasmiy» belgisi paydo bo'ladi.</p></div>
+    <div class="stack" id="ob-state"></div>
+    <div class="ob-plans" id="ob-plans" role="group" aria-label="Tariflar"></div>
+    <ul class="ob-gets"><li>Ijara xonadonlari e'lonlarini joylash va tahrirlash</li><li>Ovqatlanish joylari, o'quv markazlari va xizmatlarni qo'shish (manzil, menyu, narxlar)</li><li>Ish beruvchi tashkilot bo'limi (vakansiya e'lon qilish)</li><li>Profilda va e'lonlarda «Rasmiy» belgisi</li></ul>
+    <form class="panel stack ob-form" id="ob-form" novalidate>
+      <h2 style="margin:0">To'lov va so'rov</h2>
+      <p class="ob-sum">Tanlangan tarif: <b id="ob-sum"></b></p>
+      <div class="ob-pay"><b>To'lov ma'lumotlari</b><p id="ob-pay"></p></div>
+      <div class="row2"><label for="ob-m">To'lov usuli<select id="ob-m"><option value="">Tanlang…</option><option value="click">Click</option><option value="payme">Payme</option><option value="karta">Bank kartasiga o'tkazma</option><option value="naqd">Naqd (administratorga)</option></select></label>
+        <label for="ob-phone">Telefon<input id="ob-phone" type="tel" maxlength="20" placeholder="+998 90 123 45 67"></label></div>
+      <label for="ob-txn">To'lov raqami (tranzaksiya yoki chek raqami)<input id="ob-txn" maxlength="60" autocomplete="off" placeholder="Masalan: 1234567890"></label>
+      <div class="stack"><label class="btn ghost tg-ava-btn" for="ob-rc" style="align-self:flex-start">Chek rasmini qo'shish (ixtiyoriy)</label><input type="file" id="ob-rc" accept="image/*" hidden><div class="ob-rcp" id="ob-rcp"></div></div>
+      <label for="ob-note">Izoh (ixtiyoriy)<textarea id="ob-note" rows="2" maxlength="300" placeholder="Masalan: tashkilot nomi yoki qaysi bo'lim uchun"></textarea></label>
+      <p class="err" id="ob-err" hidden></p>
+      <div class="btnrow"><button class="btn" type="submit" id="ob-send">Obuna so'rovini yuborish</button><span class="note">Bosh administrator to'lovni tekshirib tasdiqlaydi.</span></div>
+    </form>
+  </section>
+
+  <section id="v-obunalar" class="section" hidden>
+    <div><h1>Obunalar</h1><p class="lede">To'lov so'rovlarini tekshirib tasdiqlang. Tasdiqlangan foydalanuvchi «Rasmiy profil» oladi.</p></div>
+    <div class="panel stack"><h2 style="margin:0">Kutilayotgan so'rovlar</h2><div id="obc-req"></div></div>
+    <form class="panel stack" id="obc-form"><h2 style="margin:0">Narxlar va to'lov ma'lumotlari</h2>
+      <div class="row3"><label for="obc-1">1 oylik (so'm)<input id="obc-1" type="number" min="0" step="1000"></label><label for="obc-6">6 oylik (so'm)<input id="obc-6" type="number" min="0" step="1000"></label><label for="obc-12">1 yillik (so'm)<input id="obc-12" type="number" min="0" step="1000"></label></div>
+      <p class="note" id="obc-hint" style="margin:0"></p>
+      <label for="obc-pay">To'lov ma'lumotlari (foydalanuvchilarga ko'rinadi)<textarea id="obc-pay" rows="3" maxlength="600" placeholder="Karta: 8600 **** **** 1234 (F.I.Sh.)&#10;Click / Payme: +998 90 123 45 67"></textarea></label>
+      <div><button class="btn" type="submit">Saqlash</button></div></form>
+    <div class="panel stack"><h2 style="margin:0">Obunachilar</h2><div id="obc-act"></div></div>
+  </section>
+
+  <section id="v-ovqat" class="section" hidden></section>
+  <section id="v-talim" class="section" hidden></section>
+  <section id="v-xizmat" class="section" hidden></section>
+
   <section id="v-ijara" class="section" hidden>
     <div class="ij-top"><div><h1>Ijara xonadonlari</h1><p class="lede">Talabalar va oilalar uchun ijaraga xonadonlar: narxi, rasmi, videosi, kimga mo'ljallangani va necha kishi sig'ishi. Kelishilsa, shartnoma shu yerda tuziladi.</p></div><button class="btn" type="button" data-ij-new>+ E'lon joylash</button></div>
     <div class="filters ij-filters">

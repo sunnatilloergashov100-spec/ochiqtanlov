@@ -733,3 +733,50 @@ body:not(.has-sb){background:
 .empty{border-style:dashed;border-color:color-mix(in srgb,var(--gold-o) 55%,var(--line))}
 button.btn.ghost,a.btn.ghost{border-color:color-mix(in srgb,var(--teal) 35%,var(--line))}
 .gate-verify a,.linkbtn{color:var(--teal)}
+/* ---------- Obuna (Rasmiy profil) ---------- */
+.ofb{display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;font-family:var(--f-body);font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--gold-o);white-space:nowrap}
+.ofb svg{color:var(--gold-o);flex:none}
+.ob-seal{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:color-mix(in srgb,var(--gold-o) 16%,var(--card));color:var(--gold-o);flex:none}
+.ob-seal svg{width:28px;height:28px}
+.ob-need{align-items:flex-start}
+.ob-status{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+.ob-status div{display:flex;flex-direction:column;gap:2px}.ob-status span{font-size:13.5px;color:var(--muted)}
+.ob-status.ok{border-color:var(--gold-o);background:color-mix(in srgb,var(--gold-o) 9%,var(--card))}
+.ob-status.wait{border-color:var(--teal);background:var(--teal-soft)}
+.ob-status.warn,.ob-status.bad{border-color:var(--bad);background:var(--bad-soft)}
+.ob-plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.ob-plan{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;flex-direction:column;gap:6px;padding:22px 20px 18px;border:2px solid var(--line);border-radius:18px;background:var(--card);transition:border-color .2s,transform .2s}
+.ob-plan:hover{transform:translateY(-2px)}
+.ob-plan.on{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.ob-plan:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ob-plan em{position:absolute;top:-11px;left:18px;font-style:normal;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--teal);color:#fff}
+.ob-plan em.best{background:var(--gold-o);color:#1B2436}
+.ob-pl{font-weight:700;color:var(--muted)}
+.ob-pr{font-family:var(--f-display);font-size:26px;color:var(--ink)}
+.ob-pm{font-size:13.5px;color:var(--muted)}
+.ob-sv{font-size:13px;font-weight:700;color:var(--teal)}.ob-sv.muted{color:var(--muted);font-weight:500}
+.ob-gets{margin:0;padding-left:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:4px 20px;color:var(--muted)}
+.ob-sum{margin:0}
+.ob-pay{padding:12px 14px;border-radius:12px;background:var(--paper);border:1px dashed color-mix(in srgb,var(--gold-o) 60%,var(--line))}
+.ob-pay p{margin:4px 0 0;white-space:normal;font-family:var(--f-mono);font-size:13.5px}
+.ob-rcp{display:flex;gap:10px;align-items:flex-end}.ob-rcp img{max-width:180px;max-height:180px;border-radius:10px;border:1px solid var(--line)}
+.ob-form textarea{font:inherit}
+/* ---------- Katalog (ovqatlanish, ta'lim, xizmatlar) ---------- */
+.kt-open{flex:0 0 auto!important;align-self:center}
+.kt-ty{background:#fff!important;color:#1B3A6B!important}
+.kt-st{position:absolute;right:10px;top:10px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(10,20,25,.7);color:#fff}
+.kt-st.on{background:#0F6E72}
+.kt-nm{display:flex;align-items:center;flex-wrap:wrap;font-size:16px;line-height:1.3}
+.kt-big{font-size:16px!important;color:var(--bad)!important}.kt-big.on{color:var(--teal)!important}
+.kt-menu{margin-bottom:12px}
+.kt-menu h4{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal)}
+.kt-row{display:flex;align-items:baseline;gap:8px;padding:5px 0}
+.kt-row i{flex:1;border-bottom:1px dotted color-mix(in srgb,var(--muted) 50%,transparent);transform:translateY(-3px)}
+.kt-row b{white-space:nowrap}.kt-row small{color:var(--muted);font-weight:500}
+.kt-items{display:flex;flex-direction:column;gap:6px}
+.kt-ih,.kt-ir{display:grid;grid-template-columns:1.1fr 2fr 1fr .8fr 36px;gap:6px;align-items:center}
+.kt-ih{font-size:12px;font-weight:600;color:var(--muted)}
+.kt-ir input{padding:8px 10px}
+.kt-rm{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--bad);font-size:18px;cursor:pointer}
+@media (max-width:640px){.kt-ih{display:none}.kt-ir{grid-template-columns:1fr 1fr 36px;padding:8px;border:1px solid var(--line);border-radius:12px}.kt-ir [data-in]{grid-column:1/-1}.kt-ir [data-ig]{grid-column:1/-1}}
+.kv a{color:var(--teal)}

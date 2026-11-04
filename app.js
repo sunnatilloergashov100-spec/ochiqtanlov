@@ -1,6 +1,6 @@
 (function(){
 // Sahifa (index.html) keshdan eski holda ochilgan bo'lsa, uni bir marta keshsiz qayta yuklaymiz
-{const BUILD=17,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
+{const BUILD=18,m=document.querySelector('meta[name="ot-build"]');if(!m||+m.content!==BUILD){let again=false;try{again=sessionStorage.getItem("ot-fix-"+BUILD)==="1";sessionStorage.setItem("ot-fix-"+BUILD,"1")}catch(e){}
   if(!again){const u=new URL(location.href);u.searchParams.set("b",String(BUILD)+"."+Date.now().toString(36));location.replace(u.toString());return}
   document.getElementById("main").innerHTML='<div class="gate"><h1>Ilova yangilanmoqda</h1><p class="lede">Yangi versiya serverga tarqalmoqda. 2–3 daqiqadan keyin qayta oching.</p><div><button class="btn" type="button" onclick="try{sessionStorage.clear()}catch(e){};location.reload()">Qayta urinish</button></div></div>';return}}
 if(typeof firebase==="undefined"){document.getElementById("main").innerHTML='<div class="gate"><h1>Internet aloqasi yo\'q</h1><p class="lede">OchiqTanlov ishlashi uchun internet kerak. Ulanishni tekshirib, ilovani qayta oching.</p></div>';return}
@@ -14,7 +14,7 @@ const LANGS=["O'zbek","Rus","Ingliz","Koreys","Nemis"];
 const ORG_TYPES=["Vazirlik / qo'mita","Hokimlik","Maktab / bog'cha","Oliy ta'lim muassasasi","Tibbiyot muassasasi","Davlat korxonasi","Boshqa davlat tashkiloti"];
 const DAY=864e5;
 // ---------- versiyalar ----------
-const WEB_VER=17; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
+const WEB_VER=18; // sayt kodi versiyasi: yangi fayllar yuklanganda oshiriladi
 const APK_VER=(()=>{const q=new URLSearchParams(location.search).get("apk");if(q!=null){try{sessionStorage.setItem("ot-apk",q)}catch(e){}return +q||0}
   try{const s=sessionStorage.getItem("ot-apk");if(s!=null)return +s||0}catch(e){}return /; wv\)/.test(navigator.userAgent)?0:null})(); // null = oddiy brauzer
 const FROM_PLAY=(()=>{const q=new URLSearchParams(location.search).get("play");if(q==="1"){try{sessionStorage.setItem("ot-play","1")}catch(e){}return true}try{return sessionStorage.getItem("ot-play")==="1"}catch(e){return false}})();
@@ -83,40 +83,42 @@ const myTestStatus=()=>{const a=S.myAttempt,t=testOf(S.uid);if(t!=null)return {k
 // ---------- routing ----------
 const APP_TABS=[["vakansiyalar","Vakansiyalar"],["arizalar","Arizalarim"],["profil","Profil va test"],["statistika","Statistika"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
 const EMP_TABS=[["boshqaruv","Boshqaruv"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
-const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"],["ish-beruvchilar","Ish beruvchilar"],["testlar","Test"]];
+const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"],["ish-beruvchilar","Ish beruvchilar"],["testlar","Test"],["obunalar","Obunalar"]];
 const CHIEF_ADM=[["boshqaruv","Boshqaruv"],["tashkilotlar","Tashkilotlar"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["sozlamalar","Sozlamalar"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
 APP_TABS.push(["chat","Xabarlar"]);EMP_TABS.push(["chat","Xabarlar"]);CHIEF_ADM.push(["chat","Xabarlar"]);
 const IJ_TABS=[["ijara","E'lonlar"],["ijara-mening","Mening e'lonlarim"],["ijara-shartnoma","Shartnomalar"]];APP_TABS.push(...IJ_TABS);EMP_TABS.push(...IJ_TABS);CHIEF_ADM.push(...IJ_TABS);
+const KT_TABS=[["ovqat","Ovqatlanish joylari"],["talim","O'quv markazlari"],["xizmat","Xizmatlar va ustalar"],["obuna","Rasmiy profil (obuna)"]];APP_TABS.push(...KT_TABS);EMP_TABS.push(...KT_TABS);CHIEF_ADM.push(...KT_TABS);
 APP_TABS.push(["sozlamalarim","Sozlamalar"],["kutish","Ish beruvchi so'rovi"]);EMP_TABS.push(["sozlamalarim","Sozlamalar"]);CHIEF_ADM.push(["sozlamalarim","Sozlamalar"]);
-const ALL_VIEWS=["ijara","ijara-mening","ijara-shartnoma","chat","kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
+const ALL_VIEWS=["obuna","obunalar","ovqat","talim","xizmat","ijara","ijara-mening","ijara-shartnoma","chat","kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
 // Ilova uch qismga bo'linadi; har qism ichida bo'limlar guruhlangan
-const MODES=[["applicant","Bo'sh ish o'rinlari"],["ijara","Ijara xonadonlari"],["admin","Ish beruvchi tashkilot"],["chief","Administrator"],["chat","Xabarlar"],["settings","Sozlamalar"]];
+const MODES=[["applicant","Bo'sh ish o'rinlari"],["ijara","Ijara xonadonlari"],["ovqat","Ovqatlanish joylari"],["talim","O'quv markazlari"],["xizmat","Xizmatlar va ustalar"],["admin","Ish beruvchi tashkilot"],["chief","Administrator"],["chat","Xabarlar"],["settings","Sozlamalar"]];
 const GEAR='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
 const G_APP=[["Vakansiyalar",["vakansiyalar","arizalar"]],["Profil va test",["profil"]],["Ma'lumot",["statistika","qoidalar","haqida"]]];
 const G_EMP=[["Vakansiyalar",["boshqaruv","boshqaruv-vak","arizalar-adm","natijalar"]],["Shikoyatlar",["shikoyatlar"]],["Hisobot",["statistika","jurnal"]],["Ma'lumot",["qoidalar","haqida"]]];
 const G_CEMP=[["Vakansiyalar",["boshqaruv","boshqaruv-vak","arizalar-adm","natijalar"]],["Shikoyatlar",["shikoyatlar"]],["Tashkilotlar",["tashkilotlar","ish-beruvchilar"]]];
-const G_CADM=[["Monitoring",["monitoring","kirishlar","foydalanuvchilar"]],["Test",["testlar"]],["Hisobot",["statistika","jurnal"]],["Tizim",["sozlamalar","qoidalar","haqida"]]];
-const G_SET=[["Sozlamalar",["sozlamalarim"]]];
+const G_CADM=[["Monitoring",["monitoring","kirishlar","foydalanuvchilar"]],["Test",["testlar"]],["Obunalar",["obunalar"]],["Hisobot",["statistika","jurnal"]],["Tizim",["sozlamalar","qoidalar","haqida"]]];
+const G_SET=[["Sozlamalar",["sozlamalarim"]],["Rasmiy profil (obuna)",["obuna"]]];
 const TAB_LABEL={...Object.fromEntries(APP_TABS.concat(EMP_TABS,CHIEF_TABS,CHIEF_ADM)),sozlamalar:"Tizim sozlamalari"};
 const inG=(G,t)=>G.some(g=>g[1].includes(t));
 const isIj=t=>t==="ijara"||t==="ijara-mening"||t==="ijara-shartnoma";
 const G_IJ=[["E'lonlar",["ijara"]],["Mening e'lonlarim",["ijara-mening"]],["Shartnomalar",["ijara-shartnoma"]]];
-function curMode(t){if(isIj(t))return "ijara";if(t==="chat")return "chat";if(t==="sozlamalarim")return "settings";if(t==="kutish")return "admin";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
-function groupsFor(t){if(isIj(t))return G_IJ;if(t==="chat")return [["Xabarlar",["chat"]]];if(t==="sozlamalarim")return G_SET;if(t==="kutish")return [["Ish beruvchi so'rovi",["kutish"]]];if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
+function isKt(t){return t==="ovqat"||t==="talim"||t==="xizmat"}
+function curMode(t){if(isKt(t))return t;if(t==="obuna")return "settings";if(isIj(t))return "ijara";if(t==="chat")return "chat";if(t==="sozlamalarim")return "settings";if(t==="kutish")return "admin";if(S.role==="chief")return inG(G_CEMP,t)?"admin":"chief";return S.role}
+function groupsFor(t){if(isKt(t))return [[TAB_LABEL[t]||t,[t]]];if(t==="obuna")return G_SET;if(isIj(t))return G_IJ;if(t==="chat")return [["Xabarlar",["chat"]]];if(t==="sozlamalarim")return G_SET;if(t==="kutish")return [["Ish beruvchi so'rovi",["kutish"]]];if(S.role==="applicant")return G_APP;if(S.role==="admin")return G_EMP;return curMode(t)==="admin"?G_CEMP:G_CADM}
 // Bo'lim nomlari: bosh administrator config/ui ichida o'zgartira oladi
 const LBL=(k,d)=>{const L=((S.ui||{}).labels)||{};return (L[k]&&String(L[k]).trim())||d};
-const MODE_ICON={ijara:'<path d="M3 11l9-7 9 7M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="12" cy="14" r="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 16v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',chat:'<path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',applicant:'<path d="M11 4a7 7 0 1 0 4.2 12.6L20 21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',admin:'<path d="M4 20V8l8-4 8 4v12M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',chief:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>'};
+const MODE_ICON={ovqat:'<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1.2-2.5 3.5-2.5 6v3H17V3zM17 12v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',talim:'<path d="M2.5 9L12 4.5 21.5 9 12 13.5zM6 11v4.5c0 1.5 2.7 3 6 3s6-1.5 6-3V11M21.5 9v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',xizmat:'<path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L4 17l3 3 5.2-5.2a4 4 0 0 0 5.3-5.3l-2.4 2.4-2.4-.6-.6-2.4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',ijara:'<path d="M3 11l9-7 9 7M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="12" cy="14" r="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 16v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',chat:'<path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',applicant:'<path d="M11 4a7 7 0 1 0 4.2 12.6L20 21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',admin:'<path d="M4 20V8l8-4 8 4v12M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',chief:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>'};
 function renderNav(t){
   const m=curMode(t);
   $("#modes").innerHTML=MODES.map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===m}"${k==="settings"?` class="gear"`:""}>${k==="settings"?GEAR:`<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${MODE_ICON[k]}</svg>`}<span>${esc(LBL("m:"+k,l))}</span>${k==="admin"&&S.isChief&&(S.admins||[]).some(a=>!a.org)?` <span class="bdg">${(S.admins||[]).filter(a=>!a.org).length}</span>`:""}</button>`).join("");
   const G=groupsFor(t),gi=Math.max(0,G.findIndex(g=>g[1].includes(t)));
-  const hide=m==="settings"||m==="chat"||t==="kutish";$("#nav").hidden=hide;$("#sbNavCap").hidden=hide;
+  const hide=m==="chat"||t==="kutish"||isKt(t);$("#nav").hidden=hide;$("#sbNavCap").hidden=hide;
   const pend=S.isChief?(S.admins||[]).filter(a=>!a.org).length:0,bdg=n=>n?` <span class="bdg">${n}</span>`:"";
   $("#nav").innerHTML=`<div class="grp">${G.map((g,i)=>{const on=i===gi;
     return `<a class="g" href="#${g[1][0]}" ${on?'aria-current="page"':""}>${esc(LBL("g:"+g[0],g[0]))}${g[1].includes("ish-beruvchilar")?bdg(pend):""}</a>`+
       (on&&g[1].length>1?`<div class="sub">${g[1].map(k=>`<a href="#${k}" ${k===t?'aria-current="page"':""}>${esc(LBL("t:"+k,TAB_LABEL[k]))}${k==="ish-beruvchilar"?bdg(pend):""}</a>`).join("")}</div>`:"")}).join("")}</div>`;
   const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||S.login||"";
-  const my=(window.CHAT&&CHAT.pub[S.uid])||{};$("#sbProf").innerHTML=`<span class="sb-ava">${my.av?`<img src="${esc(my.av)}" alt="">`:esc(((my.name||nm).trim()[0]||"?").toUpperCase())}</span><span class="sb-pt"><b>${esc(my.name||nm)}</b><small>${esc(S.login||"")} · ${esc(ROLE_UZ[S.role]||"")}</small></span>`;
+  const my=(window.CHAT&&CHAT.pub[S.uid])||{};$("#sbProf").innerHTML=`<span class="sb-ava">${my.av?`<img src="${esc(my.av)}" alt="">`:esc(((my.name||nm).trim()[0]||"?").toUpperCase())}</span><span class="sb-pt"><b>${esc(my.name||nm)}${obBadge(S.uid,false)}</b><small>${esc(S.login||"")} · ${esc(ROLE_UZ[S.role]||"")}</small></span>`;
   document.querySelectorAll("section.section").forEach(sec=>{const k=sec.id.slice(2),h=sec.querySelector("h1");if(!h)return;const L=(((S.ui||{}).labels||{})["t:"+k]||"").trim();
     if(L){if(!h.dataset.ov)h.dataset.orig=h.textContent;h.dataset.ov="1";h.textContent=L}else if(h.dataset.ov){h.textContent=h.dataset.orig;delete h.dataset.ov}});
   if(IJ)ijBadge();if(typeof chBadge==="function"&&window.CHAT)try{chBadge()}catch(e){}
@@ -127,8 +129,9 @@ function route(){
   if(t.startsWith("tekshir"))t="tekshir";
   else if(!S.role)t="gate";else if(!tabs().some(x=>x[0]===t))t=tabs()[0][0];
   // ish beruvchi bosh administrator tasdiqlamaguncha (tashkilotga biriktirmaguncha) ichkariga kirmaydi
-  if(S.role==="admin"&&!(S.adminDoc||{}).org&&!["sozlamalarim","qoidalar","haqida","tekshir","ijara","ijara-mening","ijara-shartnoma","chat"].includes(t))t="kutish";
-  if(IJ&&!$("#ij-modal").hidden&&!isIj(t))ijClose();
+  if(S.role==="admin"&&!(S.adminDoc||{}).org&&!["sozlamalarim","qoidalar","haqida","tekshir","ijara","ijara-mening","ijara-shartnoma","chat","obuna","ovqat","talim","xizmat"].includes(t))t="kutish";
+  if(IJ&&!$("#ij-modal").hidden&&!isIj(t)&&!isKt(t))ijClose();
+  if(S.role==="admin"&&!S.isChief&&(S.adminDoc||{}).org&&OB&&OB.loaded&&!obMine()&&!["obuna","sozlamalarim","qoidalar","haqida","chat","ijara","ijara-mening","ijara-shartnoma","ovqat","talim","xizmat","tekshir"].includes(t)){t="obuna";history.replaceState(null,"","#obuna")}
   ALL_VIEWS.forEach(x=>{const el=document.getElementById("v-"+x);if(el)el.hidden=x!==t});
   $("#hdr").hidden=!S.role||t==="tekshir";
   document.body.classList.toggle("has-sb",!$("#hdr").hidden);$("#hdr").classList.remove("open");$("#sbBack").hidden=true;$("#sbToggle").setAttribute("aria-expanded","false");
@@ -256,9 +259,13 @@ $("#modes").addEventListener("click",e=>{
   if(m==="settings")return go(S.role,"sozlamalarim");
   if(m==="chat")return go(S.role,"chat");
   if(m==="ijara")return go(S.role,"ijara");
+  if(isKt(m))return go(S.role,m);
   if(m==="applicant"){S.elev=null;return go("applicant","vakansiyalar")}
   // Ish beruvchi: kod yo'q — so'rov yuboradi, bosh administrator ruxsat bergach kiradi
-  if(m==="admin"&&!S.isChief){S.elev=null;if((S.adminDoc||{}).org)return go("admin","boshqaruv");return go("applicant","kutish")}
+  if(m==="admin"&&!S.isChief){S.elev=null;
+    // ish beruvchi bo'limi faqat faol obuna bilan ochiladi
+    if((S.adminDoc||{}).org){if(OB&&OB.loaded&&!obMine()){toast("Ish beruvchi bo'limi uchun Rasmiy profil (obuna) kerak");return go(S.role==="admin"?"applicant":S.role,"obuna")}return go("admin","boshqaruv")}
+    return go("applicant","kutish")}
   // Administrator qismiga faqat bosh administrator kodi bilan, har kirishda
   if(S.elev==="chief"&&S.isChief)return go("chief",m==="admin"?"boshqaruv":"monitoring");
   S.codeTarget=m;S.prevRole=S.role;S.prevHash=location.hash.slice(1);S.role=null;location.hash="";openAuth("chief","code");route();
@@ -512,7 +519,7 @@ function render(){
   let t=location.hash.slice(1);
   if(t.startsWith("tekshir")){renderVerify();return}
   if(!S.role){renderGate();return}
-  if(S.role==="admin"&&!(S.adminDoc||{}).org&&!["sozlamalarim","qoidalar","haqida","ijara","ijara-mening","ijara-shartnoma","chat"].includes(t))t="kutish";
+  if(S.role==="admin"&&!(S.adminDoc||{}).org&&!["sozlamalarim","qoidalar","haqida","ijara","ijara-mening","ijara-shartnoma","chat","obuna","ovqat","talim","xizmat"].includes(t))t="kutish";
   if(t==="vakansiyalar"||!t&&S.role==="applicant")renderVacs();
   if(t==="profil")renderProfile();
   if(t==="arizalar")renderMyApps();
@@ -535,6 +542,9 @@ function render(){
   if(t==="sozlamalarim")renderMySettings();
   if(t==="chat")renderChat();
   if(isIj(t))renderIjara(t);
+  if(isKt(t))renderKatalog(t);
+  if(t==="obuna")renderObuna();
+  if(t==="obunalar")renderObunalar();
   if(t==="kutish")renderRequest();
 }
 // ---------- ISH BERUVCHI SO'ROVI (kodsiz; bosh administrator ruxsat beradi) ----------
@@ -2410,7 +2420,7 @@ function ijCard(r){const free=ijFree(r);
       <span class="ij-meta"><span>${esc(IJ_TYPE[r.type]||"")}</span>${r.rooms?`<span>${esc(r.rooms)} xona</span>`:""}<span class="${free?"ok":"full"}">${free?`Bo'sh: ${free} / ${esc(r.capacity)} kishi`:"Joy qolmagan"}</span></span></span></button>`}
 function ijDrawList(){
   ijFilterUi();const f=IJ.f,q=f.q.trim().toLowerCase(),max=+f.max||0;
-  let L=IJ.list.filter(r=>r.status!=="hidden"||r.owner===S.uid);
+  let L=IJ.list.filter(r=>(r.status!=="hidden"&&obActive(r.owner))||r.owner===S.uid||(S.isChief&&S.role==="chief"));
   if(f.g)L=L.filter(r=>r.gender===f.g||(f.g!=="oila"&&r.gender==="farqsiz"));
   if(f.reg)L=L.filter(r=>r.region===f.reg);
   if(max)L=L.filter(r=>(+r.price||0)<=max);
@@ -2421,7 +2431,7 @@ function ijDrawList(){
 }
 ["ij-q","ij-g","ij-max","ij-reg","ij-sort"].forEach(id=>$("#"+id).addEventListener("input",()=>{IJ.f={q:$("#ij-q").value,g:$("#ij-g").value,max:$("#ij-max").value,reg:$("#ij-reg").value,sort:$("#ij-sort").value};ijDrawList()}));
 document.addEventListener("click",e=>{const c=e.target.closest("[data-ij]");if(c){ijShow(c.dataset.ij);return}
-  if(e.target.closest("[data-ij-new]"))ijForm(null)});
+  if(e.target.closest("[data-ij-new]")){if(!obMine()){obNeed("Ijara e'lonini joylash");return}ijForm(null)}});
 
 // ---------- e'lon tafsiloti ----------
 async function ijShow(id){
@@ -2444,7 +2454,7 @@ async function ijShow(id){
       <div class="stack">${amen.length?`<div><h3 class="ij-h3">Qulayliklar</h3><div class="chips">${amen.map(a=>`<span class="chip">✓ ${esc(a)}</span>`).join("")}</div></div>`:""}
         ${r.rules?`<div><h3 class="ij-h3">Uy qoidalari</h3><p class="ij-txt">${esc(r.rules)}</p></div>`:""}</div></div>
     ${r.desc?`<div><h3 class="ij-h3">Batafsil</h3><p class="ij-txt">${esc(r.desc)}</p></div>`:""}
-    <div class="ij-owner">${window.CHAT?chAva({...pub,uid:r.owner,name:pub.name||r.ownerName},44):""}<span><b>${esc(r.ownerName||pub.name||"Uy egasi")}</b><small>Uy egasi${pub.username?" · @"+esc(pub.username):""}</small></span>
+    <div class="ij-owner">${window.CHAT?chAva({...pub,uid:r.owner,name:pub.name||r.ownerName},44):""}<span><b>${esc(r.ownerName||pub.name||"Uy egasi")} ${obBadge(r.owner,false)}</b><small>Uy egasi${pub.username?" · @"+esc(pub.username):""}</small></span>
       ${r.phone?`<a class="btn ghost" href="tel:${esc(String(r.phone).replace(/[^+\d]/g,""))}">${esc(r.phone)}</a>`:""}</div>
     <div class="btnrow">${own?`<button class="btn" type="button" id="ij-edit">Tahrirlash</button><button class="btn ghost" type="button" id="ij-hide">${r.status==="hidden"?"Ko'rsatish":"Yashirish"}</button><button class="btn danger" type="button" id="ij-del">O'chirish</button>`:
       `${myReq?`<span class="pill ${myReq.status==="accepted"?"res":"rank"}">${myReq.status==="accepted"?"So'rovingiz qabul qilindi — Shartnomalar bo'limini oching":"So'rovingiz yuborilgan, javob kutilmoqda"}</span>`:free?`<button class="btn" type="button" id="ij-req">Ijaraga so'rov yuborish</button>`:`<span class="pill closed">Joy qolmagan</span>`}
@@ -2456,7 +2466,7 @@ async function ijShow(id){
     $("#ij-main").onclick=()=>{const im=$("#ij-main img");if(im)ijLightbox(im.src)}}
   const vp=$("#ij-vplay");if(vp)vp.onclick=()=>ijPlay(r);
   const on=(id,f)=>{const b=$("#"+id);if(b)b.onclick=f};
-  on("ij-edit",()=>ijForm(r));
+  on("ij-edit",()=>{if(!obMine()){obNeed("E'lonni tahrirlash");return}ijForm(r)});
   on("ij-hide",async()=>{try{await fs.doc("rentals/"+r.id).update({status:r.status==="hidden"?"active":"hidden",updatedAt:Date.now()});toast(r.status==="hidden"?"E'lon yana ko'rinadi":"E'lon yashirildi");ijClose()}catch(e){toast("Bajarib bo'lmadi")}});
   on("ij-del",()=>ijDelete(r));
   on("ij-req",()=>ijReqForm(r));
@@ -2630,7 +2640,7 @@ function ijDrawMine(){
       <div class="btnrow"><a class="btn ghost" href="tel:${esc(String(q.phone||"").replace(/[^+\d]/g,""))}">${esc(q.phone||"")}</a><button class="btn ghost" type="button" data-ijdm="${esc(q.renter)}">Yozish</button>
         ${q.status==="pending"?`<button class="btn" type="button" data-ijok="${esc(q.id)}">Qabul qilish va shartnoma tuzish</button><button class="btn danger" type="button" data-ijno="${esc(q.id)}">Rad etish</button>`:""}
         ${q.cid?`<button class="btn ghost" type="button" data-ijcon="${esc(q.cid)}">Shartnomani ochish</button>`:""}</div></div>`).join(""):`<p class="note">Hozircha so'rov kelmagan.</p>`;
-  $("#ij-mine").innerHTML=mine.length?`<div class="ij-grid">${mine.map(ijCard).join("")}</div>`:`<div class="empty"><b>Sizda e'lon yo'q</b><p class="note">Xonadoningizni ijaraga bermoqchi bo'lsangiz, e'lon joylang.</p><div><button class="btn" type="button" data-ij-new>+ E'lon joylash</button></div></div>`;
+  $("#ij-mine").innerHTML=(mine.length&&!obMine()?`<div class="empty" style="margin-bottom:14px"><b>Obunangiz faol emas</b><p class="note">E'lonlaringiz boshqalarga ko'rinmayapti va ularni tahrirlab bo'lmaydi. <a href="#obuna">Rasmiy profil (obuna) olish</a></p></div>`:"")+(mine.length?`<div class="ij-grid">${mine.map(ijCard).join("")}</div>`:`<div class="empty"><b>Sizda e'lon yo'q</b><p class="note">Xonadoningizni ijaraga bermoqchi bo'lsangiz, e'lon joylang.</p><div><button class="btn" type="button" data-ij-new>+ E'lon joylash</button></div></div>`);
   $("#ij-out").innerHTML=out.length?out.map(q=>`<div class="ij-req"><div class="ij-rq1"><b>${esc(q.title||"")}</b>${pill(q.status)}</div><p class="note">${esc(q.people)} kishi · ${esc(ijDate(q.start))} dan ${esc(q.months)} oy · ${dt(q.at)}</p>
       <div class="btnrow"><button class="btn ghost" type="button" data-ij="${esc(q.rid)}">E'lonni ochish</button><button class="btn ghost" type="button" data-ijdm="${esc(q.owner)}">Egasiga yozish</button>${q.status==="pending"?`<button class="btn ghost" type="button" data-ijcan="${esc(q.id)}">So'rovni bekor qilish</button>`:""}${q.cid?`<button class="btn" type="button" data-ijcon="${esc(q.cid)}">Shartnomani ochish</button>`:""}</div></div>`).join(""):`<p class="note">Siz hali so'rov yubormagansiz.</p>`;
 }
@@ -2746,6 +2756,249 @@ function ijDrawCons(){
   $("#ij-cons").innerHTML=L.length?L.map(c=>{const st=IJ_ST[c.status]||[c.status,"rank"],isR=c.renter===S.uid,need=isR&&c.status==="pending";
     return `<button type="button" class="ij-req ij-conrow ${need?"new":""}" data-ijcon="${esc(c.id)}"><div class="ij-rq1"><b>${esc(c.no)} · ${esc(c.title||"")}</b><span class="pill ${st[1]}">${esc(st[0])}</span></div>
       <p class="note">${isR?"Uy egasi: "+esc(c.ownerName):"Ijarachi: "+esc(c.renterName)} · ${esc(ijDate(c.start))} – ${esc(ijDate(c.end))} · ${esc(ijMoney(c.price))}/oy${need?" · <b>imzoingiz kutilmoqda</b>":""}</p></button>`}).join(""):`<div class="empty"><b>Shartnoma yo'q</b><p class="note">Uy egasi ijaraga so'rovingizni qabul qilganda shartnoma shu yerda paydo bo'ladi.</p></div>`;
+}
+
+
+// =================== OBUNA (Rasmiy profil) ===================
+// config/subs    — narxlar va to'lov ma'lumotlari (bosh administrator yozadi)
+// subreq/{uid}   — foydalanuvchining obuna so'rovi (to'lov ma'lumoti bilan; faqat o'zi va bosh administrator ko'radi)
+// subs/{uid}     — faol obuna (hamma ko'radi: "Rasmiy profil" belgisi shundan; faqat bosh administrator yozadi)
+var OB=null;
+OB={cfg:null,subs:{},my:null,reqs:[],uid:null,un:[],plan:"6"};
+const OB_DEF={m1:35000,m6:179000,m12:315000,pay:""};
+const OB_PLANS=[["1","1 oylik",1],["6","6 oylik",6],["12","1 yillik",12]];
+const OB_METHOD={click:"Click",payme:"Payme",karta:"Bank kartasiga o'tkazma",naqd:"Naqd (administratorga)"};
+function obCfg(){return {...OB_DEF,...(OB.cfg||{})}}
+function obPrice(p){const c=obCfg();return +(p==="1"?c.m1:p==="6"?c.m6:c.m12)||0}
+function obSave(p){const m=+p,full=obPrice("1")*m,pr=obPrice(p);return full>0&&m>1?Math.max(0,Math.round(100*(1-pr/full))):0}
+function obActive(uid){const s=OB&&OB.subs[uid];return !!(s&&(+s.until||0)>Date.now())}
+function obMine(){return obActive(S.uid)}
+const OB_SEAL='<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 2l2.4 1.8 3-.2.9 2.9 2.5 1.7-1 2.8 1 2.8-2.5 1.7-.9 2.9-3-.2L12 22l-2.4-1.8-3 .2-.9-2.9L3.2 15.8l1-2.8-1-2.8 2.5-1.7.9-2.9 3 .2z" fill="currentColor"/><path d="M8.5 12.2l2.3 2.3 4.7-4.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function obBadge(uid,txt){return obActive(uid)?`<span class="ofb" title="Rasmiy profil: obuna tasdiqlangan">${OB_SEAL}${txt===false?"":"Rasmiy"}</span>`:""}
+function obStart(){
+  if(!S.uid||OB.uid===S.uid)return;obStop();OB.uid=S.uid;const err=e=>console.warn("obuna",e&&e.code||e);
+  OB.un.push(fs.doc("config/subs").onSnapshot(s=>{OB.cfg=s.exists?s.data():null;obRefresh()},err));
+  OB.un.push(fs.collection("subs").onSnapshot(q=>{const m={};q.docs.forEach(d=>m[d.id]={uid:d.id,...d.data()});OB.subs=m;const first=!OB.loaded;OB.loaded=true;obRefresh();if(S.role&&!$("#hdr").hidden)renderNav(location.hash.slice(1));if(first&&S.role==="admin")route();if(IJ&&ijView())ijRefresh();if(KT&&ktView())ktDraw()},err));
+  OB.un.push(fs.doc("subreq/"+S.uid).onSnapshot(s=>{OB.my=s.exists?{id:s.id,...s.data()}:null;obRefresh()},err));
+  if(S.isChief)OB.un.push(fs.collection("subreq").onSnapshot(q=>{OB.reqs=q.docs.map(d=>({id:d.id,...d.data()}));obRefresh();obNavBadge()},err));
+}
+function obStop(){OB.un.forEach(f=>{try{f()}catch(e){}});Object.assign(OB,{un:[],uid:null,subs:{},my:null,reqs:[],cfg:null,loaded:false})}
+setInterval(()=>{if(S.uid&&S.role&&OB.uid!==S.uid)obStart();if(!S.uid&&OB.uid)obStop()},1500);
+function obRefresh(){const t=location.hash.slice(1);if(t==="obuna")renderObuna();if(t==="obunalar")renderObunalar();
+}
+function obNavBadge(){const n=OB.reqs.filter(r=>r.status==="pending").length,a=document.querySelector('#nav a[href="#obunalar"]');if(a)a.innerHTML=esc(LBL("t:obunalar","Obunalar"))+(n?` <span class="bdg">${n}</span>`:"")}
+// obuna kerak bo'lgan joyda chaqiriladi
+function obNeed(what){
+  ijModal(`<div class="stack ob-need"><span class="ob-seal">${OB_SEAL}</span><h2 style="margin:0">Rasmiy profil kerak</h2>
+    <p class="note" style="margin:0">${esc(what)} uchun faol obuna kerak. Obuna olgach profilingizda <b>«Rasmiy»</b> belgisi paydo bo'ladi va e'lonlaringizni o'zingiz kiritib, tahrirlay olasiz.</p>
+    <div class="btnrow"><a class="btn" href="#obuna" id="ob-go">Tariflarni ko'rish</a><button class="btn ghost" type="button" id="ob-x">Keyinroq</button></div></div>`);
+  $("#ob-go").onclick=()=>ijClose();$("#ob-x").onclick=ijClose;
+}
+const obDate=ms=>ms?new Date(ms).toLocaleDateString("ru-RU"):"—";
+function obAddMonths(from,m){const d=new Date(from);d.setMonth(d.getMonth()+(+m||1));return d.getTime()}
+
+// ---------- foydalanuvchi: tariflar va so'rov ----------
+let obRcpt=null;
+function renderObuna(){
+  obStart();const c=obCfg(),sub=OB.subs[S.uid],act=obMine(),rq=OB.my;
+  let st="";
+  if(act)st=`<div class="ob-status ok"><span class="ob-seal">${OB_SEAL}</span><div><b>Rasmiy profil faol</b><span>${obDate(sub.until)} gacha · tarif: ${esc((OB_PLANS.find(p=>p[0]===String(sub.plan))||[,""])[1])}</span></div></div>`;
+  else if(sub)st=`<div class="ob-status warn"><div><b>Obuna muddati tugagan</b><span>${obDate(sub.until)} da tugadi. E'lonlaringiz boshqalarga ko'rinmayapti — obunani yangilang.</span></div></div>`;
+  if(rq&&rq.status==="pending")st+=`<div class="ob-status wait"><div><b>So'rovingiz ko'rib chiqilmoqda</b><span>${esc((OB_PLANS.find(p=>p[0]===rq.plan)||[,""])[1])} · ${esc(ijMoney(rq.price))} · ${esc(OB_METHOD[rq.method]||rq.method)} · ${dt(rq.at)}. Bosh administrator to'lovni tekshirib tasdiqlaydi.</span></div></div>`;
+  if(rq&&rq.status==="rejected")st+=`<div class="ob-status bad"><div><b>So'rov rad etildi</b><span>${esc(rq.reason||"Sabab ko'rsatilmagan")}. To'lov ma'lumotlarini tekshirib, qayta yuboring.</span></div></div>`;
+  $("#ob-state").innerHTML=st;
+  $("#ob-plans").innerHTML=OB_PLANS.map(([k,l,m])=>{const pr=obPrice(k),sv=obSave(k),on=OB.plan===k;
+    return `<button type="button" class="ob-plan ${on?"on":""}" data-plan="${k}" aria-pressed="${on}">${k==="6"?`<em>Ommabop</em>`:k==="12"?`<em class="best">Eng foydali</em>`:""}
+      <span class="ob-pl">${esc(l)}</span><b class="ob-pr">${esc(ijMoney(pr))}</b>
+      <span class="ob-pm">${m>1?`oyiga ${esc(ijMoney(Math.round(pr/m)))}`:"har oy uchun"}</span>
+      ${sv?`<span class="ob-sv">−${sv}% tejaysiz · ${esc(ijMoney(obPrice("1")*m-pr))}</span>`:`<span class="ob-sv muted">chegirmasiz</span>`}</button>`}).join("");
+  $("#ob-plans").onclick=e=>{const b=e.target.closest("[data-plan]");if(!b)return;OB.plan=b.dataset.plan;renderObuna()};
+  const pr=obPrice(OB.plan);
+  $("#ob-sum").textContent=`${(OB_PLANS.find(p=>p[0]===OB.plan)||[,""])[1]} — ${ijMoney(pr)}`;
+  $("#ob-pay").innerHTML=c.pay?esc(c.pay).replace(/\n/g,"<br>"):`<span class="note">To'lov ma'lumotlari hali kiritilmagan. Bosh administrator bilan bog'laning.</span>`;
+  const busy=rq&&rq.status==="pending";$("#ob-form").querySelectorAll("input,select,textarea,button").forEach(x=>x.disabled=busy);
+  $("#ob-send").textContent=busy?"So'rov yuborilgan":act?"Obunani uzaytirish":"Obuna so'rovini yuborish";
+  if(!$("#ob-phone").value)$("#ob-phone").value=(S.contacts[S.uid]||{}).phone||"";
+}
+$("#ob-rc").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;try{const r=await chImg(f,1100,0.7);obRcpt=r.data;$("#ob-rcp").innerHTML=`<img src="${esc(obRcpt)}" alt="Chek"><button class="linkbtn" type="button" id="ob-rcd">O'chirish</button>`;$("#ob-rcd").onclick=()=>{obRcpt=null;$("#ob-rcp").innerHTML=""}}catch(er){toast("Rasmni o'qib bo'lmadi")}});
+$("#ob-form").addEventListener("submit",async e=>{
+  e.preventDefault();const err=$("#ob-err"),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;
+  const method=$("#ob-m").value,txn=$("#ob-txn").value.trim(),phone=$("#ob-phone").value.trim(),note=$("#ob-note").value.trim();
+  if(!method)return fail("To'lov usulini tanlang.");
+  if(method!=="naqd"&&txn.length<4&&!obRcpt)return fail("To'lov raqamini (tranzaksiya / chek raqami) yozing yoki chek rasmini qo'shing.");
+  if(String(phone).replace(/\D/g,"").length<9)return fail("Telefon raqamingizni yozing — administrator kerak bo'lsa bog'lanadi.");
+  if(obRcpt&&obRcpt.length>400000)return fail("Chek rasmi juda katta. Boshqa rasm tanlang.");
+  const c=S.contacts[S.uid]||{},b=$("#ob-send");b.disabled=true;
+  try{await fs.doc("subreq/"+S.uid).set({uid:S.uid,login:S.login||"",name:c.name||(S.profile||{}).name||S.login||"",phone,plan:OB.plan,price:obPrice(OB.plan),method,txn,note,receipt:obRcpt||"",status:"pending",at:Date.now()});
+    obRcpt=null;$("#ob-rcp").innerHTML="";$("#ob-txn").value="";$("#ob-note").value="";toast("So'rov yuborildi. Administrator tasdiqlagach Rasmiy profil yoqiladi")}
+  catch(x){b.disabled=false;fail("Yuborib bo'lmadi. Firestore qoidalarini yangilang yoki internetni tekshiring.")}
+});
+
+// ---------- bosh administrator: obunalarni tasdiqlash ----------
+function renderObunalar(){
+  obStart();const c=obCfg();
+  const f=$("#obc-form");if(!f.contains(document.activeElement)){$("#obc-1").value=c.m1;$("#obc-6").value=c.m6;$("#obc-12").value=c.m12;$("#obc-pay").value=c.pay||""}
+  $("#obc-hint").textContent=`Chegirma: 6 oylik −${obSave("6")}%, 1 yillik −${obSave("12")}% (oylik narxga nisbatan).`;
+  const P=OB.reqs.filter(r=>r.status==="pending").sort((a,b)=>(a.at||0)-(b.at||0));
+  $("#obc-req").innerHTML=P.length?`<div class="tablebox"><table class="wide"><thead><tr><th>Sana</th><th>Foydalanuvchi</th><th>Tarif</th><th class="num">Summa</th><th>To'lov</th><th>Chek</th><th></th></tr></thead><tbody>`+
+    P.map(r=>`<tr><td class="mono">${dt(r.at)}</td><td><b>${esc(r.name||"")}</b><div class="note mono">${esc(r.login||"")} · ${esc(r.phone||"")}</div></td><td>${esc((OB_PLANS.find(p=>p[0]===r.plan)||[,r.plan])[1])}</td><td class="num">${esc(ijMoney(r.price))}${+r.price!==obPrice(r.plan)?`<div class="err" style="margin:0">Narx mos emas: ${esc(ijMoney(obPrice(r.plan)))} bo'lishi kerak</div>`:""}</td>
+      <td>${esc(OB_METHOD[r.method]||r.method||"")}${r.txn?`<div class="note mono">${esc(r.txn)}</div>`:""}${r.note?`<div class="note">${esc(r.note)}</div>`:""}</td>
+      <td>${r.receipt?`<button class="btn ghost" type="button" data-obrc="${esc(r.id)}">Ko'rish</button>`:`<span class="note">yo'q</span>`}</td>
+      <td style="white-space:nowrap"><button class="btn" type="button" data-obok="${esc(r.id)}">Tasdiqlash</button> <button class="btn danger" type="button" data-obno="${esc(r.id)}">Rad etish</button></td></tr>`).join("")+`</tbody></table></div>`:`<p class="note">Kutilayotgan so'rov yo'q.</p>`;
+  const A=Object.values(OB.subs).sort((a,b)=>(b.until||0)-(a.until||0));
+  $("#obc-act").innerHTML=A.length?`<div class="tablebox"><table class="wide"><thead><tr><th>Foydalanuvchi</th><th>Tarif</th><th>Boshlangan</th><th>Tugaydi</th><th>Holat</th><th></th></tr></thead><tbody>`+
+    A.map(s=>{const on=(+s.until||0)>Date.now();return `<tr><td><b>${esc(s.name||"")}</b> ${on?obBadge(s.uid,false):""}<div class="note mono">${esc(s.login||"")}</div></td><td>${esc((OB_PLANS.find(p=>p[0]===String(s.plan))||[,s.plan||""])[1])}</td><td class="mono">${obDate(s.since)}</td><td class="mono">${obDate(s.until)}</td><td>${on?`<span class="pill res">Faol</span>`:`<span class="pill closed">Tugagan</span>`}</td><td><button class="btn ghost" type="button" data-obdel="${esc(s.uid)}">Bekor qilish</button></td></tr>`}).join("")+`</tbody></table></div>`:`<p class="note">Hali obuna yo'q.</p>`;
+  obNavBadge();
+}
+$("#obc-form").addEventListener("submit",async e=>{e.preventDefault();
+  const m1=Math.round(+$("#obc-1").value||0),m6=Math.round(+$("#obc-6").value||0),m12=Math.round(+$("#obc-12").value||0);
+  if(!(m1>0&&m6>0&&m12>0)){toast("Narxlarni kiriting");return}
+  try{await fs.doc("config/subs").set({m1,m6,m12,pay:$("#obc-pay").value.trim(),at:Date.now(),by:S.uid});toast("Saqlandi");log("obuna",`Obuna narxlari: ${m1} / ${m6} / ${m12}`).catch(()=>{})}catch(x){toast("Saqlab bo'lmadi")}});
+["obc-1","obc-6","obc-12"].forEach(id=>$("#"+id).addEventListener("input",()=>{OB.cfg={...obCfg(),m1:+$("#obc-1").value||0,m6:+$("#obc-6").value||0,m12:+$("#obc-12").value||0};$("#obc-hint").textContent=`Chegirma: 6 oylik −${obSave("6")}%, 1 yillik −${obSave("12")}% (oylik narxga nisbatan).`}));
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-obok],[data-obno],[data-obrc],[data-obdel]");if(!b||!S.isChief)return;
+  if(b.dataset.obrc){const r=OB.reqs.find(x=>x.id===b.dataset.obrc);if(r&&r.receipt)ijLightbox(r.receipt);return}
+  if(b.dataset.obdel){const s=OB.subs[b.dataset.obdel];if(!s||!confirm(`${s.name||s.login}: obuna bekor qilinsinmi? Rasmiy belgi va e'lon joylash huquqi o'chadi.`))return;
+    try{await fs.doc("subs/"+s.uid).delete();log("obuna",`Obuna bekor qilindi: ${s.login||s.uid}`).catch(()=>{});toast("Bekor qilindi")}catch(x){toast("Bajarib bo'lmadi")}return}
+  const id=b.dataset.obok||b.dataset.obno,r=OB.reqs.find(x=>x.id===id);if(!r)return;
+  if(b.dataset.obno){const reason=prompt("Rad etish sababi (foydalanuvchiga ko'rinadi):","To'lov topilmadi");if(reason===null)return;
+    try{await fs.doc("subreq/"+id).update({status:"rejected",reason:reason.slice(0,200),decAt:Date.now(),decBy:S.uid});toast("Rad etildi")}catch(x){toast("Bajarib bo'lmadi")}return}
+  const m=+r.plan||1,old=OB.subs[id],from=Math.max(Date.now(),(old&&+old.until)||0),until=obAddMonths(from,m);
+  if(!confirm(`${r.name||r.login}: ${ijMoney(r.price)} to'lov qabul qilinganini tasdiqlaysizmi?\nObuna ${obDate(until)} gacha faol bo'ladi.`))return;
+  b.disabled=true;
+  try{await fs.doc("subs/"+id).set({uid:id,login:r.login||"",name:r.name||"",plan:String(r.plan),since:(old&&(+old.until||0)>Date.now()&&old.since)||Date.now(),until,price:r.price||0,by:S.uid,at:Date.now()});
+    await fs.doc("subreq/"+id).update({status:"approved",decAt:Date.now(),decBy:S.uid,reason:""});
+    log("obuna",`Obuna tasdiqlandi: ${r.login} — ${r.plan} oy, ${r.price} so'm`).catch(()=>{});toast("Obuna faollashtirildi")}
+  catch(x){b.disabled=false;toast("Bajarib bo'lmadi: Firestore qoidalarini yangilang")}
+});
+
+// =================== KATALOG: ovqatlanish joylari, o'quv markazlari, xizmatlar ===================
+// places/{id} — joy (manzil, ish vaqti, rasmlar, narxlar ro'yxati). Faqat faol obunachi kiritadi va tahrirlaydi.
+var KT=null;
+KT={list:[],un:null,uid:null,f:{},edit:null,ph:[]};
+const KT_SEC={
+  ovqat:{t:"Ovqatlanish joylari",lede:"Restoran, kafe, fastfud va choyxonalar: manzili, menyusi va narxlari.",add:"+ Joy qo'shish",items:"Menyu va narxlar",item:"Taom yoki ichimlik",grp:"Bo'lim (masalan: Birinchi taomlar)",unit:"porsiya",
+    types:{restoran:"Restoran",kafe:"Kafe",fastfud:"Fastfud",choyxona:"Choyxona",milliy:"Milliy taomlar",qahva:"Qahvaxona",shirin:"Shirinliklar va tortlar"},bulk:"Lag'mon — 28000\nOsh (to'y oshi) — 35000\nSomsa — 8000\nKoka-kola 1 l — 12000"},
+  talim:{t:"O'quv markazlari va repetitorlar",lede:"Kurslar va repetitorlar: fanlar, narxlar, manzil va dars vaqti.",add:"+ Markaz yoki repetitor qo'shish",items:"Kurslar va narxlar",item:"Kurs yoki fan",grp:"Yo'nalish (masalan: Tillar)",unit:"oy",
+    types:{markaz:"O'quv markazi",repetitor:"Repetitor",til:"Til kursi",it:"IT kurs",abituriyent:"Abituriyentlar uchun",haydovchi:"Haydovchilik maktabi",sport:"Sport va to'garaklar"},bulk:"Ingliz tili (IELTS) — 450000\nMatematika (abituriyent) — 350000\nKompyuter savodxonligi — 300000"},
+  xizmat:{t:"Xizmatlar va ustalar",lede:"Uy ta'miri, santexnika, elektr, avto va maishiy xizmatlar — narxlari bilan.",add:"+ Xizmat qo'shish",items:"Xizmatlar narxi",item:"Xizmat",grp:"Turi (masalan: Santexnika)",unit:"ish",
+    types:{tamir:"Uy ta'miri",santexnika:"Santexnika",elektr:"Elektrik",avto:"Avtoservis",texnika:"Maishiy texnika ta'miri",gozallik:"Go'zallik saloni",tozalash:"Tozalash xizmati",yuk:"Yuk tashish",tikuv:"Tikuvchilik"},bulk:"Rozetka o'rnatish — 30000\nKran almashtirish — 60000\nKonditsioner tozalash — 150000"}
+};
+const ktView=()=>{const t=location.hash.slice(1);return KT_SEC[t]?t:null};
+function ktStart(){if(!S.uid||KT.uid===S.uid)return;if(KT.un)KT.un();KT.uid=S.uid;
+  KT.un=fs.collection("places").onSnapshot(q=>{KT.list=q.docs.map(d=>({id:d.id,...d.data()}));if(ktView())ktDraw()},e=>console.warn("places",e&&e.code||e))}
+setInterval(()=>{if(S.uid&&S.role&&KT.uid!==S.uid)ktStart();if(!S.uid&&KT.uid){if(KT.un)KT.un();Object.assign(KT,{un:null,uid:null,list:[]})}},1500);
+function ktMin(r){const p=(r.items||[]).map(i=>+i.p||0).filter(x=>x>0);return p.length?Math.min(...p):0}
+function ktMax(r){const p=(r.items||[]).map(i=>+i.p||0).filter(x=>x>0);return p.length?Math.max(...p):0}
+function ktOpen(r){if(r.allday)return true;const o=r.open,c=r.close;if(!o||!c)return null;const n=new Date(),m=n.getHours()*60+n.getMinutes(),mm=s=>{const [h,x]=String(s).split(":");return (+h||0)*60+(+x||0)},a=mm(o),b=mm(c);return b>a?m>=a&&m<b:(m>=a||m<b)}
+function ktHours(r){return r.allday?"24/7":r.open&&r.close?`${r.open} – ${r.close}`:""}
+function renderKatalog(t){ktStart();obStart();
+  const el=$("#v-"+t);if(!el.dataset.built){const s=KT_SEC[t];el.dataset.built="1";
+    el.innerHTML=`<div class="ij-top"><div><h1>${esc(s.t)}</h1><p class="lede">${esc(s.lede)}</p></div><button class="btn" type="button" data-kt-new="${t}">${esc(s.add)}</button></div>
+      <div class="filters ij-filters"><input type="search" data-kf="q" placeholder="Qidirish: nomi, manzil, taom yoki xizmat…" aria-label="Qidirish">
+        <select data-kf="type" aria-label="Turi"><option value="">Barcha turlar</option>${Object.entries(s.types).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("")}</select>
+        <select data-kf="reg" aria-label="Hudud"><option value="">Barcha hududlar</option>${REGIONS.map(r=>`<option>${esc(r)}</option>`).join("")}</select>
+        <select data-kf="sort" aria-label="Saralash"><option value="new">Avval yangilari</option><option value="cheap">Avval arzonlari</option><option value="name">Nomi bo'yicha</option></select>
+        <label class="chk kt-open"><input type="checkbox" data-kf="open"> Hozir ochiq</label><label class="chk kt-open"><input type="checkbox" data-kf="mine"> Mening joylarim</label></div>
+      <p class="note" data-kcount></p><div class="ij-grid" data-kgrid></div>`;
+    el.querySelectorAll("[data-kf]").forEach(x=>x.addEventListener("input",()=>{const f=KT.f[t]=KT.f[t]||{};el.querySelectorAll("[data-kf]").forEach(y=>f[y.dataset.kf]=y.type==="checkbox"?y.checked:y.value);ktDraw()}))}
+  ktDraw();
+}
+function ktCard(r){const s=KT_SEC[r.sec]||{},op=ktOpen(r),mn=ktMin(r),mx=ktMax(r);
+  return `<button type="button" class="ij-card kt-card" data-kt="${esc(r.id)}"><span class="ij-cover">${r.cover?`<img src="${esc(r.cover)}" alt="" loading="lazy">`:`<svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`}
+      <span class="ij-g kt-ty">${esc((s.types||{})[r.type]||"")}</span>${op===null?"":`<span class="kt-st ${op?"on":""}">${op?"Ochiq":"Yopiq"}</span>`}${r.delivery?`<span class="ij-v">Yetkazib berish</span>`:""}</span>
+    <span class="ij-body"><span class="kt-nm"><b>${esc(r.name||"")}</b>${obBadge(r.owner,false)}</span>
+      <span class="ij-loc">${esc([r.district,r.address].filter(Boolean).join(", ")||r.region||"")}</span>
+      <span class="ij-meta">${mn?`<span class="ok">${mn===mx?esc(ijMoney(mn)):esc(ijMoney(mn).replace(" so'm",""))+" – "+esc(ijMoney(mx))}</span>`:""}${ktHours(r)?`<span>${esc(ktHours(r))}</span>`:""}<span>${(r.items||[]).length} ta narx</span></span></span></button>`}
+function ktDraw(){
+  const t=ktView();if(!t)return;const el=$("#v-"+t);if(!el||!el.dataset.built)return;const f=KT.f[t]||{},q=(f.q||"").trim().toLowerCase();
+  let L=KT.list.filter(r=>r.sec===t&&((r.status!=="hidden"&&obActive(r.owner))||r.owner===S.uid||(S.isChief&&S.role==="chief")));
+  if(f.mine)L=L.filter(r=>r.owner===S.uid);if(f.type)L=L.filter(r=>r.type===f.type);if(f.reg)L=L.filter(r=>r.region===f.reg);if(f.open)L=L.filter(r=>ktOpen(r)===true);
+  if(q)L=L.filter(r=>[r.name,r.address,r.district,r.landmark,r.desc,...(r.items||[]).map(i=>i.n+" "+(i.g||""))].join(" ").toLowerCase().includes(q));
+  L.sort(f.sort==="cheap"?(a,b)=>(ktMin(a)||1e12)-(ktMin(b)||1e12):f.sort==="name"?(a,b)=>String(a.name).localeCompare(String(b.name)):(a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  el.querySelector("[data-kcount]").textContent=L.length?`${L.length} ta joy`:"";
+  const mineHidden=KT.list.some(r=>r.sec===t&&r.owner===S.uid)&&!obMine();
+  el.querySelector("[data-kgrid]").innerHTML=(mineHidden?`<div class="empty" style="grid-column:1/-1"><b>Obunangiz faol emas</b><p class="note">Joylaringiz boshqalarga ko'rinmayapti. <a href="#obuna">Obunani yangilang</a>.</p></div>`:"")+(L.length?L.map(ktCard).join(""):`<div class="empty"><b>${KT.list.some(r=>r.sec===t)?"Shartlarga mos joy topilmadi":"Hozircha joy qo'shilmagan"}</b><p class="note">Obuna olgan foydalanuvchilar o'z joylarini qo'shadi.</p></div>`);
+}
+document.addEventListener("click",e=>{const c=e.target.closest("[data-kt]");if(c){ktShow(c.dataset.kt);return}
+  const n=e.target.closest("[data-kt-new]");if(n){if(!obMine()&&!(S.isChief&&S.role==="chief")){obNeed("Joy qo'shish");return}ktForm(n.dataset.ktNew,null)}});
+async function ktShow(id){
+  const r=KT.list.find(x=>x.id===id);if(!r){toast("Topilmadi");return}const s=KT_SEC[r.sec]||{},own=r.owner===S.uid,op=ktOpen(r);IJ.cur={kind:"kt",id};
+  const groups={};(r.items||[]).forEach(i=>{const g=i.g||"Asosiy";(groups[g]=groups[g]||[]).push(i)});
+  const pub=window.CHAT?await chPub(r.owner).catch(()=>({})):{};
+  const map="https://yandex.uz/maps/?text="+encodeURIComponent([r.name,r.address,r.district,r.region].filter(Boolean).join(", "));
+  const kv=(k,v)=>v?`<dt>${k}</dt><dd>${v}</dd>`:"";
+  ijModal(`<div class="ij-gal"><div class="ij-main" id="ij-main">${r.cover?`<img src="${esc(r.cover)}" alt="${esc(r.name||"")}">`:`<span class="note">Rasm qo'shilmagan</span>`}</div><div class="ij-thumbs" id="ij-thumbs"></div></div>
+    <div class="ij-head"><div><h2>${esc(r.name||"")} ${obBadge(r.owner)}</h2><p class="note">${esc((s.types||{})[r.type]||"")} · ${esc([r.region,r.district,r.address].filter(Boolean).join(", "))}</p></div>
+      <div class="ij-pr">${op===null?"":`<b class="kt-big ${op?"on":""}">${op?"Hozir ochiq":"Hozir yopiq"}</b>`}<small>${esc(ktHours(r)||"Ish vaqti ko'rsatilmagan")}</small></div></div>
+    <dl class="kv">${kv("Manzil",esc([r.address,r.district,r.region].filter(Boolean).join(", ")))}${kv("Mo'ljal",esc(r.landmark||""))}${kv("Ish vaqti",esc(ktHours(r)))}${kv("Telefon",r.phone?`<a href="tel:${esc(String(r.phone).replace(/[^+\d]/g,""))}">${esc(r.phone)}</a>`:"")}${r.sec==="ovqat"?kv("Yetkazib berish",r.delivery?"Bor":"Yo'q"):""}${kv("O'rtacha narx",ktMin(r)?esc(ijMoney(ktMin(r)))+" – "+esc(ijMoney(ktMax(r))):"")}</dl>
+    ${r.desc?`<p class="ij-txt">${esc(r.desc)}</p>`:""}
+    <div><h3 class="ij-h3">${esc(s.items||"Narxlar")}</h3>${(r.items||[]).length?Object.entries(groups).map(([g,L])=>`<div class="kt-menu"><h4>${esc(g)}</h4>${L.map(i=>`<div class="kt-row"><span>${esc(i.n)}</span><i></i><b>${+i.p?esc(ijMoney(i.p)):"kelishiladi"}${i.u?`<small> / ${esc(i.u)}</small>`:""}</b></div>`).join("")}</div>`).join(""):`<p class="note">Narxlar kiritilmagan.</p>`}</div>
+    <div class="ij-owner">${window.CHAT?chAva({...pub,uid:r.owner,name:pub.name||r.ownerName},44):""}<span><b>${esc(r.ownerName||pub.name||"")} ${obBadge(r.owner,false)}</b><small>Joy egasi${pub.username?" · @"+esc(pub.username):""}</small></span></div>
+    <div class="btnrow">${r.phone?`<a class="btn" href="tel:${esc(String(r.phone).replace(/[^+\d]/g,""))}">Qo'ng'iroq qilish</a>`:""}<a class="btn ghost" href="${esc(map)}" target="_blank" rel="noopener">Xaritada ochish</a>
+      ${own?`<button class="btn ghost" type="button" id="kt-edit">Tahrirlash</button><button class="btn ghost" type="button" id="kt-hide">${r.status==="hidden"?"Ko'rsatish":"Yashirish"}</button><button class="btn danger" type="button" id="kt-del">O'chirish</button>`:`<button class="btn ghost" type="button" id="kt-chat">Egasiga yozish</button>${S.isChief&&S.role==="chief"?`<button class="btn danger" type="button" id="kt-del">O'chirish (moderator)</button>`:""}`}</div>`,true);
+  const ids=r.photos||[];if(ids.length){$("#ij-thumbs").innerHTML=ids.map((p,i)=>`<button type="button" data-ph="${esc(p)}" aria-label="${i+1}-rasm"><span class="ij-sk"></span></button>`).join("");const big={};
+    ids.forEach(async(p,i)=>{try{const g=await fs.doc("rentfiles/"+p).get();if(!g.exists)return;big[p]=g.data().data;const b=document.querySelector(`#ij-thumbs [data-ph="${CSS.escape(p)}"]`);if(b)b.innerHTML=`<img src="${esc(big[p])}" alt="">`;if(i===0&&$("#ij-main"))$("#ij-main").innerHTML=`<img src="${esc(big[p])}" alt="">`}catch(e){}});
+    $("#ij-thumbs").onclick=e=>{const b=e.target.closest("[data-ph]");if(b&&big[b.dataset.ph])$("#ij-main").innerHTML=`<img src="${esc(big[b.dataset.ph])}" alt="">`};$("#ij-main").onclick=()=>{const im=$("#ij-main img");if(im)ijLightbox(im.src)}}
+  const on=(i,f)=>{const b=$("#"+i);if(b)b.onclick=f};
+  on("kt-edit",()=>{if(!obMine()){obNeed("Tahrirlash");return}ktForm(r.sec,r)});
+  on("kt-hide",async()=>{try{await fs.doc("places/"+r.id).update({status:r.status==="hidden"?"active":"hidden",updatedAt:Date.now()});toast("Saqlandi");ijClose()}catch(e){toast("Bajarib bo'lmadi")}});
+  on("kt-del",async()=>{if(!confirm("Joy va uning rasmlari o'chiriladi. Davom etasizmi?"))return;try{await Promise.all((r.photos||[]).map(p=>fs.doc("rentfiles/"+p).delete().catch(()=>{})));await fs.doc("places/"+r.id).delete();toast("O'chirildi");ijClose()}catch(e){toast("O'chirib bo'lmadi")}});
+  on("kt-chat",()=>{ijClose();location.hash="chat";setTimeout(()=>chStartDm(r.owner),200)});
+}
+function ktParse(txt,grp){const out=[];String(txt||"").split(/\n/).forEach(l=>{l=l.trim();if(!l)return;const m=l.match(/^(.*?)[\s\-–—:|]+([\d\s.,]+)\s*(?:so'?m|сум|sum)?\s*$/i);
+  if(m&&m[1].trim()){out.push({g:grp||"",n:m[1].trim().slice(0,80),p:Math.round(+m[2].replace(/[\s.,]/g,"")||0),u:""})}else out.push({g:grp||"",n:l.slice(0,80),p:0,u:""})});return out}
+function ktForm(sec,r){
+  const s=KT_SEC[sec],c=S.contacts[S.uid]||{},v=r||{type:Object.keys(s.types)[0],region:"Jizzax",phone:c.phone||"",items:[],status:"active",open:"09:00",close:"22:00"};
+  KT.edit={id:r?r.id:fs.collection("places").doc().id,orig:r,sec};IJ.ph=(r&&r.photos||[]).map(id=>({id,old:true,thumb:null}));IJ.edit={delPh:[]};IJ.cur={kind:"ktform"};
+  KT.items=(v.items||[]).map(i=>({...i}));
+  const opt=(o,sel)=>Object.entries(o).map(([k,l])=>`<option value="${k}" ${k===sel?"selected":""}>${esc(l)}</option>`).join("");
+  ijModal(`<form class="stack" id="ktp-form" novalidate><h2 style="margin:0">${r?"Tahrirlash":esc(s.add.replace("+ ",""))} · ${esc(s.t)}</h2>
+    <div class="row2"><label>Nomi<input id="ktf-name" maxlength="80" required value="${esc(v.name||"")}" placeholder="${sec==="ovqat"?"Masalan: «Zarafshon» kafesi":sec==="talim"?"Masalan: «Bilim» o'quv markazi":"Masalan: Usta Akmal — santexnik"}"></label><label>Turi<select id="ktf-type">${opt(s.types,v.type)}</select></label></div>
+    <div class="row3"><label>Viloyat<select id="ktf-reg">${REGIONS.map(x=>`<option ${x===v.region?"selected":""}>${esc(x)}</option>`).join("")}</select></label><label>Shahar / tuman<input id="ktf-dist" maxlength="60" value="${esc(v.district||"")}" placeholder="Jizzax sh."></label><label>Telefon<input id="ktf-phone" type="tel" maxlength="20" value="${esc(v.phone||"")}" placeholder="+998 90 123 45 67"></label></div>
+    <div class="row2"><label>Manzil<input id="ktf-addr" maxlength="140" value="${esc(v.address||"")}" placeholder="Ko'cha, uy"></label><label>Mo'ljal<input id="ktf-land" maxlength="80" value="${esc(v.landmark||"")}" placeholder="Masalan: markaziy bozor yonida"></label></div>
+    <div class="row3"><label>Ochilish<input id="ktf-open" type="time" value="${esc(v.open||"")}"></label><label>Yopilish<input id="ktf-close" type="time" value="${esc(v.close||"")}"></label><label class="chk" style="align-self:end"><input type="checkbox" id="ktf-24" ${v.allday?"checked":""}> 24 soat ochiq</label></div>
+    ${sec==="ovqat"?`<label class="chk"><input type="checkbox" id="ktf-del" ${v.delivery?"checked":""}> Yetkazib berish xizmati bor</label>`:""}
+    <label>Batafsil ma'lumot<textarea id="ktf-desc" rows="3" maxlength="1500" placeholder="Qisqacha: nimasi bilan yaxshi, qulayliklar, chegirmalar…">${esc(v.desc||"")}</textarea></label>
+    <div class="stack"><h3 class="ij-h3" style="margin:0">${esc(s.items)}</h3>
+      <div class="kt-items" id="ktf-items"></div>
+      <div class="btnrow"><button class="btn ghost" type="button" id="ktf-add">+ Qator qo'shish</button><button class="linkbtn" type="button" id="ktf-bulkb">Ro'yxatni matndan qo'shish</button></div>
+      <div class="stack" id="ktf-bulkbox" hidden><label>Har qatorga bittadan: nomi — narxi<textarea id="ktf-bulk" rows="5" placeholder="${esc(s.bulk)}"></textarea></label><div class="row2"><label>Bo'lim (ixtiyoriy)<input id="ktf-bulkg" maxlength="40" placeholder="${esc(s.grp)}"></label><div style="align-self:end"><button class="btn" type="button" id="ktf-bulkgo">Qo'shish</button></div></div></div></div>
+    <div><h3 class="ij-h3">Rasmlar (${IJ_MAX_PH} tagacha)</h3><div class="ij-phs" id="ijf-phs"></div><label class="btn ghost tg-ava-btn" for="ktf-phin">+ Rasm qo'shish</label><input type="file" id="ktf-phin" accept="image/*" multiple hidden><p class="note">Birinchi rasm muqova bo'ladi.</p></div>
+    <label>Holati<select id="ktf-st"><option value="active" ${v.status!=="hidden"?"selected":""}>Faol — hamma ko'radi</option><option value="hidden" ${v.status==="hidden"?"selected":""}>Yashirin</option></select></label>
+    <p class="err" id="ktf-err" hidden></p><p class="note" id="ktf-prog"></p>
+    <div class="btnrow"><button class="btn" type="submit" id="ktf-save">Saqlash</button><button class="btn ghost" type="button" id="ktf-x">Bekor qilish</button></div></form>`,true);
+  ktDrawItems();ijDrawPh();
+  if(r&&r.cover&&IJ.ph[0])IJ.ph[0].thumb=r.cover;IJ.ph.forEach(async p=>{if(p.thumb)return;try{const g=await fs.doc("rentfiles/"+p.id).get();if(g.exists){p.thumb=g.data().data;ijDrawPh()}}catch(e){}});
+  $("#ktf-x").onclick=ijClose;
+  $("#ktf-add").onclick=()=>{ktReadItems();KT.items.push({g:(KT.items[KT.items.length-1]||{}).g||"",n:"",p:"",u:""});ktDrawItems();const L=document.querySelectorAll("#ktf-items [data-in]");if(L.length)L[L.length-1].focus()};
+  $("#ktf-bulkb").onclick=()=>{$("#ktf-bulkbox").hidden=!$("#ktf-bulkbox").hidden};
+  $("#ktf-bulkgo").onclick=()=>{ktReadItems();const add=ktParse($("#ktf-bulk").value,$("#ktf-bulkg").value.trim());if(!add.length){toast("Matn bo'sh");return}KT.items.push(...add);$("#ktf-bulk").value="";ktDrawItems();toast(add.length+" ta qator qo'shildi")};
+  $("#ktf-phin").addEventListener("change",async e=>{const fl=[...e.target.files];e.target.value="";for(const f of fl){if(IJ.ph.length>=IJ_MAX_PH){toast(`Ko'pi bilan ${IJ_MAX_PH} ta rasm`);break}try{const big=await chImg(f,1280,0.8),th=await chImg(f,480,0.7);IJ.ph.push({id:null,data:big.data,thumb:th.data})}catch(er){toast("Rasmni o'qib bo'lmadi")}}ijDrawPh()});
+  $("#ktp-form").addEventListener("submit",e=>{e.preventDefault();ktSave()});
+}
+function ktDrawItems(){const b=$("#ktf-items");if(!b)return;const s=KT_SEC[KT.edit.sec];
+  b.innerHTML=KT.items.length?`<div class="kt-ih"><span>Bo'lim</span><span>${esc(s.item)}</span><span>Narx (so'm)</span><span>Birlik</span><span></span></div>`+KT.items.map((i,k)=>`<div class="kt-ir" data-row="${k}"><input data-ig maxlength="40" value="${esc(i.g||"")}" placeholder="${esc(s.grp.split(" (")[0])}" aria-label="Bo'lim"><input data-in maxlength="80" value="${esc(i.n||"")}" placeholder="${esc(s.item)}" aria-label="Nomi"><input data-ip type="number" min="0" step="500" inputmode="numeric" value="${esc(i.p||"")}" placeholder="0" aria-label="Narx"><input data-iu maxlength="16" value="${esc(i.u||"")}" placeholder="${esc(s.unit)}" aria-label="Birlik"><button type="button" class="kt-rm" data-rm="${k}" aria-label="Qatorni o'chirish">×</button></div>`).join(""):`<p class="note">Hali narx qo'shilmagan. «+ Qator qo'shish» yoki «Ro'yxatni matndan qo'shish» ni bosing.</p>`;
+  b.onclick=e=>{const x=e.target.closest("[data-rm]");if(!x)return;ktReadItems();KT.items.splice(+x.dataset.rm,1);ktDrawItems()}}
+function ktReadItems(){document.querySelectorAll("#ktf-items [data-row]").forEach(row=>{const i=KT.items[+row.dataset.row];if(!i)return;i.g=row.querySelector("[data-ig]").value.trim();i.n=row.querySelector("[data-in]").value.trim();i.p=Math.round(+row.querySelector("[data-ip]").value||0);i.u=row.querySelector("[data-iu]").value.trim()})}
+async function ktSave(){
+  ktReadItems();const err=$("#ktf-err"),fail=m=>{err.textContent=m;err.hidden=false;err.scrollIntoView({block:"center",behavior:"smooth"})};err.hidden=true;
+  const g=id=>($("#"+id)||{}).value?$("#"+id).value.trim():"",sec=KT.edit.sec,orig=KT.edit.orig,id=KT.edit.id;
+  const items=KT.items.filter(i=>i.n).slice(0,200).map(i=>({g:i.g||"",n:i.n,p:+i.p||0,u:i.u||""}));
+  const d={sec,name:g("ktf-name"),type:g("ktf-type"),region:g("ktf-reg"),district:g("ktf-dist"),phone:g("ktf-phone"),address:g("ktf-addr"),landmark:g("ktf-land"),open:g("ktf-open"),close:g("ktf-close"),allday:$("#ktf-24").checked,delivery:!!($("#ktf-del")&&$("#ktf-del").checked),desc:g("ktf-desc"),status:g("ktf-st"),items};
+  if(d.name.length<2)return fail("Nomini yozing.");
+  if(!d.address&&!d.district)return fail("Manzil yoki shahar/tumanni yozing.");
+  if(String(d.phone).replace(/\D/g,"").length<9)return fail("Telefon raqamini to'liq yozing.");
+  if(!items.length)return fail(`Kamida bitta narx kiriting (${KT_SEC[sec].items.toLowerCase()}).`);
+  const btn=$("#ktf-save"),pr=$("#ktf-prog"),say=t=>{if(pr)pr.textContent=t};btn.disabled=true;
+  try{const photos=[];let k=0;
+    for(const p of IJ.ph){k++;if(p.old){photos.push(p.id);continue}say(`Rasmlar yuklanmoqda: ${k}/${IJ.ph.length}`);const ref=fs.collection("rentfiles").doc();await ref.set({by:S.uid,rid:id,kind:"img",data:p.data,at:Date.now()});p.id=ref.id;p.old=true;photos.push(ref.id)}
+    let cover="";const first=IJ.ph[0];if(first){cover=first.thumb||"";if(orig&&first.id===(orig.photos||[])[0]&&orig.cover)cover=orig.cover;else if(cover.length>120000)cover=await ijThumb(cover).catch(()=>"")}
+    const c=S.contacts[S.uid]||{},pub=(window.CHAT&&CHAT.pub[S.uid])||{};
+    await fs.doc("places/"+id).set({...d,owner:orig?orig.owner:S.uid,ownerName:orig?orig.ownerName||"":(pub.name||c.name||S.login||""),photos,cover,createdAt:orig?orig.createdAt||Date.now():Date.now(),updatedAt:Date.now()});
+    (IJ.edit.delPh||[]).forEach(x=>fs.doc("rentfiles/"+x).delete().catch(()=>{}));
+    toast(orig?"Saqlandi":"Joy qo'shildi");ijClose();
+  }catch(e){console.warn(e);btn.disabled=false;say("");fail("Saqlab bo'lmadi. Obunangiz faolligini tekshiring yoki Firestore qoidalarini yangilang. ("+(e&&e.code||e)+")")}
 }
 
 })();
