@@ -3019,6 +3019,10 @@ async function ktSave(){
 
 S.live=null;        // config/live hujjati (yoki null)
 S.players=[];       // players kolleksiyasi (har biri {id:uid, ...})
+// QR/havola ?live=PIN orqali kelganlar to'g'ridan-to'g'ri xonaga tushadi
+let liveWant=null; try{liveWant=(new URLSearchParams(location.search)).get("live")||sessionStorage.getItem("ot-live")||null;}catch(e){}
+if(liveWant){try{sessionStorage.setItem("ot-live",String(liveWant))}catch(e){}}
+let liveAutoTried=false;
 
 const LIVE_BASE=1000;                 // bitta savolning asosiy bali (ball koeffitsiyentiga ko'paytiriladi)
 const liveUrl=pin=>location.origin+location.pathname+"?live="+pin;
@@ -3123,7 +3127,7 @@ function renderLiveAdmin(){
 async function liveJoinNow(){
   if(!S.live||!S.live.active){toast("Jonli test ochiq emas");return}
   const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||S.login||"Ishtirokchi";
-  try{await fs.doc("players/"+S.uid).set({name:nm,login:S.login||"",score:0,ans:{},joinedAt:Date.now()});toast("Qo'shildingiz — chief boshlashini kuting")}
+  try{await fs.doc("players/"+S.uid).set({name:nm,login:S.login||"",score:0,ans:{},joinedAt:Date.now()});try{sessionStorage.removeItem("ot-live")}catch(e){}toast("Qo'shildingiz — chief boshlashini kuting")}
   catch(e){toast("Qo'shilib bo'lmadi ("+(e&&e.code||e)+")")}
 }
 async function liveAnswer(choice){
@@ -3141,7 +3145,7 @@ function renderLiveJoin(){
   if(S.role!=="applicant")return;
   const L=S.live, box=$("#live-join");
   const ov=$("#live");
-  if(!L||!L.active){if(ov)liveOverlayClose();if(box)box.innerHTML="";return}
+  if(!L||!L.active){liveAutoTried=false;if(ov)liveOverlayClose();if(box)box.innerHTML="";return}
   // test paneldagi kichik tugma/holat
   if(box){
     box.innerHTML=!liveJoined()
@@ -3149,7 +3153,22 @@ function renderLiveJoin(){
       : `<div class="banner"><b>Jonli testga qo'shildingiz.</b> Ekran avtomatik ochiladi.</div>`;
     const jb=$("#live-join-btn");if(jb)jb.onclick=liveJoinNow;
   }
-  if(!liveJoined()){if(ov)liveOverlayClose();return}
+  if(!liveJoined()){
+    // QR/havola (?live=PIN) orqali kelgan bo'lsa — to'g'ridan-to'g'ri xonada ko'rsatamiz
+    const viaLink=liveWant&&String(liveWant)===String(L.pin)&&L.phase!=="ended";
+    if(viaLink&&ov){
+      ov.hidden=false;document.body.classList.add("live-open");
+      const body=$("#live-body"),top=$("#live-top-info");if(top)top.textContent="Jonli test";
+      if(profileReady()){
+        if(!liveAutoTried){liveAutoTried=true;if(body)body.innerHTML=`<div class="live-card"><h2>Qo'shilyapsiz…</h2><p>Bir lahza.</p></div>`;liveJoinNow()}
+      }else{
+        if(body)body.innerHTML=`<div class="live-card"><h2>Jonli testga qo'shilish</h2><p>Qo'shilishdan oldin profilingizni to'ldiring (ism va ma'lumotlar).</p><div class="btnrow" style="justify-content:center"><button class="btn" type="button" id="live-goprof">Profil va test</button></div></div>`;
+        const gp=$("#live-goprof");if(gp)gp.onclick=()=>{location.hash="#profil"};
+      }
+      clearInterval(liveTick);liveTick=null;return;
+    }
+    if(ov)liveOverlayClose();return;
+  }
   // qo'shilgan — to'liq ekran
   if(!ov)return;
   ov.hidden=false;document.body.classList.add("live-open");
