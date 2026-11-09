@@ -140,6 +140,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
         <div class="panel stack">
           <h2>Kasbiy test</h2>
           <dl class="kv"><dt>Test bali</dt><dd class="mono" id="p-test">—</dd><dt>Anonim kodingiz</dt><dd class="mono" id="p-code">—</dd><dt>Face ID</dt><dd id="p-face">—</dd></dl>
+          <div id="live-join" class="stack"></div>
           <div id="testPanel" class="stack"></div>
         </div>
       </div>
@@ -508,6 +509,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
   <section id="v-testlar" class="section" hidden>
     <div><h1>Kasbiy test</h1><p class="lede">Savollar banki, har bir savol vaqti va natijalar reytingi. To'g'ri javoblar faqat sizda saqlanadi, ishtirokchilar ularni ko'ra olmaydi. Topshirilgan testlar shu ilova ochiq turganda avtomatik baholanadi.</p></div>
     <div class="kpis" id="t-kpis"></div>
+    <div id="live-admin"></div>
     <div class="panel stack reqpanel">
       <div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Testni boshlashga ruxsat so'rovlari</h2><span class="note" id="trq-count"></span></div>
       <p class="note">Ishtirokchi Face ID dan o'tgach, shu yerda paydo bo'ladi. "Ruxsat berish"ni bossangiz, uning ekranida test boshlanadi. Ruxsat 15 daqiqa amal qiladi.</p>
@@ -648,10 +650,15 @@ C) Boshqa bo'limga yo'naltirish</pre>
   <div class="exam-cam" id="ex-cam"><video id="ex-video" autoplay muted playsinline></video><span id="ex-cam-st">Kamera</span></div>
   <div class="exam-body wrap" id="ex-body"></div>
 </div>
+<div class="live-overlay" id="live" hidden>
+  <div class="live-topbar"><b>Jonli test</b><span id="live-top-info" class="note"></span></div>
+  <div class="live-wrap wrap" id="live-body"></div>
+</div>
 <div class="modal ij-modal" id="ij-modal" hidden role="dialog" aria-modal="true" aria-label="Ijara"><div class="sheet ij-sheet" id="ij-sheet"></div></div>
 <div class="modal" id="cert" hidden role="dialog" aria-modal="true" aria-label="Natija guvohnomasi"><div class="sheet" id="certBody"></div></div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // Firebase server kutubxonalari yuklanadi, so'ng ilova ishga tushadi.
 (function(){

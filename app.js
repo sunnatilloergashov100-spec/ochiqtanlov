@@ -537,7 +537,7 @@ function render(){
   if(t==="ish-beruvchilar")renderEmployers();
   if(t==="shikoyatlar")renderAppeals();
   if(t==="statistika")renderStats();
-  if(t==="testlar")renderTestAdmin();
+  if(t==="testlar"){renderTestAdmin();renderLiveAdmin();}
   if(t==="qoidalar"){}
   if(t==="sozlamalarim")renderMySettings();
   if(t==="chat")renderChat();
@@ -546,6 +546,7 @@ function render(){
   if(t==="obuna")renderObuna();
   if(t==="obunalar")renderObunalar();
   if(t==="kutish")renderRequest();
+  renderLiveJoin();
 }
 // ---------- ISH BERUVCHI SO'ROVI (kodsiz; bosh administrator ruxsat beradi) ----------
 function renderRequest(){
@@ -1680,6 +1681,9 @@ function subscribe(){
   col("results",x=>{const m={};x.forEach(d=>m[d.id]=d);S.results=m});
   unsubs.push(fs.doc("about/info").onSnapshot(s=>{S.about=s.exists?s.data():null;if(!abEditing)render()},err));
   unsubs.push(fs.doc("config/test").onSnapshot(s=>{S.testCfg=s.exists?s.data():null;render()},err));
+  // Jonli test (Kahoot): config/live hamma uchun, players hamma uchun (reyting ko'rinadi); baholash faqat chief'da
+  unsubs.push(fs.doc("config/live").onSnapshot(s=>{S.live=s.exists?s.data():null;if(S.isChief)liveGradeSoon();render()},err));
+  col("players",x=>{S.players=x;if(S.isChief)liveGradeSoon()});
   unsubs.push(fs.doc("profiles/"+S.uid).onSnapshot(s=>{S.profile=s.exists?s.data():null;draftP.skills=null;draftP.langs=null;render()},err));
   if(S.isChief){
     unsubs.push(fs.collection("logins").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]={uid:d.id,...d.data()});S.logins=m;render()},err));
@@ -3001,6 +3005,184 @@ async function ktSave(){
     (IJ.edit.delPh||[]).forEach(x=>fs.doc("rentfiles/"+x).delete().catch(()=>{}));
     toast(orig?"Saqlandi":"Joy qo'shildi");ijClose();
   }catch(e){console.warn(e);btn.disabled=false;say("");fail("Saqlab bo'lmadi. Obunangiz faolligini tekshiring yoki Firestore qoidalarini yangilang. ("+(e&&e.code||e)+")")}
+}
+
+
+// ======================= JONLI TEST (Kahoot uslubi) =======================
+// Mavjud asinxron test saqlanadi. Bu qism yoniga "jonli sessiya" qo'shadi:
+// chief sessiyani ochadi -> PIN+QR -> ishtirokchilar qo'shiladi (lobby) ->
+// chief "Boshlash" bosadi -> savollar hammaga bir vaqtda chiqadi ->
+// to'g'ri + tez javob = ko'proq ball -> jonli reyting.
+//
+// Xavfsizlik: joriy savol (kalit​SIZ) config/live ichiga yoziladi; javob
+// kalitlari (qkeys) faqat chief'da bo'ladi va baholashni ham faqat chief qiladi.
+
+S.live=null;        // config/live hujjati (yoki null)
+S.players=[];       // players kolleksiyasi (har biri {id:uid, ...})
+
+const LIVE_BASE=1000;                 // bitta savolning asosiy bali (ball koeffitsiyentiga ko'paytiriladi)
+const liveUrl=pin=>location.origin+location.pathname+"?live="+pin;
+const livePin=()=>String(100000+Math.floor(Math.random()*900000));
+const liveJoined=()=>!!S.players.find(p=>p.id===S.uid);
+const liveMe=()=>S.players.find(p=>p.id===S.uid)||null;
+
+// --- Tezlik bo'yicha ball: to'g'ri bo'lsa, tez javob ko'proq ball oladi ---
+function liveScoreOne(q,key,ans){
+  if(!ans||ans.i==null||key==null||ans.i!==key)return 0;
+  const limit=Math.max(5,+q.sec||60)*1000, frac=Math.min(1,Math.max(0,(+ans.t||0)/limit));
+  return Math.round(LIVE_BASE*(+q.pts||1)*(1-0.5*frac));
+}
+function liveTotal(player){
+  const L=S.live;if(!L||!Array.isArray(L.qids))return 0;let s=0;
+  L.qids.forEach((qid,idx)=>{const q=S.questions.find(x=>x.id===qid);if(!q)return;
+    const k=(S.qkeys[qid]||{}).a, a=(player.ans||{})[idx];s+=liveScoreOne(q,k==null?null:k,a)});
+  return s;
+}
+// Chief javoblarni ko'rib ballni players/{uid}.score ga yozadi (faqat chief'da qkeys bor)
+let liveGradeT=null;
+function liveGradeSoon(){clearTimeout(liveGradeT);liveGradeT=setTimeout(liveGrade,400)}
+async function liveGrade(){
+  if(!S.isChief||!S.live||!S.live.active)return;
+  for(const p of S.players){const want=liveTotal(p);if((p.score||0)!==want){
+    try{await fs.doc("players/"+p.id).update({score:want})}catch(e){}}}
+}
+
+// --- Reyting jadvali (umumiy) ---
+function liveRanking(){
+  return [...S.players].sort((a,b)=>(b.score||0)-(a.score||0)||((a.joinedAt||0)-(b.joinedAt||0)));
+}
+function liveBoardHtml(limit){
+  const r=liveRanking(),top=limit?r.slice(0,limit):r;
+  if(!r.length)return `<div class="empty">Hali hech kim qo'shilmagan.</div>`;
+  return `<ol class="live-board">`+top.map((p,i)=>`<li class="${p.id===S.uid?"me":""}${i===0?" first":""}"><span class="lb-rank">${i+1}</span><span class="lb-name">${esc(p.name||p.login||"—")}</span><span class="lb-score">${p.score||0}</span></li>`).join("")+`</ol>`;
+}
+
+// ============================ CHIEF TOMONI ============================
+async function liveOpen(){
+  const Q=S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2);
+  if(!Q.length){toast("Avval savol qo'shing");return}
+  const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),Q.length);
+  const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
+  try{
+    // eski ishtirokchilarni tozalaymiz
+    const old=await fs.collection("players").get();
+    for(const d of old.docs)await fs.doc("players/"+d.id).delete().catch(()=>{});
+    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",qids,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
+    await log("test",`Jonli test ochildi: ${n} ta savol`);
+  }catch(e){toast("Ochib bo'lmadi ("+(e&&e.code||e)+")")}
+}
+async function liveShowQ(i){
+  const L=S.live;if(!L)return;
+  if(i>=L.qids.length){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
+  const q=S.questions.find(x=>x.id===L.qids[i]);
+  if(!q){liveShowQ(i+1);return}
+  try{await fs.doc("config/live").update({phase:"running",qIndex:i,qStart:Date.now(),
+    q:{q:q.q,o:q.o,sec:Math.max(5,+q.sec||60),idx:i,total:L.qids.length}})}catch(e){toast("Bajarib bo'lmadi")}
+}
+const liveStart=()=>liveShowQ(0);
+const liveNext=()=>liveShowQ((S.live.qIndex||0)+1);
+async function liveFinish(){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}}
+async function liveClose(){try{await fs.doc("config/live").update({active:false,phase:"ended",q:null})}catch(e){}}
+
+let liveQR=null;
+function renderLiveAdmin(){
+  const box=$("#live-admin");if(!box)return;
+  const L=S.live;
+  if(!L||!L.active){
+    box.innerHTML=`<div class="panel stack live-panel"><div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Jonli test (Kahoot usuli)</h2></div>
+      <p class="note">Hamma bir vaqtda, bitta ekranda. Siz ochasiz — ishtirokchilar PIN yoki QR orqali kiradi — "Boshlash"ni bosasiz — savollar birma-bir chiqadi. Tez va to'g'ri javob bergan ko'proq ball oladi.</p>
+      <div><button class="btn" type="button" id="live-open">Jonli sessiyani ochish</button></div></div>`;
+    const b=$("#live-open");if(b)b.onclick=liveOpen;liveQR=null;return;
+  }
+  const r=liveRanking(),ans=(L.q&&L.qIndex>=0)?S.players.filter(p=>(p.ans||{})[L.qIndex]!=null).length:0;
+  let body="";
+  if(L.phase==="lobby"){
+    body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
+      <div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Qo'shilganlar: ${S.players.length}</b></div>
+        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${esc(p.name||p.login||"—")}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div></div>
+      <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
+  }else if(L.phase==="running"&&L.q){
+    body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Savol ${L.q.idx+1} / ${L.q.total}</b><span class="note">Javob berdi: ${ans} / ${S.players.length}</span></div>
+      <div class="live-q">${esc(L.q.q)}</div>
+      <div class="live-opts chief">${L.q.o.map((o,j)=>{const key=(S.qkeys[L.qids[L.qIndex]]||{}).a;return `<div class="live-opt ${key===j?"correct":""}">${"ABCDEF"[j]}) ${esc(o)}${key===j?" ✓":""}</div>`}).join("")}</div></div>
+      <div class="btnrow"><button class="btn" type="button" id="live-next">${L.qIndex+1>=L.qids.length?"Yakunlash":"Keyingi savol"}</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>
+      <h3 style="margin:14px 0 6px">Reyting</h3>${liveBoardHtml(10)}`;
+  }else{ // ended
+    body=`<div class="banner"><b>Jonli test yakunlandi.</b> Yakuniy reyting quyida.</div>${liveBoardHtml()}
+      <div class="btnrow" style="margin-top:12px"><button class="btn" type="button" id="live-reopen">Yangi sessiya</button><button class="btn ghost" type="button" id="live-dismiss">Yopish</button></div>`;
+  }
+  box.innerHTML=`<div class="panel stack live-panel"><div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Jonli test (Kahoot usuli)</h2><span class="pill ${L.phase==="running"?"open":L.phase==="lobby"?"res":"closed"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":"Yakunlandi"}</span></div>${body}</div>`;
+  // QR (faqat lobbyda, bir marta)
+  if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
+  const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
+  on("live-start",liveStart);on("live-cancel",liveClose);on("live-next",liveNext);
+  on("live-finish",liveFinish);on("live-reopen",liveOpen);on("live-dismiss",liveClose);
+}
+
+// ========================= ISHTIROKCHI TOMONI =========================
+async function liveJoinNow(){
+  if(!S.live||!S.live.active){toast("Jonli test ochiq emas");return}
+  const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||S.login||"Ishtirokchi";
+  try{await fs.doc("players/"+S.uid).set({name:nm,login:S.login||"",score:0,ans:{},joinedAt:Date.now()});toast("Qo'shildingiz — chief boshlashini kuting")}
+  catch(e){toast("Qo'shilib bo'lmadi ("+(e&&e.code||e)+")")}
+}
+async function liveAnswer(choice){
+  const L=S.live;if(!L||L.phase!=="running"||!L.q)return;
+  const me=liveMe();if(me&&(me.ans||{})[L.qIndex]!=null)return;         // bir savolga bir marta
+  const t=Math.max(0,Date.now()-(L.qStart||Date.now()));
+  try{await fs.doc("players/"+S.uid).update({["ans."+L.qIndex]:{i:choice,t}})}catch(e){}
+}
+
+// Ishtirokchi ekrani: #live overlay (kamerasiz, yengil)
+let liveTick=null;
+function liveOverlayClose(){clearInterval(liveTick);liveTick=null;const ov=$("#live");if(ov)ov.hidden=true;document.body.classList.remove("live-open")}
+function renderLiveJoin(){
+  // faqat ishtirokchi (applicant) uchun
+  if(S.role!=="applicant")return;
+  const L=S.live, box=$("#live-join");
+  const ov=$("#live");
+  if(!L||!L.active){if(ov)liveOverlayClose();if(box)box.innerHTML="";return}
+  // test paneldagi kichik tugma/holat
+  if(box){
+    box.innerHTML=!liveJoined()
+      ? `<div class="banner live-cta"><b>Jonli test ochiq!</b> Chief jonli sessiyani boshladi. Qo'shiling va real vaqtda ishtirok eting.<div class="btnrow" style="margin-top:8px"><button class="btn" type="button" id="live-join-btn" ${profileReady()?"":"disabled"}>Jonli testga qo'shilish</button></div>${profileReady()?"":`<p class="note">Avval profilni saqlang.</p>`}</div>`
+      : `<div class="banner"><b>Jonli testga qo'shildingiz.</b> Ekran avtomatik ochiladi.</div>`;
+    const jb=$("#live-join-btn");if(jb)jb.onclick=liveJoinNow;
+  }
+  if(!liveJoined()){if(ov)liveOverlayClose();return}
+  // qo'shilgan — to'liq ekran
+  if(!ov)return;
+  ov.hidden=false;document.body.classList.add("live-open");
+  const body=$("#live-body"),top=$("#live-top-info");
+  if(L.phase==="lobby"){
+    if(top)top.textContent="Kutish xonasi";
+    if(body)body.innerHTML=`<div class="live-card"><h2>Tayyor turing…</h2><p>Siz qo'shildingiz. Chief testni boshlashi bilan birinchi savol shu yerda chiqadi.</p><div class="live-count">${S.players.length} ishtirokchi</div></div>`;
+    clearInterval(liveTick);liveTick=null;
+  }else if(L.phase==="running"&&L.q){
+    const me=liveMe(),answered=me&&(me.ans||{})[L.qIndex]!=null;
+    if(top)top.textContent=`Savol ${L.q.idx+1} / ${L.q.total}`;
+    if(!answered){
+      if(body)body.innerHTML=`<div class="live-card"><div class="live-timer" id="live-timer"></div><div class="live-q">${esc(L.q.q)}</div>
+        <div class="live-opts">${L.q.o.map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}">${"ABCDEF"[j]}) ${esc(o)}</button>`).join("")}</div></div>`;
+      body.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{body.querySelectorAll("[data-opt]").forEach(x=>x.disabled=true);b.classList.add("picked");liveAnswer(+b.dataset.opt)});
+      // vaqt hisoblagich
+      clearInterval(liveTick);
+      const limit=Math.max(5,+L.q.sec||60)*1000,end=(L.qStart||Date.now())+limit;
+      const upd=()=>{const el=$("#live-timer");if(!el)return;const left=Math.max(0,end-Date.now());el.textContent=Math.ceil(left/1000)+"s";
+        if(left<=0){clearInterval(liveTick);body.querySelectorAll("[data-opt]").forEach(x=>x.disabled=true)}};
+      upd();liveTick=setInterval(upd,250);
+    }else{
+      clearInterval(liveTick);liveTick=null;
+      const place=liveRanking().findIndex(p=>p.id===S.uid)+1;
+      if(body)body.innerHTML=`<div class="live-card"><h2>Javob qabul qilindi ✓</h2><p>Keyingi savolni kuting…</p><div class="live-count">Hozirgi o'rningiz: <b>${place||"—"}</b> · ${me&&me.score||0} ball</div><h3>Reyting</h3>${liveBoardHtml(5)}</div>`;
+    }
+  }else{ // ended
+    clearInterval(liveTick);liveTick=null;
+    if(top)top.textContent="Yakunlandi";
+    const place=liveRanking().findIndex(p=>p.id===S.uid)+1,me=liveMe();
+    if(body)body.innerHTML=`<div class="live-card"><h2>Test tugadi!</h2><div class="live-place">${place===1?"🏆 ":""}${place||"—"}-o'rin</div><div class="live-count">${me&&me.score||0} ball</div><h3>Yakuniy reyting</h3>${liveBoardHtml(10)}<div class="btnrow" style="justify-content:center;margin-top:10px"><button class="btn ghost" type="button" id="live-exit">Yopish</button></div></div>`;
+    const x=$("#live-exit");if(x)x.onclick=liveOverlayClose;
+  }
 }
 
 })();
