@@ -826,3 +826,11 @@ button.live-opt.picked{outline:3px solid var(--ink);outline-offset:2px}
 .live-count{margin-top:10px;color:var(--muted)}
 .live-place{font-size:44px;font-weight:800;color:var(--accent);text-align:center;margin:10px 0}
 body.live-open{overflow:hidden}
+
+/* Jonli test: qo'shilish formasi + guruh + mehmon rejimi */
+.live-field{display:flex;flex-direction:column;gap:4px;margin-top:10px;text-align:left}
+.live-field span{font-size:13px;color:var(--muted)}
+.live-field input{padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--paper);color:var(--ink);font:inherit}
+.lb-name small{color:var(--muted);font-weight:500;margin-left:6px;font-size:12px}
+.chips-wrap .chip{white-space:nowrap}
+body.live-guest #main,body.live-guest #hdr{display:none}

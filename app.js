@@ -516,6 +516,7 @@ function renderStats(){
 
 // ---------- render dispatcher ----------
 function render(){
+  if(S.liveGuest){renderLiveJoin();return}
   let t=location.hash.slice(1);
   if(t.startsWith("tekshir")){renderVerify();return}
   if(!S.role){renderGate();return}
@@ -1726,8 +1727,15 @@ function subscribeOrg(){
   orgUnsubs.push(fs.collection("offers").where("orgId","==",org).onSnapshot(s=>{S.offers=s.docs.map(d=>({id:d.id,...d.data()}));render()},err));
   orgUnsubs.push(fs.collection("appeals").where("orgId","==",org).onSnapshot(s=>{S.appeals=s.docs.map(d=>({id:d.id,...d.data()}));render()},err));
 }
+let liveGuestFlag=false;try{liveGuestFlag=sessionStorage.getItem("ot-guest")==="1"}catch(e){}
 auth.onAuthStateChanged(async u=>{
   unsubAll();
+  // Jonli test mehmoni: ?live=PIN bo'lsa ro'yxatdan o'tmasdan anonim kirish
+  if(liveWant||liveGuestFlag){
+    if(!u){try{await auth.signInAnonymously()}catch(e){liveGuestFail(e)}return;}
+    if(u.isAnonymous){liveGuestBoot(u);return;}
+    // ro'yxatdan o'tgan foydalanuvchi bo'lsa — oddiy oqim davom etadi
+  }
   if(u&&isLocked()&&(getQuick()||{}).uid===u.uid){S.uid=u.uid;S.login=(u.email||"").split("@")[0];S.loaded=true;S.role=null;location.hash="";route();checkVersion();return}
   if(u&&isLocked())setLock(false);
   if(!u){Object.assign(S,{uid:null,login:null,isAdmin:false,isChief:false,logins:{},failed:[],myLog:null,orgs:[],vacs:[],apps:[],contacts:{},audit:[],profile:null,loaded:true,adminDoc:null,admins:[],offers:[],appeals:[],results:{},attempts:[],myAttempt:null,face:null});
@@ -3022,7 +3030,7 @@ S.players=[];       // players kolleksiyasi (har biri {id:uid, ...})
 // QR/havola ?live=PIN orqali kelganlar to'g'ridan-to'g'ri xonaga tushadi
 let liveWant=null; try{liveWant=(new URLSearchParams(location.search)).get("live")||sessionStorage.getItem("ot-live")||null;}catch(e){}
 if(liveWant){try{sessionStorage.setItem("ot-live",String(liveWant))}catch(e){}}
-let liveAutoTried=false;
+let liveAutoTried=false, liveFormOpen=false;
 
 const LIVE_BASE=1000;                 // bitta savolning asosiy bali (ball koeffitsiyentiga ko'paytiriladi)
 const liveUrl=pin=>location.origin+location.pathname+"?live="+pin;
@@ -3058,7 +3066,7 @@ function liveRanking(){
 function liveBoardHtml(limit){
   const r=liveRanking(),top=limit?r.slice(0,limit):r;
   if(!r.length)return `<div class="empty">Hali hech kim qo'shilmagan.</div>`;
-  return `<ol class="live-board">`+top.map((p,i)=>`<li class="${p.id===S.uid?"me":""}${i===0?" first":""}"><span class="lb-rank">${i+1}</span><span class="lb-name">${esc(p.name||p.login||"—")}</span><span class="lb-score">${p.score||0}</span></li>`).join("")+`</ol>`;
+  return `<ol class="live-board">`+top.map((p,i)=>`<li class="${p.id===S.uid?"me":""}${i===0?" first":""}"><span class="lb-rank">${i+1}</span><span class="lb-name">${esc(p.name||p.login||"—")}${p.group?` <small>${esc(p.group)}</small>`:""}</span><span class="lb-score">${p.score||0}</span></li>`).join("")+`</ol>`;
 }
 
 // ============================ CHIEF TOMONI ============================
@@ -3103,7 +3111,7 @@ function renderLiveAdmin(){
   if(L.phase==="lobby"){
     body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
       <div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Qo'shilganlar: ${S.players.length}</b></div>
-        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${esc(p.name||p.login||"—")}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div></div>
+        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${esc(p.name||p.login||"—")}${p.group?` · ${esc(p.group)}`:""}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div></div>
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q){
     body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Savol ${L.q.idx+1} / ${L.q.total}</b><span class="note">Javob berdi: ${ans} / ${S.players.length}</span></div>
@@ -3124,11 +3132,27 @@ function renderLiveAdmin(){
 }
 
 // ========================= ISHTIROKCHI TOMONI =========================
-async function liveJoinNow(){
+async function liveJoinNow(nm,grp){
   if(!S.live||!S.live.active){toast("Jonli test ochiq emas");return}
-  const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||S.login||"Ishtirokchi";
-  try{await fs.doc("players/"+S.uid).set({name:nm,login:S.login||"",score:0,ans:{},joinedAt:Date.now()});try{sessionStorage.removeItem("ot-live")}catch(e){}toast("Qo'shildingiz — chief boshlashini kuting")}
+  nm=(nm||"").trim();grp=(grp||"").trim();
+  if(nm.length<2){toast("Ism familiyani to'liq kiriting");return}
+  if(grp.length<1){toast("Guruhni kiriting");return}
+  try{await fs.doc("players/"+S.uid).set({name:nm,group:grp,login:S.login||"",score:0,ans:{},joinedAt:Date.now()});toast("Qo'shildingiz — boshlanishini kuting")}
   catch(e){toast("Qo'shilib bo'lmadi ("+(e&&e.code||e)+")")}
+}
+// Qo'shilish formasi (ism + guruh majburiy) — overlayda
+function liveJoinForm(){
+  const ov=$("#live");if(!ov)return;
+  ov.hidden=false;ov.dataset.mode="joinform";document.body.classList.add("live-open");
+  const body=$("#live-body"),top=$("#live-top-info");if(top)top.textContent="Jonli testga qo'shilish";
+  const c=S.contacts[S.uid]||{},nm=c.name||(S.profile||{}).name||"";
+  if(body)body.innerHTML=`<div class="live-card"><h2>Qo'shilish</h2><p>Ism familiya va guruhingizni kiriting — natija shu ma'lumot bilan yoziladi.</p>
+    <label class="live-field"><span>Ism familiya</span><input id="live-name" type="text" value="${esc(nm)}" placeholder="Ism familiya" maxlength="60" autocomplete="name"></label>
+    <label class="live-field"><span>Guruh</span><input id="live-group" type="text" placeholder="Masalan: 261-24" maxlength="40"></label>
+    <div class="btnrow" style="justify-content:center;margin-top:12px"><button class="btn" type="button" id="live-dojoin">Qo'shilish</button>${S.liveGuest?"":`<button class="btn ghost" type="button" id="live-cancel-join">Bekor qilish</button>`}</div></div>`;
+  const go=$("#live-dojoin");if(go)go.onclick=()=>liveJoinNow(($("#live-name")||{}).value,($("#live-group")||{}).value);
+  const cx=$("#live-cancel-join");if(cx)cx.onclick=liveOverlayClose;
+  clearInterval(liveTick);liveTick=null;
 }
 async function liveAnswer(choice){
   const L=S.live;if(!L||L.phase!=="running"||!L.q)return;
@@ -3139,39 +3163,45 @@ async function liveAnswer(choice){
 
 // Ishtirokchi ekrani: #live overlay (kamerasiz, yengil)
 let liveTick=null;
-function liveOverlayClose(){clearInterval(liveTick);liveTick=null;const ov=$("#live");if(ov)ov.hidden=true;document.body.classList.remove("live-open")}
+function liveOverlayClose(){clearInterval(liveTick);liveTick=null;liveFormOpen=false;const ov=$("#live");if(ov){ov.hidden=true;ov.dataset.mode=""}document.body.classList.remove("live-open")}
+// Anonim mehmon (ro'yxatdan o'tmagan) uchun yengil rejim: faqat jonli test ekrani
+async function liveGuestBoot(u){
+  try{sessionStorage.setItem("ot-guest","1")}catch(e){}
+  S.uid=u.uid;S.login="";S.isChief=false;S.isAdmin=false;S.adminDoc=null;S.profile=null;S.contacts={};
+  S.role="applicant";S.liveGuest=true;S.loaded=true;
+  document.body.classList.add("live-guest");
+  const h=$("#hdr");if(h)h.hidden=true;
+  unsubAll();
+  unsubs.push(fs.doc("config/live").onSnapshot(s=>{S.live=s.exists?s.data():null;render()},()=>{}));
+  unsubs.push(fs.collection("players").onSnapshot(s=>{S.players=s.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{}));
+  render();
+}
+function liveGuestFail(e){
+  try{$("#main").innerHTML=`<div class="gate"><h1>Jonli testga kira olmadik</h1><p class="lede">Administrator Firebase'da "Anonymous" kirishni yoqishi kerak, yoki ro'yxatdan o'tib kiring.</p></div>`}catch(x){}
+}
 function renderLiveJoin(){
-  // faqat ishtirokchi (applicant) uchun
-  if(S.role!=="applicant")return;
+  // ishtirokchi (applicant) yoki anonim mehmon (liveGuest) uchun
+  if(S.role!=="applicant"&&!S.liveGuest)return;
   const L=S.live, box=$("#live-join");
   const ov=$("#live");
-  if(!L||!L.active){liveAutoTried=false;if(ov)liveOverlayClose();if(box)box.innerHTML="";return}
-  // test paneldagi kichik tugma/holat
-  if(box){
+  if(!L||!L.active){liveFormOpen=false;if(ov)liveOverlayClose();if(box)box.innerHTML="";return}
+  // test paneldagi kichik tugma (ro'yxatdan o'tgan foydalanuvchi uchun)
+  if(box&&!S.liveGuest){
     box.innerHTML=!liveJoined()
-      ? `<div class="banner live-cta"><b>Jonli test ochiq!</b> Chief jonli sessiyani boshladi. Qo'shiling va real vaqtda ishtirok eting.<div class="btnrow" style="margin-top:8px"><button class="btn" type="button" id="live-join-btn" ${profileReady()?"":"disabled"}>Jonli testga qo'shilish</button></div>${profileReady()?"":`<p class="note">Avval profilni saqlang.</p>`}</div>`
+      ? `<div class="banner live-cta"><b>Jonli test ochiq!</b> Qo'shilib real vaqtda ishtirok eting.<div class="btnrow" style="margin-top:8px"><button class="btn" type="button" id="live-join-btn">Jonli testga qo'shilish</button></div></div>`
       : `<div class="banner"><b>Jonli testga qo'shildingiz.</b> Ekran avtomatik ochiladi.</div>`;
-    const jb=$("#live-join-btn");if(jb)jb.onclick=liveJoinNow;
+    const jb=$("#live-join-btn");if(jb)jb.onclick=()=>{liveFormOpen=true;liveJoinForm()};
   }
   if(!liveJoined()){
-    // QR/havola (?live=PIN) orqali kelgan bo'lsa — to'g'ridan-to'g'ri xonada ko'rsatamiz
-    const viaLink=liveWant&&String(liveWant)===String(L.pin)&&L.phase!=="ended";
-    if(viaLink&&ov){
-      ov.hidden=false;document.body.classList.add("live-open");
-      const body=$("#live-body"),top=$("#live-top-info");if(top)top.textContent="Jonli test";
-      if(profileReady()){
-        if(!liveAutoTried){liveAutoTried=true;if(body)body.innerHTML=`<div class="live-card"><h2>Qo'shilyapsiz…</h2><p>Bir lahza.</p></div>`;liveJoinNow()}
-      }else{
-        if(body)body.innerHTML=`<div class="live-card"><h2>Jonli testga qo'shilish</h2><p>Qo'shilishdan oldin profilingizni to'ldiring (ism va ma'lumotlar).</p><div class="btnrow" style="justify-content:center"><button class="btn" type="button" id="live-goprof">Profil va test</button></div></div>`;
-        const gp=$("#live-goprof");if(gp)gp.onclick=()=>{location.hash="#profil"};
-      }
-      clearInterval(liveTick);liveTick=null;return;
-    }
-    if(ov)liveOverlayClose();return;
+    // QR/havola orqali kelgan, mehmon, yoki tugma bosilgan bo'lsa — qo'shilish formasi
+    const viaLink=liveWant&&String(liveWant)===String(L.pin);
+    const want=(viaLink||liveFormOpen||S.liveGuest)&&L.phase!=="ended";
+    if(want&&ov){ if(ov.dataset.mode!=="joinform")liveJoinForm(); return; }
+    if(ov&&ov.dataset.mode!=="joinform")liveOverlayClose();return;
   }
   // qo'shilgan — to'liq ekran
   if(!ov)return;
-  ov.hidden=false;document.body.classList.add("live-open");
+  ov.hidden=false;ov.dataset.mode="live";document.body.classList.add("live-open");
   const body=$("#live-body"),top=$("#live-top-info");
   if(L.phase==="lobby"){
     if(top)top.textContent="Kutish xonasi";
