@@ -3151,12 +3151,15 @@ function renderLiveAdmin(){
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q){
     body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Savol ${L.q.idx+1} / ${L.q.total}</b><span class="note">Javob berdi: ${ans} / ${S.players.length}</span></div>
-      <div class="live-q">${esc(L.q.q)}</div>${liveOptsArena(L,"running")}</div>
+      <div class="live-q big">${esc(L.q.q)}</div>
+      <p class="note" style="text-align:center">Javob variantlari ishtirokchilar telefonida. Ekranga qarab javob belgilashadi.</p></div>
       <p class="note">Hamma javob bersa yoki vaqt tugasa — avtomatik reyting ochiladi.</p>
       <div class="btnrow"><button class="btn" type="button" id="live-next">Reytingni hozir ochish</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>`;
   }else if(L.phase==="reveal"&&L.q){
+    const co=(L.q.o||[])[L.qCorrect];
     body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Natija · savol ${L.q.idx+1} / ${L.q.total}</b><span class="pill res">Reyting</span></div>
-      <div class="live-q">${esc(L.q.q)}</div>${liveOptsArena(L,"reveal")}</div>
+      <div class="live-q big">${esc(L.q.q)}</div>
+      ${co!=null?`<div class="live-correct">To'g'ri javob: ${"ABCDEF"[L.qCorrect]}) ${esc(co)} ✓</div>`:""}</div>
       <p class="note">${L.qIndex+1>=L.qids.length?"Oxirgi savol — tez orada yakunlanadi.":"Keyingi savol avtomatik ochiladi…"}</p>
       <div class="btnrow"><button class="btn" type="button" id="live-next">${L.qIndex+1>=L.qids.length?"Yakunlash":"Keyingi savolga hozir"}</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>
       <h3 style="margin:14px 0 6px">Reyting</h3>${liveBoardHtml(10)}`;
@@ -3164,11 +3167,15 @@ function renderLiveAdmin(){
     body=`<div class="live-fin"><div class="live-crown">🏆</div><b>Jonli test yakunlandi</b></div>${livePodium()}${liveBoardHtml()}
       <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-reopen">Yangi sessiya</button><button class="btn ghost" type="button" id="live-dismiss">Yopish</button></div>`;
   }
-  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Jonli test (Kahoot usuli)</h2><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div>${body}</div>`;
+  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Jonli test (Kahoot usuli)</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
   on("live-start",liveStart);on("live-cancel",liveClose);on("live-next",liveNext);
   on("live-finish",liveFinish);on("live-reopen",liveOpen);on("live-dismiss",liveClose);
+  on("live-full",()=>{const el=$("#live-admin");if(!el)return;
+    if(document.fullscreenElement){document.exitFullscreen().catch(()=>{})}
+    else if(el.requestFullscreen){el.requestFullscreen().catch(()=>{})}
+    else if(el.webkitRequestFullscreen){el.webkitRequestFullscreen()}});
 }
 
 // ========================= ISHTIROKCHI TOMONI =========================

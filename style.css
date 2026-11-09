@@ -903,3 +903,19 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 .pcol.first .pbar{height:100px;background:linear-gradient(180deg,var(--la-gold),#ff9d4d)}
 .pcol.second .pbar{height:72px;background:rgba(255,255,255,.16);color:var(--la-ink)}
 .pcol.third .pbar{height:52px;background:rgba(255,255,255,.16);color:var(--la-ink)}
+
+/* Admin arena: katta savol + to'g'ri javob satri */
+.live-arena .live-q.big{font-size:26px;text-align:center;line-height:1.22;margin:20px 8px 10px}
+.live-correct{text-align:center;font-weight:800;background:var(--la-acc,#2BE0B8);color:#06231b;border-radius:12px;padding:12px 14px;margin:12px 0}
+
+/* Admin arena: to'liq ekran (proyektor) rejimi */
+.live-fsbtn{font-size:13px;padding:7px 12px}
+#live-admin:fullscreen{background:#0B0F2A;display:flex;align-items:center;justify-content:center;padding:4vmin;overflow:auto}
+#live-admin:-webkit-full-screen{background:#0B0F2A;display:flex;align-items:center;justify-content:center;padding:4vmin}
+#live-admin:fullscreen .live-arena{width:min(1200px,100%);max-height:100%;overflow:auto;border-radius:24px}
+#live-admin:fullscreen .live-q.big{font-size:clamp(30px,5vw,60px);margin:4vmin 2vmin}
+#live-admin:fullscreen .pin-big{font-size:clamp(46px,7vw,84px)}
+#live-admin:fullscreen .live-opts.arena .live-opt{font-size:clamp(16px,2.2vw,26px);min-height:clamp(66px,9vh,110px)}
+#live-admin:fullscreen h2{font-size:clamp(17px,2.4vw,26px)}
+#live-admin:fullscreen .live-correct{font-size:clamp(16px,2.4vw,28px)}
+#live-admin:fullscreen .live-board li{padding:clamp(12px,1.6vh,18px) 16px}
