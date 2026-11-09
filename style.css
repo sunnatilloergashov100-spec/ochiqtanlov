@@ -834,3 +834,72 @@ body.live-open{overflow:hidden}
 .lb-name small{color:var(--muted);font-weight:500;margin-left:6px;font-size:12px}
 .chips-wrap .chip{white-space:nowrap}
 body.live-guest #main,body.live-guest #hdr{display:none}
+
+/* Jonli test: natija (reveal) ekrani */
+.live-verdict{font-size:26px;font-weight:800;text-align:center;padding:10px;border-radius:var(--r);margin-bottom:10px}
+.live-verdict.ok{background:var(--accent-soft);color:var(--accent)}
+.live-verdict.no{background:var(--bad-soft);color:var(--bad)}
+.live-opts.reveal{grid-template-columns:1fr}
+.live-opt.rv{padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);font-weight:600;color:var(--ink)}
+.live-opt.rv.correct{border-color:var(--accent);background:var(--accent-soft)}
+.live-opt.rv.mine{border-color:var(--bad);background:var(--bad-soft)}
+.live-opt.rv.correct.mine{border-color:var(--accent);background:var(--accent-soft)}
+
+/* Jonli test: ishtirokchi faqat javob tugmalarini ko'radi (savol admin ekranida) */
+.live-top-q{font-size:13px;color:var(--muted);text-align:center;font-weight:600;margin-bottom:6px}
+.live-hint{text-align:center;color:var(--muted);font-size:13px;margin:0 0 14px}
+.live-play .live-opts{grid-template-columns:1fr 1fr}
+.live-opt .ok-k{display:inline-grid;place-items:center;width:26px;height:26px;background:rgba(255,255,255,.28);border-radius:7px;font-weight:800;margin-right:8px;flex:0 0 auto}
+.live-opt{display:flex;align-items:center}
+.live-check{font-size:46px;color:var(--accent);text-align:center;line-height:1}
+
+/* ===== Jonli test ADMIN paneli: quyuq "arena" ko'rinishi ===== */
+.live-arena{
+  --la-bg:#0B0F2A;--la-card:#1B2250;--la-ink:#F2F4FF;--la-muted:#9AA3D4;--la-line:#2C356E;
+  --la-acc:#2BE0B8;--la-acc2:#7C5CFF;--la-gold:#FFC94D;
+  --a0:#FF5A6E;--a1:#3D7BFF;--a2:#FFB22E;--a3:#2BD17E;--a4:#B06CFF;--a5:#2BE0B8;
+  background:linear-gradient(180deg,var(--la-card),var(--la-bg));
+  border:1px solid var(--la-line);color:var(--la-ink);border-radius:20px;
+  box-shadow:0 20px 50px -28px #000, inset 0 1px 0 rgba(255,255,255,.05)
+}
+.live-arena h2,.live-arena h3,.live-arena b{color:var(--la-ink)}
+.live-arena .note{color:var(--la-muted)}
+.live-arena .pin-big{font-size:46px;background:linear-gradient(135deg,var(--la-acc),var(--la-acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.live-arena .live-pin{background:rgba(255,255,255,.04);border:1px solid var(--la-line);border-radius:16px}
+.live-arena .live-qr img,.live-arena .live-qr canvas{border-radius:12px}
+.live-arena .chip{background:rgba(255,255,255,.06);border:1px solid var(--la-line);color:var(--la-ink)}
+.live-arena .chip small{color:var(--la-muted)}
+.live-arena .live-q{font-size:22px;color:var(--la-ink)}
+/* Arena rangli javoblar (shakl bilan) */
+.live-opts.arena{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.live-opts.arena{grid-template-columns:1fr}}
+.live-opts.arena .live-opt{display:flex;align-items:center;gap:11px;border:none;border-radius:16px;color:#0b0f2a;font-weight:800;font-size:16px;padding:16px;min-height:66px;box-shadow:0 8px 22px -12px #000;opacity:.92}
+.live-opts.arena .live-opt .sh{width:24px;height:24px;flex:0 0 auto;fill:#0b0f2a}
+.live-opts.arena .live-opt .t{flex:1}
+.live-opts.arena .live-opt .ck{font-size:18px}
+.live-opts.arena .live-opt.a0{background:var(--a0)} .live-opts.arena .live-opt.a1{background:var(--a1);color:#fff} .live-opts.arena .live-opt.a1 .sh{fill:#fff}
+.live-opts.arena .live-opt.a2{background:var(--a2)} .live-opts.arena .live-opt.a3{background:var(--a3)} .live-opts.arena .live-opt.a4{background:var(--a4);color:#fff} .live-opts.arena .live-opt.a4 .sh{fill:#fff} .live-opts.arena .live-opt.a5{background:var(--a5)}
+.live-opts.arena .live-opt.correct{opacity:1;outline:3px solid #fff;outline-offset:2px}
+/* Arena reyting */
+.live-arena .live-board li{background:rgba(255,255,255,.04);border:1px solid var(--la-line);color:var(--la-ink)}
+.live-arena .live-board li.first{border-color:var(--la-gold);background:linear-gradient(90deg,rgba(255,201,77,.18),transparent)}
+.live-arena .live-board li.me{outline:2px solid var(--la-acc)}
+.live-arena .lb-rank{color:var(--la-muted)} .live-arena .live-board li.first .lb-rank{color:var(--la-gold)}
+.live-arena .lb-name small{color:var(--la-muted)}
+.live-arena .lb-score{color:var(--la-acc)}
+/* Arena tugmalar */
+.live-arena .btn{background:linear-gradient(135deg,var(--la-acc),var(--la-acc2));color:#07122a;border:none;font-weight:800}
+.live-arena .btn.ghost{background:transparent;color:var(--la-ink);border:1px solid var(--la-line)}
+.live-arena .btn:disabled{opacity:.5}
+.live-arena .pill.open{background:rgba(43,224,184,.16);color:var(--la-acc)} .live-arena .pill.res{background:rgba(124,92,255,.18);color:#b9a8ff} .live-arena .pill.closed{background:rgba(255,255,255,.06);color:var(--la-muted)}
+/* Arena yakun: podium */
+.live-fin{text-align:center;margin-bottom:6px}
+.live-crown{font-size:34px}
+.live-podium{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:end;gap:10px;margin:14px 0 18px}
+.pcol{text-align:center;display:flex;flex-direction:column;justify-content:flex-end}
+.pcol .pwho{font-size:12px;font-weight:600;color:var(--la-ink);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcol .pbar{border-radius:12px 12px 0 0;color:#0b0f2a;font-family:var(--f-display,inherit);font-weight:800;font-size:20px;display:grid;place-items:end center;padding-bottom:8px}
+.pcol .psc{font-family:var(--f-mono,monospace);font-weight:800;color:var(--la-acc);margin-top:4px;font-size:13px}
+.pcol.first .pbar{height:100px;background:linear-gradient(180deg,var(--la-gold),#ff9d4d)}
+.pcol.second .pbar{height:72px;background:rgba(255,255,255,.16);color:var(--la-ink)}
+.pcol.third .pbar{height:52px;background:rgba(255,255,255,.16);color:var(--la-ink)}
