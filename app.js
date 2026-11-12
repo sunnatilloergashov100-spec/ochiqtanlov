@@ -96,7 +96,7 @@ const GEAR='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><
 const G_APP=[["Vakansiyalar",["vakansiyalar","arizalar"]],["Profil va test",["profil"]],["Ma'lumot",["statistika","qoidalar","haqida"]]];
 const G_EMP=[["Vakansiyalar",["boshqaruv","boshqaruv-vak","arizalar-adm","natijalar"]],["Shikoyatlar",["shikoyatlar"]],["Hisobot",["statistika","jurnal"]],["Ma'lumot",["qoidalar","haqida"]]];
 const G_CEMP=[["Vakansiyalar",["boshqaruv","boshqaruv-vak","arizalar-adm","natijalar"]],["Shikoyatlar",["shikoyatlar"]],["Tashkilotlar",["tashkilotlar","ish-beruvchilar"]]];
-const G_CADM=[["Monitoring",["monitoring","kirishlar","foydalanuvchilar"]],["Test",["testlar"]],["Obunalar",["obunalar"]],["Hisobot",["statistika","jurnal"]],["Tizim",["sozlamalar","qoidalar","haqida"]]];
+const G_CADM=[["Monitoring",["monitoring","kirishlar","foydalanuvchilar"]],["Test",["testlar"]],["O'yinlar",["oyinlar"]],["Obunalar",["obunalar"]],["Hisobot",["statistika","jurnal"]],["Tizim",["sozlamalar","qoidalar","haqida"]]];
 const G_SET=[["Sozlamalar",["sozlamalarim"]],["Rasmiy profil (obuna)",["obuna"]]];
 const TAB_LABEL={...Object.fromEntries(APP_TABS.concat(EMP_TABS,CHIEF_TABS,CHIEF_ADM)),sozlamalar:"Tizim sozlamalari"};
 const inG=(G,t)=>G.some(g=>g[1].includes(t));
@@ -3044,8 +3044,8 @@ const TEAM_PAL=[{name:"Qizil",c:"#E5533D"},{name:"Ko'k",c:"#3B5BDB"},{name:"Sari
 const GAMES=[
   {cat:"Yakka — har kim o'zi",md:"Yakka",cls:"ya",items:[
     {id:"kahoot",mode:"yakka",ic:"⚡",t:"Kahoot test",d:"Tez va to'g'ri javob — ko'proq ball. Jonli reyting.",ok:1},
-    {id:"millioner",ic:"💎",t:"Millioner",d:"Savollar ketma-ket, ball bosqichma-bosqich oshib boradi.",ok:0},
-    {id:"blitz",ic:"🔥",t:"Tez javob blitz",d:"Belgilangan vaqtda imkon qadar ko'p savolga javob bering.",ok:0},
+    {id:"millioner",mode:"yakka",ic:"💎",t:"Millioner",d:"Savollar ketma-ket, ball bosqichma-bosqich oshib boradi.",ok:1},
+    {id:"blitz",mode:"yakka",ic:"🔥",t:"Tez javob blitz",d:"Qisqa vaqt — imkon qadar ko'p savolga tez javob bering.",ok:1},
     {id:"yozish",ic:"⌨️",t:"Toping-yozing",d:"Variant yo'q — javobni o'zingiz yozasiz.",ok:0},
     {id:"juftla",ic:"🧲",t:"Juftla",d:"Savol va to'g'ri javobini bir-biriga moslang.",ok:0},
     {id:"xotira",ic:"🃏",t:"Xotira o'yini",d:"Yopiq kartalar: savol-javob juftlarini toping.",ok:0},
@@ -3099,15 +3099,19 @@ const liveJoined=()=>!!S.players.find(p=>p.id===S.uid);
 const liveMe=()=>S.players.find(p=>p.id===S.uid)||null;
 
 // --- Tezlik bo'yicha ball: to'g'ri bo'lsa, tez javob ko'proq ball oladi ---
-function liveScoreOne(q,key,ans){
+function liveScoreOne(q,key,ans,idx){
   if(!ans||ans.i==null||key==null||ans.i!==key)return 0;
+  const game=(S.live&&S.live.game)||"kahoot";
   const limit=Math.max(5,+q.sec||60)*1000, frac=Math.min(1,Math.max(0,(+ans.t||0)/limit));
+  // Millioner: har savol avvalgidan qimmatroq. Blitz: tez, qat'iy ball.
+  if(game==="millioner")return Math.round(LIVE_BASE*(+q.pts||1)*(1+0.6*(idx||0))*(1-0.3*frac));
+  if(game==="blitz")return Math.round(300*(1-0.4*frac));
   return Math.round(LIVE_BASE*(+q.pts||1)*(1-0.5*frac));
 }
 function liveTotal(player){
   const L=S.live;if(!L||!Array.isArray(L.qids))return 0;let s=0;
   L.qids.forEach((qid,idx)=>{const q=S.questions.find(x=>x.id===qid);if(!q)return;
-    const k=(S.qkeys[qid]||{}).a, a=(player.ans||{})[idx];s+=liveScoreOne(q,k==null?null:k,a)});
+    const k=(S.qkeys[qid]||{}).a, a=(player.ans||{})[idx];s+=liveScoreOne(q,k==null?null:k,a,idx)});
   return s;
 }
 // Chief javoblarni ko'rib ballni players/{uid}.score ga yozadi (faqat chief'da qkeys bor)
@@ -3133,7 +3137,7 @@ function liveBoardHtml(limit){
 
 // ============================ CHIEF TOMONI ============================
 async function liveOpen(game,mode){
-  game=game||"kahoot";mode=mode||"yakka";
+  game=game||"kahoot";mode=(mode==="jamoa"||mode==="guruh")?mode:"yakka";
   const Q=S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2);
   if(!Q.length){toast("Avval savol qo'shing");return}
   const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),Q.length);
@@ -3156,8 +3160,9 @@ async function liveShowQ(i){
   if(i>=L.qids.length){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
   const q=S.questions.find(x=>x.id===L.qids[i]);
   if(!q){liveShowQ(i+1);return}
+  const base=Math.max(5,+q.sec||60), sec=L.game==="blitz"?Math.min(base,10):base;
   try{await fs.doc("config/live").update({phase:"running",qIndex:i,qStart:Date.now(),qCorrect:null,
-    q:{q:q.q,o:q.o,sec:Math.max(5,+q.sec||60),idx:i,total:L.qids.length}})}catch(e){toast("Bajarib bo'lmadi")}
+    q:{q:q.q,o:q.o,sec,idx:i,total:L.qids.length}})}catch(e){toast("Bajarib bo'lmadi")}
 }
 // Natijani ochish: ballarni yozamiz, to'g'ri javobni ko'rsatamiz (savol tugagani uchun xavfsiz)
 async function liveReveal(){
@@ -3182,7 +3187,8 @@ async function liveAuto(){
     const everyone=S.players.length>0&&S.players.every(p=>(p.ans||{})[L.qIndex]!=null);
     if(timeUp||everyone){liveActing=true;try{await liveReveal()}finally{liveActing=false}}
   }else if(L.phase==="reveal"){
-    if(Date.now()>=(L.revealAt||0)+LIVE_REVEAL_MS){liveActing=true;try{await liveShowQ((L.qIndex||0)+1)}finally{liveActing=false}}
+    const revMs=L.game==="blitz"?1800:LIVE_REVEAL_MS;
+    if(Date.now()>=(L.revealAt||0)+revMs){liveActing=true;try{await liveShowQ((L.qIndex||0)+1)}finally{liveActing=false}}
   }
 }
 async function liveClose(){try{await fs.doc("config/live").update({active:false,phase:"ended",q:null})}catch(e){}}
@@ -3197,7 +3203,7 @@ function renderGames(){
     <div class="g-grid">${g.items.map(it=>`<button class="g-card${it.ok?"":" soon"}" type="button" ${it.ok?`data-game="${it.id}" data-mode="${it.mode}"`:"disabled"}>
       <span class="g-badge ${it.ok?"ok":"soon"}">${it.ok?"Tayyor":"Tez orada"}</span>
       <span class="g-ic">${it.ic}</span><span class="g-t">${esc(it.t)}</span><span class="g-d">${esc(it.d)}</span></button>`).join("")}</div>`).join("");
-  hub.querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>liveOpen(b.dataset.game,b.dataset.mode));
+  hub.querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>liveOpen(b.dataset.game,b.dataset.mode||"yakka"));
 }
 // Javob shakllari (arena ko'rinishi uchun)
 const LIVE_SHAPES=['<svg class="sh" viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/></svg>','<svg class="sh" viewBox="0 0 24 24"><path d="M12 2l10 10-10 10L2 12z"/></svg>','<svg class="sh" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>','<svg class="sh" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>','<svg class="sh" viewBox="0 0 24 24"><polygon points="12,3 21,9 17,20 7,20 3,9"/></svg>','<svg class="sh" viewBox="0 0 24 24"><path d="M12 3l3 6 6 .9-4.5 4.2 1 6L12 17l-5.5 3 1-6L4 9.9 10 9z"/></svg>'];
@@ -3262,7 +3268,8 @@ function renderLiveAdmin(){
     body=`<div class="live-fin"><div class="live-crown">🏆</div><b>${liveMode()==="yakka"?"Jonli test yakunlandi":liveMode()==="guruh"?"G'olib guruh aniqlandi":"G'olib jamoa aniqlandi"}</b></div>${liveMode()==="yakka"?livePodium()+liveBoardHtml():liveTeamBoardHtml()+`<h3 style="margin:16px 0 6px">Shaxsiy reyting</h3>`+liveBoardHtml(10)}
       <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-reopen">Yangi sessiya</button><button class="btn ghost" type="button" id="live-dismiss">Yopish</button></div>`;
   }
-  const gTitle={yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"}[L.mode]||"Jonli o'yin";
+  const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz"};
+  let gTitle=gName[L.game];if(gTitle&&typeof gTitle==="object")gTitle=gTitle[L.mode];gTitle=gTitle||"Jonli o'yin";
   box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
