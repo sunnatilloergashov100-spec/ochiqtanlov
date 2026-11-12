@@ -969,3 +969,21 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 /* Omad g'ildiragi: ball ko'paytmasi */
 .live-mult{text-align:center;font-weight:800;font-size:18px;color:var(--gold,#C98A1A);background:var(--gold-soft,#F7ECCF);border-radius:12px;padding:6px 12px;margin:0 auto 10px;display:inline-block}
 .live-card .live-mult{display:block}
+
+/* Rost/Yolg'on — 2 ta katta tugma */
+.live-stmt{font-weight:700;font-size:17px;text-align:center;background:var(--card,#17242b);border:1px solid var(--line);border-radius:14px;padding:16px;margin:4px 0 14px}
+.live-stmt.big{font-size:20px;margin-top:14px}
+.live-tf{display:flex;flex-direction:column;gap:12px}
+.tf-b{border:none;border-radius:16px;padding:24px;font-family:var(--f-display,inherit);font-weight:800;font-size:20px;cursor:pointer}
+.tf-b.rost{background:#2BD17E;color:#06231b}
+.tf-b.yolgon{background:#FF5A6E;color:#fff}
+.tf-b:disabled{opacity:.5}
+/* Toping-yozing — matn maydoni */
+.live-textwrap{display:flex;flex-direction:column;gap:10px}
+.live-textwrap input{padding:16px;border:2px solid var(--line);border-radius:14px;font:inherit;font-size:17px;background:var(--paper);color:var(--ink)}
+.live-textwrap input:focus{border-color:var(--accent);outline:none}
+/* Omonat — yuraklar */
+.live-hearts{text-align:center;font-size:24px;letter-spacing:4px;margin-bottom:8px}
+/* To'g'ri javob satri (tf/text/choice reveal) */
+.live-correct-line{text-align:center;margin:8px 0 4px;color:var(--muted)}
+.live-correct-line b{color:var(--accent)}
