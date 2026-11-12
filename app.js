@@ -3245,6 +3245,31 @@ async function liveReveal(){
 const liveStart=()=>liveShowQ(0);
 const liveNext=()=>{const L=S.live;if(!L)return;L.phase==="running"?liveReveal():liveShowQ((L.qIndex||0)+1)};
 async function liveFinish(){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}}
+// Tayyor (ishlaydigan) o'yinlar ro'yxati — ovoz berish uchun
+function liveReadyGames(){const a=[];GAMES.forEach(g=>g.items.forEach(it=>{if(it.ok)a.push({game:it.id,mode:it.mode||"yakka",ic:it.ic,t:it.t})}));return a}
+// Ovoz berish bosqichiga o'tish (natija saqlangach)
+async function liveToVoting(){
+  if(!S.isChief)return;
+  try{const b=fs.batch();S.players.forEach(p=>b.update(fs.doc("players/"+p.id),{vote:null}));await b.commit()}catch(e){}
+  try{await fs.doc("config/live").update({phase:"voting",q:null})}catch(e){}
+}
+// Ishtirokchi ovoz beradi
+async function liveVote(game,mode){if(!S.uid)return;try{await fs.doc("players/"+S.uid).update({vote:{game,mode:(mode==="jamoa"||mode==="guruh")?mode:"yakka"}})}catch(e){}}
+function liveVoteTally(){const m={};S.players.forEach(p=>{if(p.vote&&p.vote.game){const k=p.vote.game+"|"+(p.vote.mode||"yakka");m[k]=(m[k]||0)+1}});return m}
+// G'olib o'yinni boshlash — o'yinchilar saqlanadi, faqat holati tozalanadi
+async function liveStartVoted(winKey){
+  if(!S.isChief)return;const L=S.live;if(!L)return;
+  const tally=liveVoteTally();let key=winKey;
+  if(!key){let best=-1;Object.entries(tally).forEach(([k,v])=>{if(v>best){best=v;key=k}})}
+  if(!key)key="kahoot|yakka";
+  const [game,mode]=key.split("|");
+  const Q=liveValidQ();if(!Q.length){toast("Savol yo'q");return}
+  const n=Math.min(Math.max(1,L.total||10),Q.length);
+  const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
+  try{const b=fs.batch();S.players.forEach(p=>b.update(fs.doc("players/"+p.id),{ans:{},score:0,out:false,wrong:0,vote:null}));await b.commit()}catch(e){}
+  liveSavedKey=null;
+  try{await fs.doc("config/live").update({game,mode:(mode==="jamoa"||mode==="guruh")?mode:"yakka",qids,total:qids.length,phase:"lobby",qIndex:-1,q:null,startedAt:Date.now(),secOverride:L.secOverride||0})}catch(e){toast("Boshlab bo'lmadi")}
+}
 // Chief avtomati: vaqt tugasa yoki hamma javob bersa -> reyting; reyting tugasa -> keyingi savol
 function liveCtlStart(){if(liveCtl)return;liveCtl=setInterval(liveAuto,500)}
 function liveCtlStop(){if(liveCtl){clearInterval(liveCtl);liveCtl=null}}
@@ -3349,10 +3374,15 @@ function renderLiveAdmin(){
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q){
     const sub=L.q.mode==="tf"?`<div class="live-stmt big">"${esc(L.q.stmt||"")}" — rostmi?</div>`:L.q.mode==="text"?`<p class="note" style="text-align:center">Ishtirokchilar javobni telefonda yozishadi.</p>`:`<p class="note" style="text-align:center">Javob variantlari ishtirokchilar telefonida. Ekranga qarab javob belgilashadi.</p>`;
-    body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Savol ${L.q.idx+1} / ${L.q.total}</b><span class="note">Javob berdi: ${ans} / ${S.players.length}</span></div>
+    // Jarayon tahlili (admin): kim to'g'ri topdi, kim birinchi
+    const aqid=L.qids[L.qIndex],aq=S.questions.find(x=>x.id===aqid),akey=(S.qkeys[aqid]||{}).a;
+    let corr=0,fp=null,ft=null;S.players.forEach(p=>{const a=(p.ans||{})[L.qIndex];if(a&&aq&&liveIsCorrect(aq,akey,a,L.qIndex,aqid)){corr++;const t=+a.t||0;if(ft==null||t<ft){ft=t;fp=p}}});
+    const analysis=`<div class="live-analysis"><div class="an-row"><span>Javob berdi</span><b>${ans} / ${S.players.length}</b></div><div class="an-row"><span>To'g'ri topdi</span><b class="ok">${corr}</b></div><div class="an-row"><span>Birinchi to'g'ri</span><b>${fp?esc(fp.name||fp.login||"—"):"—"}</b></div></div>`;
+    body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Savol ${L.q.idx+1} / ${L.q.total}</b><span class="note">Jarayon tahlili</span></div>
       <div class="live-q big">${esc(L.q.q)}</div>${sub}</div>
-      <p class="note">Hamma javob bersa yoki vaqt tugasa — avtomatik reyting ochiladi.</p>
-      <div class="btnrow"><button class="btn" type="button" id="live-next">Reytingni hozir ochish</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>`;
+      ${analysis}
+      <div class="btnrow"><button class="btn" type="button" id="live-next">Reytingni hozir ochish</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>
+      <h3 style="margin:12px 0 6px">Jonli reyting</h3>${liveBoardAuto(6)}`;
   }else if(L.phase==="reveal"&&L.q){
     const corr=L.q.mode==="tf"?(L.qTrue?"ROST":"YOLG'ON"):L.q.mode==="text"?L.qAnswer:(L.qAnswer!=null?`${"ABCDEF"[L.qCorrect]}) ${L.qAnswer}`:null);
     body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Natija · savol ${L.q.idx+1} / ${L.q.total}</b><span class="pill res">Reyting</span></div>
@@ -3361,9 +3391,17 @@ function renderLiveAdmin(){
       <p class="note">${L.qIndex+1>=L.qids.length?"Oxirgi savol — tez orada yakunlanadi.":"Keyingi savol avtomatik ochiladi…"}</p>
       <div class="btnrow"><button class="btn" type="button" id="live-next">${L.qIndex+1>=L.qids.length?"Yakunlash":"Keyingi savolga hozir"}</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>
       <h3 style="margin:14px 0 6px">Reyting</h3>${liveBoardAuto(10)}`;
+  }else if(L.phase==="voting"){
+    const tally=liveVoteTally(),games=liveReadyGames(),total=S.players.length||1;
+    const sorted=games.map(g=>({...g,k:g.game+"|"+g.mode,v:tally[g.game+"|"+g.mode]||0})).sort((a,b)=>b.v-a.v);
+    const voted=S.players.filter(p=>p.vote&&p.vote.game).length;
+    body=`<div class="vote-head"><h3 style="margin:0">🗳️ Keyingi o'yinni tanlang</h3><span class="note">Ovoz berdi: ${voted} / ${S.players.length}</span></div>
+      <p class="note">Ishtirokchilar telefonida tanlayapti. Ko'p ovoz olgan o'yin boshlanadi.</p>
+      <div class="vote-bars">${sorted.slice(0,8).map(g=>`<div class="vb"><span class="vb-ic">${g.ic}</span><span class="vb-nm">${esc(g.t)}</span><span class="vb-tr"><i style="width:${Math.round(100*g.v/total)}%"></i></span><span class="vb-n">${g.v}</span></div>`).join("")}</div>
+      <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-startvoted">G'olib o'yinni boshlash</button><button class="btn ghost" type="button" id="live-dismiss">Sessiyani yopish</button></div>`;
   }else{ // ended
-    body=`<div class="live-fin"><div class="live-crown">🏆</div><b>${liveMode()==="yakka"?"Jonli test yakunlandi":liveMode()==="guruh"?"G'olib guruh aniqlandi":"G'olib jamoa aniqlandi"}</b></div>${liveMode()==="yakka"?livePodium()+liveBoardHtml():liveTeamBoardHtml()+`<h3 style="margin:16px 0 6px">Shaxsiy reyting</h3>`+liveBoardHtml(10)}
-      <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-reopen">Yangi sessiya</button><button class="btn ghost" type="button" id="live-dismiss">Yopish</button></div>`;
+    body=`<div class="live-fin"><div class="live-crown">🏆</div><b>${liveMode()==="yakka"?"O'yin yakunlandi":liveMode()==="guruh"?"G'olib guruh aniqlandi":"G'olib jamoa aniqlandi"}</b></div>${liveMode()==="yakka"?livePodium()+liveBoardHtml():liveTeamBoardHtml()+`<h3 style="margin:16px 0 6px">Shaxsiy reyting</h3>`+liveBoardHtml(10)}
+      <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-tovote">🗳️ Keyingi o'yin — ovoz berish</button><button class="btn ghost" type="button" id="live-dismiss">Sessiyani yopish</button></div>`;
   }
   const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on"};
   let gTitle=gName[L.game];if(gTitle&&typeof gTitle==="object")gTitle=gTitle[L.mode];gTitle=gTitle||"Jonli o'yin";
@@ -3371,7 +3409,8 @@ function renderLiveAdmin(){
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
   on("live-start",liveStart);on("live-cancel",liveClose);on("live-next",liveNext);
-  on("live-finish",liveFinish);on("live-reopen",()=>liveOpen(L.game,L.mode));on("live-dismiss",liveClose);
+  on("live-finish",liveFinish);on("live-dismiss",liveClose);
+  on("live-tovote",liveToVoting);on("live-startvoted",()=>liveStartVoted());
   box.querySelectorAll("[data-tc]").forEach(b=>b.onclick=()=>liveSetTeams(+b.dataset.tc));
   box.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>liveMovePlayer(b.dataset.mv,isNaN(+b.dataset.to)?b.dataset.to:+b.dataset.to));
   box.querySelectorAll("[data-cnt]").forEach(b=>b.onclick=()=>liveSetCount((L.total||10)+ +b.dataset.cnt));
@@ -3499,9 +3538,11 @@ function renderLiveJoin(){
         hint="Savol katta ekranda. Javobni yozing.";
         ansHtml=`<div class="live-textwrap"><input id="live-text" type="text" placeholder="Javobingiz…" autocomplete="off" autocapitalize="off" maxlength="60"><button class="btn" type="button" id="live-send">Yuborish</button></div>`;
       }else{
-        hint=isBuzz?"Tez tanlang — kim birinchi to'g'ri bo'lsa!":"Savol katta ekranda. Javobingizni tanlang.";
+        const showQ=game!=="kahoot"; // Kahoot savoli faqat monitorda; qolganlarida telefonda ham
+        hint=isBuzz?"Tez tanlang — kim birinchi to'g'ri bo'lsa!":showQ?"Javob bering:":"Savol katta ekranda. Javobingizni tanlang.";
         const ladder=game==="millioner"?`<div class="mil-head"><span>Pog'ona ${L.q.idx+1} / ${L.q.total}</span><div class="mil-bar"><i style="width:${Math.round(100*(L.q.idx+1)/L.q.total)}%"></i></div><span class="mil-tip">📈 Har pog'ona qimmatroq</span></div>`:"";
-        ansHtml=ladder+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
+        const pq=showQ?`<div class="live-pq">${esc(L.q.q||"")}</div>`:"";
+        ansHtml=ladder+pq+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }
       if(body)body.innerHTML=`<div class="live-card live-play"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div>${hearts}<div class="live-timer" id="live-timer"></div>${mult}
         <p class="live-hint">${hint}</p>${ansHtml}</div>`;
@@ -3532,12 +3573,20 @@ function renderLiveJoin(){
     if(top)top.textContent=`Reyting · savol ${L.q?L.q.idx+1:""} / ${L.q?L.q.total:""}`;
     if(body)body.innerHTML=`<div class="live-card"><div class="live-verdict ${correct?"ok":"no"}">${myAns==null?"Javob bermadingiz":correct?"To'g'ri! ✓":"Noto'g'ri ✗"}</div>${ansLine}
       <div class="live-count" style="text-align:center">O'rningiz: <b>${place||"—"}</b> · ${me&&me.score||0} ball</div><h3 style="margin-top:12px">Reyting</h3>${liveBoardAuto(10)}</div>`;
+  }else if(L.phase==="voting"){
+    clearInterval(liveTick);liveTick=null;
+    if(top)top.textContent="Keyingi o'yinni tanlang";
+    const me=liveMe(),myk=me&&me.vote&&me.vote.game?(me.vote.game+"|"+(me.vote.mode||"yakka")):null;
+    const tally=liveVoteTally(),games=liveReadyGames();
+    if(body)body.innerHTML=`<div class="live-card"><h2>🗳️ Qaysi o'yin?</h2><p>Ovoz bering — eng ko'p ovoz olgan o'yin boshlanadi.</p>
+      <div class="vote-grid">${games.map(g=>{const k=g.game+"|"+g.mode,v=tally[k]||0,mine=myk===k;return `<button class="vote-c ${mine?"on":""}" type="button" data-vote="${k}"><span class="vi">${g.ic}</span><span class="vt">${esc(g.t)}</span><span class="vn">${v} ovoz</span></button>`}).join("")}</div>
+      ${myk?`<p class="note" style="text-align:center;margin-top:10px">Ovozingiz qabul qilindi. Almashtirishingiz mumkin.</p>`:""}</div>`;
+    body.querySelectorAll("[data-vote]").forEach(b=>b.onclick=()=>{const p=b.dataset.vote.split("|");liveVote(p[0],p[1])});
   }else{ // ended
     clearInterval(liveTick);liveTick=null;
     if(top)top.textContent="Yakunlandi";
     const place=liveRanking().findIndex(p=>p.id===S.uid)+1,me=liveMe();
-    if(body)body.innerHTML=`<div class="live-card"><h2>Test tugadi!</h2><div class="live-place">${place===1?"🏆 ":""}${place||"—"}-o'rin</div><div class="live-count">${me&&me.score||0} ball</div><h3>Yakuniy reyting</h3>${liveBoardAuto(10)}<div class="btnrow" style="justify-content:center;margin-top:10px"><button class="btn ghost" type="button" id="live-exit">Yopish</button></div></div>`;
-    const x=$("#live-exit");if(x)x.onclick=liveOverlayClose;
+    if(body)body.innerHTML=`<div class="live-card"><h2>O'yin tugadi!</h2><div class="live-place">${place===1?"🏆 ":""}${place||"—"}-o'rin</div><div class="live-count">${me&&me.score||0} ball</div><p class="note" style="margin-top:8px">Keyingi o'yin ovoz berish orqali tanlanadi — kuting.</p><h3>Yakuniy reyting</h3>${liveBoardAuto(10)}</div>`;
   }
 }
 

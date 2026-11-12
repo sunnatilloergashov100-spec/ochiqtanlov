@@ -1017,3 +1017,28 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 .hist-more{padding:7px 12px;font-size:13px}
 .hist-modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px}
 .hist-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:440px;width:100%;max-height:85vh;overflow:auto}
+
+/* Ovoz berish — ishtirokchi */
+.vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.vote-c{display:flex;flex-direction:column;align-items:center;gap:3px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:12px 8px;cursor:pointer;font:inherit}
+.vote-c.on{border-color:var(--accent);background:var(--accent-soft)}
+.vote-c .vi{font-size:24px}
+.vote-c .vt{font-weight:700;font-size:12px;text-align:center;line-height:1.2}
+.vote-c .vn{font-size:11px;color:var(--muted);font-weight:600}
+/* Ovoz berish — admin */
+.vote-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.vote-bars{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.vb{display:flex;align-items:center;gap:9px}
+.vb-ic{font-size:18px;width:24px;text-align:center}
+.vb-nm{width:130px;font-size:13px;font-weight:600;color:var(--la-ink,#F2F4FF)}
+.vb-tr{flex:1;height:18px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.vb-tr i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--la-acc,#2BE0B8),var(--la-acc2,#7C5CFF))}
+.vb-n{width:28px;text-align:right;font-family:var(--f-mono,monospace);font-weight:800;color:var(--la-acc,#2BE0B8)}
+/* Admin jarayon tahlili */
+.live-analysis{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.an-row{flex:1;min-width:100px;background:rgba(255,255,255,.04);border:1px solid var(--la-line,#2C356E);border-radius:10px;padding:10px;text-align:center}
+.an-row span{display:block;font-size:11px;color:var(--la-muted,#9AA3D4)}
+.an-row b{font-size:20px;color:var(--la-ink,#F2F4FF)}
+.an-row b.ok{color:var(--la-acc,#2BE0B8)}
+/* Telefonda savol (Kahootdan boshqa o'yinlar) */
+.live-pq{font-weight:700;font-size:16px;text-align:center;margin-bottom:12px;line-height:1.3}
