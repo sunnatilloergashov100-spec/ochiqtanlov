@@ -998,3 +998,22 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 .mil-bar{height:12px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0}
 .mil-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--gold,#C98A1A))}
 .mil-tip{font-size:12px;color:var(--muted)}
+
+/* O'yin sozlamalari (lobby) */
+.live-set{display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--la-line,#2C356E);border-radius:12px;padding:12px;margin-bottom:12px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.set-row>span:first-child{font-weight:600;font-size:13px}
+.set-row small{color:var(--la-muted,#9AA3D4);font-size:11px;width:100%;text-align:right}
+.stepper{display:inline-flex;align-items:center;gap:8px}
+.stepper button{width:30px;height:30px;border-radius:8px;border:1px solid var(--la-line,#2C356E);background:rgba(255,255,255,.06);color:var(--la-ink,#F2F4FF);font-weight:800;font-size:16px;cursor:pointer}
+.stepper b{min-width:60px;text-align:center;font-family:var(--f-mono,monospace)}
+.live-people-wrap{display:flex;flex-direction:column;gap:2px}
+/* Natijalar tarixi */
+#game-hist{display:flex;flex-direction:column;gap:8px}
+.hist-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.hist-main{flex:1;min-width:140px;display:flex;flex-direction:column}
+.hist-main small{color:var(--muted);font-size:12px}
+.hist-top{font-weight:700;color:var(--gold,#C98A1A);font-size:13px}
+.hist-more{padding:7px 12px;font-size:13px}
+.hist-modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px}
+.hist-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:440px;width:100%;max-height:85vh;overflow:auto}

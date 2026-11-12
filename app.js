@@ -1684,7 +1684,7 @@ function subscribe(){
   unsubs.push(fs.doc("about/info").onSnapshot(s=>{S.about=s.exists?s.data():null;if(!abEditing)render()},err));
   unsubs.push(fs.doc("config/test").onSnapshot(s=>{S.testCfg=s.exists?s.data():null;render()},err));
   // Jonli test (Kahoot): config/live hamma uchun, players hamma uchun (reyting ko'rinadi); baholash faqat chief'da
-  unsubs.push(fs.doc("config/live").onSnapshot(s=>{S.live=s.exists?s.data():null;if(S.isChief){liveGradeSoon();if(S.live&&S.live.active)liveCtlStart();else liveCtlStop();}render()},err));
+  unsubs.push(fs.doc("config/live").onSnapshot(s=>{S.live=s.exists?s.data():null;if(S.isChief){liveGradeSoon();if(S.live&&S.live.active)liveCtlStart();else liveCtlStop();if(S.live&&S.live.phase==="ended")setTimeout(liveSaveResult,600);}render()},err));
   col("players",x=>{S.players=x;if(S.isChief)liveGradeSoon()});
   unsubs.push(fs.doc("profiles/"+S.uid).onSnapshot(s=>{S.profile=s.exists?s.data():null;draftP.skills=null;draftP.langs=null;render()},err));
   if(S.isChief){
@@ -3105,6 +3105,21 @@ function liveCorrectN(p){const L=S.live;if(!L)return 0;let n=0;(L.qids||[]).forE
 function liveWrongCount(p){const L=S.live;if(!L)return 0;let w=0;(L.qids||[]).forEach((qid,idx)=>{if(idx>(L.qIndex==null?-1:L.qIndex))return;const key=(S.qkeys[qid]||{}).a,q=S.questions.find(x=>x.id===qid);const a=(p.ans||{})[idx];if(a!=null&&q&&!liveIsCorrect(q,key,a,idx,qid))w++});return w}
 function liveIsOut(p){const c=gcfg();if(c.elim)return liveWrongCount(p)>=1;if(c.lives)return liveWrongCount(p)>=c.lives;return false}
 const liveMode=()=>(S.live&&S.live.mode)||"yakka";
+// O'yin nomi (global)
+function liveGameTitle(game,mode){
+  const g={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on"};
+  let t=g[game||(S.live&&S.live.game)];if(t&&typeof t==="object")t=t[mode||(S.live&&S.live.mode)];return t||"Jonli o'yin";
+}
+// Natijani saqlash (chief, o'yin tugaganda bir marta)
+let liveSavedKey=null;
+async function liveSaveResult(){
+  const L=S.live;if(!L||!S.isChief)return;
+  const key=(L.pin||"")+"_"+(L.startedAt||0);if(liveSavedKey===key)return;liveSavedKey=key;
+  const board=liveMode()==="yakka"
+    ? liveRanking().slice(0,20).map(p=>({name:p.name||p.login||"—",group:p.group||"",score:p.score||0}))
+    : liveTeamBoard().map(t=>({name:t.name,score:t.score,n:t.n}));
+  try{await fs.doc("gameResults/"+key).set({game:L.game,mode:L.mode,title:liveGameTitle(),date:Date.now(),n:S.players.length,board});await log("test",`O'yin yakunlandi: ${liveGameTitle()} (${S.players.length} ishtirokchi)`)}catch(e){}
+}
 // Joriy rejimdagi jamoalar ro'yxati: [{id,name,c}]
 function liveTeams(){
   const L=S.live;if(!L)return [];
@@ -3179,19 +3194,25 @@ function liveBoardHtml(limit){
 }
 
 // ============================ CHIEF TOMONI ============================
+// Yaroqli savollar bankidan (barcha o'yin uchun yagona)
+const liveValidQ=()=>S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2);
 async function liveOpen(game,mode){
   game=game||"kahoot";mode=(mode==="jamoa"||mode==="guruh")?mode:"yakka";
-  const Q=S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2);
+  const Q=liveValidQ();
   if(!Q.length){toast("Avval savol qo'shing");return}
   const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),Q.length);
   const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
   try{
     const old=await fs.collection("players").get();
     for(const d of old.docs)await fs.doc("players/"+d.id).delete().catch(()=>{});
-    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",game,mode,teamCount:2,qids,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
+    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",game,mode,teamCount:2,qids,secOverride:0,poolSize:Q.length,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
     await log("test",`Jonli o'yin ochildi: ${game}/${mode}, ${n} ta savol`);
   }catch(e){toast("Ochib bo'lmadi ("+(e&&e.code||e)+")")}
 }
+// Admin: savollar sonini o'zgartirish (bankdan qayta tanlanadi)
+async function liveSetCount(n){const Q=liveValidQ();n=Math.min(Math.max(1,n),Q.length);const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);try{await fs.doc("config/live").update({qids,total:qids.length,poolSize:Q.length})}catch(e){}}
+// Admin: har savol vaqti (0 = savolning o'z vaqti)
+async function liveSetSec(s){try{await fs.doc("config/live").update({secOverride:Math.max(0,Math.min(120,s))})}catch(e){}}
 // Admin: jamoalar sonini o'zgartirish (jamoa rejimi)
 async function liveSetTeams(n){try{await fs.doc("config/live").update({teamCount:Math.min(4,Math.max(2,n))})}catch(e){}}
 // Admin: ishtirokchini boshqa jamoaga ko'chirish
@@ -3203,7 +3224,7 @@ async function liveShowQ(i){
   if(i>=L.qids.length){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
   const q=S.questions.find(x=>x.id===L.qids[i]);
   if(!q){liveShowQ(i+1);return}
-  const cfg=gcfg(), base=Math.max(5,+q.sec||60), sec=cfg.sec?Math.min(base,cfg.sec):base;
+  const cfg=gcfg(), own=Math.max(5,+q.sec||60), ovr=+L.secOverride||0, base=ovr>0?ovr:own, sec=cfg.sec?Math.min(base,cfg.sec):base;
   const mult=cfg.s==="omad"?[1,2,3][liveSeed(L.qids[i])%3]:1;
   const qid=L.qids[i];
   let qd={idx:i,total:L.qids.length,sec,mult,q:q.q};
@@ -3259,6 +3280,24 @@ function renderGames(){
       <span class="g-badge ${it.ok?"ok":"soon"}">${it.ok?"Tayyor":"Tez orada"}</span>
       <span class="g-ic">${it.ic}</span><span class="g-t">${esc(it.t)}</span><span class="g-d">${esc(it.d)}</span></button>`).join("")}</div>`).join("");
   hub.querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>liveOpen(b.dataset.game,b.dataset.mode||"yakka"));
+  // Natijalar tarixi
+  hub.insertAdjacentHTML("beforeend",`<div class="g-cat" style="margin-top:28px"><b>Natijalar tarixi</b><span class="g-ln"></span></div><div id="game-hist"><span class="note">Yuklanmoqda…</span></div>`);
+  liveLoadHist();
+}
+async function liveLoadHist(){
+  const box=$("#game-hist");if(!box)return;
+  try{
+    const snap=await fs.collection("gameResults").orderBy("date","desc").limit(10).get();
+    if(snap.empty){box.innerHTML=`<span class="note">Hali o'yin o'tkazilmagan. O'yin tugagach natija shu yerda saqlanadi.</span>`;return}
+    box.innerHTML=snap.docs.map(d=>{const r=d.data(),top=(r.board||[])[0];
+      return `<div class="hist-row"><div class="hist-main"><b>${esc(r.title||"O'yin")}</b><small>${new Date(r.date||0).toLocaleString("uz")} · ${r.n||0} ishtirokchi</small></div><div class="hist-top">${top?`🥇 ${esc(top.name)} · ${top.score||0}`:"—"}</div><button class="btn ghost hist-more" type="button" data-id="${d.id}">Reyting</button></div>`}).join("");
+    box.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{const r=snap.docs.find(x=>x.id===b.dataset.id).data();liveShowHist(r)});
+  }catch(e){box.innerHTML=`<span class="note">Tarixni yuklab bo'lmadi (${e&&e.code||e}). Firestore qoidalariga gameResults qo'shing.</span>`}
+}
+function liveShowHist(r){
+  const rows=(r.board||[]).map((p,i)=>`<li class="${i===0?"first":""}"><span class="lb-rank">${i+1}</span><span class="lb-name">${esc(p.name)}${p.group?` <small>${esc(p.group)}</small>`:""}${p.n!=null?` <small>${p.n} kishi</small>`:""}</span><span class="lb-score">${p.score||0}</span></li>`).join("");
+  const m=document.createElement("div");m.className="hist-modal";m.innerHTML=`<div class="hist-card"><div class="btnrow" style="justify-content:space-between"><h3 style="margin:0">${esc(r.title||"O'yin")}</h3><button class="btn ghost" type="button" id="hist-x">✕</button></div><p class="note">${new Date(r.date||0).toLocaleString("uz")} · ${r.n||0} ishtirokchi</p><ol class="live-board">${rows}</ol></div>`;
+  document.body.appendChild(m);m.onclick=e=>{if(e.target===m||e.target.id==="hist-x")m.remove()};
 }
 // Javob shakllari (arena ko'rinishi uchun)
 const LIVE_SHAPES=['<svg class="sh" viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/></svg>','<svg class="sh" viewBox="0 0 24 24"><path d="M12 2l10 10-10 10L2 12z"/></svg>','<svg class="sh" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>','<svg class="sh" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>','<svg class="sh" viewBox="0 0 24 24"><polygon points="12,3 21,9 17,20 7,20 3,9"/></svg>','<svg class="sh" viewBox="0 0 24 24"><path d="M12 3l3 6 6 .9-4.5 4.2 1 6L12 17l-5.5 3 1-6L4 9.9 10 9z"/></svg>'];
@@ -3302,8 +3341,11 @@ function renderLiveAdmin(){
       peoplePanel=`<div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Qo'shilganlar: ${S.players.length}</b></div>
         <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${esc(p.name||p.login||"—")}${p.group?` · ${esc(p.group)}`:""}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div>`;
     }
+    const secLbl=(+L.secOverride||0)>0?(L.secOverride+"s"):"savolniki";
+    const setPanel=`<div class="live-set"><div class="set-row"><span>Savollar soni</span><span class="stepper"><button type="button" data-cnt="-5">−</button><b>${L.total}</b><button type="button" data-cnt="5">+</button></span><small>bankda ${L.poolSize||liveValidQ().length} ta</small></div>
+      <div class="set-row"><span>Har savol vaqti</span><span class="stepper"><button type="button" data-sec="-5">−</button><b>${secLbl}</b><button type="button" data-sec="5">+</button></span><small>${(+L.secOverride||0)>0?"barchasiga bir xil":"har savolning o'z vaqti"}</small></div></div>`;
     body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
-      ${peoplePanel}</div>
+      <div class="live-people-wrap">${setPanel}${peoplePanel}</div></div>
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q){
     const sub=L.q.mode==="tf"?`<div class="live-stmt big">"${esc(L.q.stmt||"")}" — rostmi?</div>`:L.q.mode==="text"?`<p class="note" style="text-align:center">Ishtirokchilar javobni telefonda yozishadi.</p>`:`<p class="note" style="text-align:center">Javob variantlari ishtirokchilar telefonida. Ekranga qarab javob belgilashadi.</p>`;
@@ -3332,6 +3374,8 @@ function renderLiveAdmin(){
   on("live-finish",liveFinish);on("live-reopen",()=>liveOpen(L.game,L.mode));on("live-dismiss",liveClose);
   box.querySelectorAll("[data-tc]").forEach(b=>b.onclick=()=>liveSetTeams(+b.dataset.tc));
   box.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>liveMovePlayer(b.dataset.mv,isNaN(+b.dataset.to)?b.dataset.to:+b.dataset.to));
+  box.querySelectorAll("[data-cnt]").forEach(b=>b.onclick=()=>liveSetCount((L.total||10)+ +b.dataset.cnt));
+  box.querySelectorAll("[data-sec]").forEach(b=>b.onclick=()=>liveSetSec((+L.secOverride||0)+ +b.dataset.sec));
   on("live-full",()=>{const el=$("#live-admin");if(!el)return;
     if(document.fullscreenElement){document.exitFullscreen().catch(()=>{})}
     else if(el.requestFullscreen){el.requestFullscreen().catch(()=>{})}
