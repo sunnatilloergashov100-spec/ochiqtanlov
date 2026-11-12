@@ -3049,29 +3049,48 @@ const GAMES=[
     {id:"yozish",ic:"⌨️",t:"Toping-yozing",d:"Variant yo'q — javobni o'zingiz yozasiz.",ok:0},
     {id:"juftla",ic:"🧲",t:"Juftla",d:"Savol va to'g'ri javobini bir-biriga moslang.",ok:0},
     {id:"xotira",ic:"🃏",t:"Xotira o'yini",d:"Yopiq kartalar: savol-javob juftlarini toping.",ok:0},
-    {id:"omad",ic:"🎡",t:"Omad g'ildiragi",d:"G'ildirak aylanadi — savol bali tasodifiy ko'payadi.",ok:0},
-    {id:"qoshhech",ic:"🎰",t:"Qo'sh yoki hech",d:"To'g'ri javob ballni ikkilaydi, bitta xato — hammasi kuyadi.",ok:0},
-    {id:"omonat",ic:"❤️",t:"Omonat (3 jon)",d:"3 jon bilan boshlaysiz, xato = jon ketadi. Qancha uzoq?",ok:0},
+    {id:"omad",mode:"yakka",ic:"🎡",t:"Omad g'ildiragi",d:"Har savol bali tasodifiy (×1, ×2 yoki ×3) ko'payadi.",ok:1},
+    {id:"qoshhech",mode:"yakka",ic:"🎰",t:"Qo'sh yoki hech",d:"Ketma-ket to'g'ri javob ballni ikkilaydi, xato — zanjir uziladi.",ok:1},
+    {id:"omonat",mode:"yakka",ic:"❤️",t:"Omonat (3 jon)",d:"3 jon bilan boshlaysiz, xato = jon ketadi.",ok:1},
     {id:"teskari",ic:"🔄",t:"Teskari",d:"Javob beriladi — to'g'ri savolni tanlang.",ok:0},
-    {id:"poyga",ic:"🏁",t:"Tezlik poygasi",d:"Birinchi bo'lib 10 ta to'g'ri javob bergan g'olib.",ok:0}]},
+    {id:"poyga",mode:"yakka",ic:"🏁",t:"Tezlik poygasi",d:"Birinchi bo'lib 10 ta to'g'ri javob bergan g'olib.",ok:1}]},
   {cat:"Jamoaviy — ichkarida jamoalar",md:"Jamoaviy",cls:"ja",items:[
     {id:"kahoot",mode:"jamoa",ic:"⚔️",t:"Jamolar jangi",d:"Jamoalarga bo'linadi, har to'g'ri javob jamoa baliga qo'shiladi.",ok:1},
     {id:"estafeta",ic:"🏃",t:"Estafeta",d:"Jamoadan har kim navbatma-navbat javob beradi.",ok:0},
     {id:"bomba",ic:"💣",t:"Bomba",d:"Savol jamoa ichida yuradi — qo'lida qolgan yonadi.",ok:0},
-    {id:"jbmz",ic:"🤝",t:"Jamoaviy blitz",d:"Jamoalar vaqt ichida qancha ko'p to'g'ri javob yig'adi.",ok:0},
+    {id:"jbmz",mode:"jamoa",ic:"🤝",t:"Jamoaviy blitz",d:"Jamoalar qisqa vaqtda qancha ko'p to'g'ri javob yig'adi.",ok:1},
     {id:"bayroq",ic:"🚩",t:"Bayroq olish",d:"To'g'ri javob maydondagi katakni jamoangiz nomiga oladi.",ok:0},
-    {id:"zanjir",ic:"🔗",t:"Zanjir",d:"Ketma-ket to'g'ri javoblar jamoa ko'paytmasini oshiradi.",ok:0}]},
+    {id:"zanjir",mode:"jamoa",ic:"🔗",t:"Zanjir",d:"Ketma-ket to'g'ri javoblar jamoa balini oshirib boradi.",ok:1}]},
   {cat:"Guruh vs guruh",md:"Guruh",cls:"gu",items:[
     {id:"kahoot",mode:"guruh",ic:"🏆",t:"Guruhlar ligasi",d:"Guruhlar (261-24 vs 262-24) ball to'playdi, g'olib guruh chiqadi.",ok:1},
-    {id:"gbell",ic:"🥊",t:"Guruh bellashuvi",d:"Ikki guruh raundma-raund yuzma-yuz.",ok:0},
+    {id:"gbell",mode:"guruh",ic:"🥊",t:"Guruh bellashuvi",d:"Har savolda birinchi to'g'ri bosgan guruh ball oladi.",ok:1},
     {id:"gestafeta",ic:"🏅",t:"Guruh estafetasi",d:"Har guruhdan navbat bilan — zanjirni uzmang.",ok:0}]},
   {cat:"Hamma birga",md:"Ochiq",cls:"ha",items:[
     {id:"rostyolgon",ic:"✅",t:"Rost yoki Yolg'on",d:"\"Javob shu variant\" — rostmi yoki yolg'on?",ok:0},
-    {id:"bellashuv",ic:"🔔",t:"Bellashuv",d:"Savol chiqadi — kim birinchi to'g'ri bossa, ball oladi.",ok:0},
-    {id:"barcha",ic:"🌐",t:"Barchaga savol",d:"Hamma javob beradi, to'g'ri foizi ekranda ko'rinadi.",ok:0},
-    {id:"oxirgi",ic:"🪑",t:"Oxirgi qoladi",d:"Xato javob — chiqib ketasiz. Oxirgi qolgan g'olib.",ok:0},
-    {id:"marafon",ic:"📊",t:"Reyting marafoni",d:"Uzoq davom etadigan reyting — kim eng ko'p ball yig'adi.",ok:0}]}
+    {id:"bellashuv",mode:"yakka",ic:"🔔",t:"Bellashuv",d:"Har savolda faqat birinchi to'g'ri javob bergan ball oladi.",ok:1},
+    {id:"barcha",mode:"yakka",ic:"🌐",t:"Barchaga savol",d:"Hamma javob beradi, har to'g'ri javob teng ball.",ok:1},
+    {id:"oxirgi",mode:"yakka",ic:"🪑",t:"Oxirgi qoladi",d:"Xato javob — chiqib ketasiz. Oxirgi qolgan g'olib.",ok:1},
+    {id:"marafon",mode:"yakka",ic:"📊",t:"Reyting marafoni",d:"Hamma savollar — kim eng ko'p ball yig'adi.",ok:1}]}
 ];
+// Har o'yinning qoidasi: s=ball turi, sec=vaqt, goal=g'olib sharti, lives=jon, elim=xatoda chiqib ketish
+const GCFG={
+  kahoot:{s:"time"}, millioner:{s:"ladder"}, blitz:{s:"flat",sec:10,rev:1800},
+  marafon:{s:"time"}, poyga:{s:"time",goal:10},
+  bellashuv:{s:"first"}, barcha:{s:"flat"},
+  qoshhech:{s:"double"}, zanjir:{s:"streak"}, jbmz:{s:"flat",sec:10},
+  gbell:{s:"first"}, omonat:{s:"time",lives:3}, oxirgi:{s:"time",elim:1}, omad:{s:"omad"}
+};
+const gcfg=()=>GCFG[(S.live&&S.live.game)||"kahoot"]||GCFG.kahoot;
+function liveSeed(str){let h=2166136261;str=String(str);for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+// Eng tez to'g'ri javob bergan (bellashuv uchun)
+function liveIsFastest(qid,idx,uid){
+  const key=(S.qkeys[qid]||{}).a;if(key==null)return false;let best=null,bu=null;
+  S.players.forEach(p=>{const a=(p.ans||{})[idx];if(a&&a.i===key){const t=+a.t||0;if(best==null||t<best){best=t;bu=p.id}}});
+  return bu===uid;
+}
+function liveCorrectN(p){const L=S.live;if(!L)return 0;let n=0;(L.qids||[]).forEach((qid,idx)=>{const key=(S.qkeys[qid]||{}).a;const a=(p.ans||{})[idx];if(a&&key!=null&&a.i===key)n++});return n}
+function liveWrongCount(p){const L=S.live;if(!L)return 0;let w=0;(L.qids||[]).forEach((qid,idx)=>{if(idx>(L.qIndex==null?-1:L.qIndex))return;const key=(S.qkeys[qid]||{}).a;const a=(p.ans||{})[idx];if(a!=null&&key!=null&&a.i!==key)w++});return w}
+function liveIsOut(p){const c=gcfg();if(c.elim)return liveWrongCount(p)>=1;if(c.lives)return liveWrongCount(p)>=c.lives;return false}
 const liveMode=()=>(S.live&&S.live.mode)||"yakka";
 // Joriy rejimdagi jamoalar ro'yxati: [{id,name,c}]
 function liveTeams(){
@@ -3099,19 +3118,27 @@ const liveJoined=()=>!!S.players.find(p=>p.id===S.uid);
 const liveMe=()=>S.players.find(p=>p.id===S.uid)||null;
 
 // --- Tezlik bo'yicha ball: to'g'ri bo'lsa, tez javob ko'proq ball oladi ---
-function liveScoreOne(q,key,ans,idx){
-  if(!ans||ans.i==null||key==null||ans.i!==key)return 0;
-  const game=(S.live&&S.live.game)||"kahoot";
-  const limit=Math.max(5,+q.sec||60)*1000, frac=Math.min(1,Math.max(0,(+ans.t||0)/limit));
-  // Millioner: har savol avvalgidan qimmatroq. Blitz: tez, qat'iy ball.
-  if(game==="millioner")return Math.round(LIVE_BASE*(+q.pts||1)*(1+0.6*(idx||0))*(1-0.3*frac));
-  if(game==="blitz")return Math.round(300*(1-0.4*frac));
-  return Math.round(LIVE_BASE*(+q.pts||1)*(1-0.5*frac));
+// Bitta to'g'ri javobning asosiy bali (streak/first/double dan oldin)
+function liveBasePts(cfg,q,ans,idx,qid){
+  const limit=Math.max(5,+q.sec||60)*1000, frac=Math.min(1,Math.max(0,(+(ans&&ans.t)||0)/limit));
+  if(cfg.s==="ladder")return Math.round(LIVE_BASE*(+q.pts||1)*(1+0.6*(idx||0))*(1-0.3*frac));
+  if(cfg.s==="flat")return Math.round(300*(1-0.4*frac));
+  if(cfg.s==="omad"){const m=[1,2,3][liveSeed(qid)%3];return Math.round(LIVE_BASE*(+q.pts||1)*(1-0.5*frac))*m}
+  return Math.round(LIVE_BASE*(+q.pts||1)*(1-0.5*frac)); // time
 }
 function liveTotal(player){
-  const L=S.live;if(!L||!Array.isArray(L.qids))return 0;let s=0;
+  const L=S.live;if(!L||!Array.isArray(L.qids))return 0;const cfg=gcfg();let s=0,streak=0;
   L.qids.forEach((qid,idx)=>{const q=S.questions.find(x=>x.id===qid);if(!q)return;
-    const k=(S.qkeys[qid]||{}).a, a=(player.ans||{})[idx];s+=liveScoreOne(q,k==null?null:k,a,idx)});
+    const key=(S.qkeys[qid]||{}).a, a=(player.ans||{})[idx];
+    const ok=a&&a.i!=null&&key!=null&&a.i===key;
+    if(!ok){streak=0;return}
+    let pts;
+    if(cfg.s==="streak"){streak++;pts=100*streak}
+    else if(cfg.s==="double"){streak++;pts=100*Math.pow(2,Math.min(streak,10)-1)}
+    else if(cfg.s==="first"){if(!liveIsFastest(qid,idx,player.id))return;pts=liveBasePts(cfg,q,a,idx,qid)}
+    else{pts=liveBasePts(cfg,q,a,idx,qid)}
+    s+=pts;
+  });
   return s;
 }
 // Chief javoblarni ko'rib ballni players/{uid}.score ga yozadi (faqat chief'da qkeys bor)
@@ -3119,8 +3146,11 @@ let liveGradeT=null;
 function liveGradeSoon(){clearTimeout(liveGradeT);liveGradeT=setTimeout(liveGrade,400)}
 async function liveGrade(){
   if(!S.isChief||!S.live||!S.live.active)return;
-  for(const p of S.players){const want=liveTotal(p);if((p.score||0)!==want){
-    try{await fs.doc("players/"+p.id).update({score:want})}catch(e){}}}
+  const elim=gcfg().elim||gcfg().lives;
+  for(const p of S.players){const want=liveTotal(p);const upd={};
+    if((p.score||0)!==want)upd.score=want;
+    if(elim){const out=liveIsOut(p);if(!!p.out!==out)upd.out=out}
+    if(Object.keys(upd).length)try{await fs.doc("players/"+p.id).update(upd)}catch(e){}}
 }
 
 // --- Reyting jadvali (umumiy) ---
@@ -3160,9 +3190,10 @@ async function liveShowQ(i){
   if(i>=L.qids.length){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
   const q=S.questions.find(x=>x.id===L.qids[i]);
   if(!q){liveShowQ(i+1);return}
-  const base=Math.max(5,+q.sec||60), sec=L.game==="blitz"?Math.min(base,10):base;
+  const cfg=gcfg(), base=Math.max(5,+q.sec||60), sec=cfg.sec?Math.min(base,cfg.sec):base;
+  const mult=cfg.s==="omad"?[1,2,3][liveSeed(L.qids[i])%3]:1;
   try{await fs.doc("config/live").update({phase:"running",qIndex:i,qStart:Date.now(),qCorrect:null,
-    q:{q:q.q,o:q.o,sec,idx:i,total:L.qids.length}})}catch(e){toast("Bajarib bo'lmadi")}
+    q:{q:q.q,o:q.o,sec,idx:i,total:L.qids.length,mult}})}catch(e){toast("Bajarib bo'lmadi")}
 }
 // Natijani ochish: ballarni yozamiz, to'g'ri javobni ko'rsatamiz (savol tugagani uchun xavfsiz)
 async function liveReveal(){
@@ -3187,8 +3218,13 @@ async function liveAuto(){
     const everyone=S.players.length>0&&S.players.every(p=>(p.ans||{})[L.qIndex]!=null);
     if(timeUp||everyone){liveActing=true;try{await liveReveal()}finally{liveActing=false}}
   }else if(L.phase==="reveal"){
-    const revMs=L.game==="blitz"?1800:LIVE_REVEAL_MS;
-    if(Date.now()>=(L.revealAt||0)+revMs){liveActing=true;try{await liveShowQ((L.qIndex||0)+1)}finally{liveActing=false}}
+    const cfg=gcfg(), revMs=cfg.rev||LIVE_REVEAL_MS;
+    if(Date.now()>=(L.revealAt||0)+revMs){
+      // G'olib/tugash shartlari
+      if(cfg.goal&&S.players.some(p=>liveCorrectN(p)>=cfg.goal)){liveActing=true;try{await liveFinish()}finally{liveActing=false}return}
+      if(cfg.elim){const alive=S.players.filter(p=>!liveIsOut(p));if(S.players.length>=2&&alive.length<=1){liveActing=true;try{await liveFinish()}finally{liveActing=false}return}}
+      liveActing=true;try{await liveShowQ((L.qIndex||0)+1)}finally{liveActing=false}
+    }
   }
 }
 async function liveClose(){try{await fs.doc("config/live").update({active:false,phase:"ended",q:null})}catch(e){}}
@@ -3268,7 +3304,7 @@ function renderLiveAdmin(){
     body=`<div class="live-fin"><div class="live-crown">🏆</div><b>${liveMode()==="yakka"?"Jonli test yakunlandi":liveMode()==="guruh"?"G'olib guruh aniqlandi":"G'olib jamoa aniqlandi"}</b></div>${liveMode()==="yakka"?livePodium()+liveBoardHtml():liveTeamBoardHtml()+`<h3 style="margin:16px 0 6px">Shaxsiy reyting</h3>`+liveBoardHtml(10)}
       <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-reopen">Yangi sessiya</button><button class="btn ghost" type="button" id="live-dismiss">Yopish</button></div>`;
   }
-  const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz"};
+  const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi"};
   let gTitle=gName[L.game];if(gTitle&&typeof gTitle==="object")gTitle=gTitle[L.mode];gTitle=gTitle||"Jonli o'yin";
   box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
@@ -3371,8 +3407,12 @@ function renderLiveJoin(){
   }else if(L.phase==="running"&&L.q){
     const me=liveMe(),answered=me&&(me.ans||{})[L.qIndex]!=null;
     if(top)top.textContent=`Savol ${L.q.idx+1} / ${L.q.total}`;
-    if(!answered){
-      if(body)body.innerHTML=`<div class="live-card live-play"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div><div class="live-timer" id="live-timer"></div>
+    if(me&&me.out){ // chiqib ketgan (omonat/oxirgi)
+      clearInterval(liveTick);liveTick=null;
+      if(body)body.innerHTML=`<div class="live-card"><div class="live-verdict no">Chiqib ketdingiz</div><p>Siz o'yindan chiqdingiz — kuzatib boring.</p><h3>Reyting</h3>${liveBoardAuto(10)}</div>`;
+    }else if(!answered){
+      const mult=(+L.q.mult||1)>1?`<div class="live-mult">×${L.q.mult} ball!</div>`:"";
+      if(body)body.innerHTML=`<div class="live-card live-play"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div><div class="live-timer" id="live-timer"></div>${mult}
         <p class="live-hint">Savol katta ekranda. Javobingizni tanlang.</p>
         <div class="live-opts">${L.q.o.map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div></div>`;
       body.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{body.querySelectorAll("[data-opt]").forEach(x=>x.disabled=true);b.classList.add("picked");liveAnswer(+b.dataset.opt)});

@@ -965,3 +965,7 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 .team-pick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .tp{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}
 .tp.on{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 16%,transparent)}
+
+/* Omad g'ildiragi: ball ko'paytmasi */
+.live-mult{text-align:center;font-weight:800;font-size:18px;color:var(--gold,#C98A1A);background:var(--gold-soft,#F7ECCF);border-radius:12px;padding:6px 12px;margin:0 auto 10px;display:inline-block}
+.live-card .live-mult{display:block}
