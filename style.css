@@ -919,3 +919,49 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 #live-admin:fullscreen h2{font-size:clamp(17px,2.4vw,26px)}
 #live-admin:fullscreen .live-correct{font-size:clamp(16px,2.4vw,28px)}
 #live-admin:fullscreen .live-board li{padding:clamp(12px,1.6vh,18px) 16px}
+
+/* ======================= O'YINLAR MARKAZI (hub) ======================= */
+#games-hub{display:flex;flex-direction:column;gap:4px}
+.g-cat{display:flex;align-items:center;gap:10px;margin:22px 0 12px}
+.g-cat b{font-weight:700;font-size:15px}
+.g-cat .g-ln{flex:1;height:1px;background:var(--line)}
+.g-md{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;padding:4px 10px;border-radius:999px}
+.g-md.ya{background:rgba(11,122,98,.14);color:var(--accent)}
+.g-md.ja{background:rgba(201,138,26,.16);color:var(--gold,#C98A1A)}
+.g-md.gu{background:rgba(124,92,255,.16);color:#7C5CFF}
+.g-md.ha{background:rgba(59,91,219,.14);color:#3B5BDB}
+.g-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.g-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.g-grid{grid-template-columns:1fr}}
+.g-card{position:relative;text-align:left;display:flex;flex-direction:column;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;font:inherit;color:var(--ink);transition:transform .08s,border-color .15s}
+.g-card:hover:not(:disabled){transform:translateY(-2px);border-color:var(--accent)}
+.g-card.soon{opacity:.62;cursor:default}
+.g-ic{font-size:26px;width:48px;height:48px;display:grid;place-items:center;background:var(--accent-soft);border-radius:13px}
+.g-t{font-weight:700;font-size:16px}
+.g-d{color:var(--muted);font-size:13px;line-height:1.45}
+.g-badge{position:absolute;top:14px;right:14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:4px 9px;border-radius:999px}
+.g-badge.ok{background:var(--accent-soft);color:var(--accent)}
+.g-badge.soon{background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+
+/* ======================= JAMOALAR (admin, arena) ======================= */
+.live-arena .team-count{display:inline-flex;gap:5px}
+.live-arena .tc-btn{width:30px;height:30px;border-radius:9px;border:1px solid var(--la-line);background:rgba(255,255,255,.05);color:var(--la-ink);font-weight:800;cursor:pointer}
+.live-arena .tc-btn.on{background:linear-gradient(135deg,var(--la-acc),var(--la-acc2));color:#07122a;border:none}
+.team-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
+.team-col{border:1px solid var(--la-line,#2C356E);border-top:3px solid var(--tc,#2BE0B8);border-radius:12px;padding:10px;background:rgba(255,255,255,.03)}
+.team-h{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:8px;color:var(--la-ink,#F2F4FF)}
+.team-p{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:13px;padding:5px 0;color:var(--la-ink,#F2F4FF)}
+.team-empty{color:var(--la-muted,#9AA3D4);font-size:13px;padding:5px 0}
+.team-p .mv{display:inline-flex;gap:4px}
+.mv-b{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;padding:0}
+.unset{margin-top:12px;color:var(--la-ink,#F2F4FF)}
+.unset .chip{background:rgba(255,255,255,.06);border:1px solid var(--la-line,#2C356E);color:var(--la-ink,#F2F4FF);display:inline-flex;align-items:center;gap:5px}
+.lb-dot{display:inline-block;width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+.live-board.team li{grid-template-columns:30px auto 1fr auto}
+
+/* ======================= JAMOA TANLASH (ishtirokchi) ======================= */
+.pick-team{margin:14px 0;text-align:center}
+.pick-team p{margin:0 0 8px;color:var(--muted)}
+.team-pick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.tp{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}
+.tp.on{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 16%,transparent)}

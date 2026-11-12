@@ -83,13 +83,13 @@ const myTestStatus=()=>{const a=S.myAttempt,t=testOf(S.uid);if(t!=null)return {k
 // ---------- routing ----------
 const APP_TABS=[["vakansiyalar","Vakansiyalar"],["arizalar","Arizalarim"],["profil","Profil va test"],["statistika","Statistika"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
 const EMP_TABS=[["boshqaruv","Boshqaruv"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
-const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"],["ish-beruvchilar","Ish beruvchilar"],["testlar","Test"],["obunalar","Obunalar"]];
+const CHIEF_TABS=[["monitoring","Monitoring"],["kirishlar","Kirish-chiqish"],["foydalanuvchilar","Foydalanuvchilar"],["ish-beruvchilar","Ish beruvchilar"],["testlar","Test"],["oyinlar","O'yinlar"],["obunalar","Obunalar"]];
 const CHIEF_ADM=[["boshqaruv","Boshqaruv"],["tashkilotlar","Tashkilotlar"],["boshqaruv-vak","Vakansiyalar"],["arizalar-adm","Arizalar"],["natijalar","Natijalar"],["shikoyatlar","Shikoyatlar"],["statistika","Statistika"],["jurnal","Jurnal"],["sozlamalar","Sozlamalar"],["qoidalar","Qoidalar"],["haqida","Ilova haqida"]];
 APP_TABS.push(["chat","Xabarlar"]);EMP_TABS.push(["chat","Xabarlar"]);CHIEF_ADM.push(["chat","Xabarlar"]);
 const IJ_TABS=[["ijara","E'lonlar"],["ijara-mening","Mening e'lonlarim"],["ijara-shartnoma","Shartnomalar"]];APP_TABS.push(...IJ_TABS);EMP_TABS.push(...IJ_TABS);CHIEF_ADM.push(...IJ_TABS);
 const KT_TABS=[["ovqat","Ovqatlanish joylari"],["talim","O'quv markazlari"],["xizmat","Xizmatlar va ustalar"],["obuna","Rasmiy profil (obuna)"]];APP_TABS.push(...KT_TABS);EMP_TABS.push(...KT_TABS);CHIEF_ADM.push(...KT_TABS);
 APP_TABS.push(["sozlamalarim","Sozlamalar"],["kutish","Ish beruvchi so'rovi"]);EMP_TABS.push(["sozlamalarim","Sozlamalar"]);CHIEF_ADM.push(["sozlamalarim","Sozlamalar"]);
-const ALL_VIEWS=["obuna","obunalar","ovqat","talim","xizmat","ijara","ijara-mening","ijara-shartnoma","chat","kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
+const ALL_VIEWS=["obuna","obunalar","ovqat","talim","xizmat","ijara","ijara-mening","ijara-shartnoma","chat","kutish","sozlamalarim","monitoring","kirishlar","foydalanuvchilar","ish-beruvchilar","testlar","oyinlar","gate","vakansiyalar","profil","arizalar","boshqaruv","tashkilotlar","boshqaruv-vak","arizalar-adm","natijalar","shikoyatlar","statistika","jurnal","sozlamalar","qoidalar","haqida","tekshir"];
 // Ilova uch qismga bo'linadi; har qism ichida bo'limlar guruhlangan
 const MODES=[["applicant","Bo'sh ish o'rinlari"],["ijara","Ijara xonadonlari"],["ovqat","Ovqatlanish joylari"],["talim","O'quv markazlari"],["xizmat","Xizmatlar va ustalar"],["admin","Ish beruvchi tashkilot"],["chief","Administrator"],["chat","Xabarlar"],["settings","Sozlamalar"]];
 const GEAR='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
@@ -538,7 +538,8 @@ function render(){
   if(t==="ish-beruvchilar")renderEmployers();
   if(t==="shikoyatlar")renderAppeals();
   if(t==="statistika")renderStats();
-  if(t==="testlar"){renderTestAdmin();renderLiveAdmin();}
+  if(t==="testlar"){renderTestAdmin();}
+  if(t==="oyinlar"){renderGames();}
   if(t==="qoidalar"){}
   if(t==="sozlamalarim")renderMySettings();
   if(t==="chat")renderChat();
@@ -3035,6 +3036,63 @@ let liveAutoTried=false, liveFormOpen=false;
 const LIVE_BASE=1000;                 // bitta savolning asosiy bali (ball koeffitsiyentiga ko'paytiriladi)
 const LIVE_REVEAL_MS=5000;            // reyting/natija ekrani necha ms ko'rinadi, so'ng keyingi savol
 let liveCtl=null, liveActing=false;   // chief avtomat boshqaruvi
+// O'yin rejimlari va jamoa ranglari
+const TEAM_PAL=[{name:"Qizil",c:"#E5533D"},{name:"Ko'k",c:"#3B5BDB"},{name:"Sariq",c:"#E0972B"},{name:"Yashil",c:"#2F9E44"}];
+// O'yinlar ro'yxati (hub) — hozircha quiz dvigateli 3 rejimda; qolganlari tez orada
+// BARCHA 25 o'yin: hammasi telefonda o'ynaladi va sizning yuklagan test
+// savollaringizdan (savol + variantlar + to'g'ri javob) avtomatik tuziladi.
+const GAMES=[
+  {cat:"Yakka — har kim o'zi",md:"Yakka",cls:"ya",items:[
+    {id:"kahoot",mode:"yakka",ic:"⚡",t:"Kahoot test",d:"Tez va to'g'ri javob — ko'proq ball. Jonli reyting.",ok:1},
+    {id:"millioner",ic:"💎",t:"Millioner",d:"Savollar ketma-ket, ball bosqichma-bosqich oshib boradi.",ok:0},
+    {id:"blitz",ic:"🔥",t:"Tez javob blitz",d:"Belgilangan vaqtda imkon qadar ko'p savolga javob bering.",ok:0},
+    {id:"yozish",ic:"⌨️",t:"Toping-yozing",d:"Variant yo'q — javobni o'zingiz yozasiz.",ok:0},
+    {id:"juftla",ic:"🧲",t:"Juftla",d:"Savol va to'g'ri javobini bir-biriga moslang.",ok:0},
+    {id:"xotira",ic:"🃏",t:"Xotira o'yini",d:"Yopiq kartalar: savol-javob juftlarini toping.",ok:0},
+    {id:"omad",ic:"🎡",t:"Omad g'ildiragi",d:"G'ildirak aylanadi — savol bali tasodifiy ko'payadi.",ok:0},
+    {id:"qoshhech",ic:"🎰",t:"Qo'sh yoki hech",d:"To'g'ri javob ballni ikkilaydi, bitta xato — hammasi kuyadi.",ok:0},
+    {id:"omonat",ic:"❤️",t:"Omonat (3 jon)",d:"3 jon bilan boshlaysiz, xato = jon ketadi. Qancha uzoq?",ok:0},
+    {id:"teskari",ic:"🔄",t:"Teskari",d:"Javob beriladi — to'g'ri savolni tanlang.",ok:0},
+    {id:"poyga",ic:"🏁",t:"Tezlik poygasi",d:"Birinchi bo'lib 10 ta to'g'ri javob bergan g'olib.",ok:0}]},
+  {cat:"Jamoaviy — ichkarida jamoalar",md:"Jamoaviy",cls:"ja",items:[
+    {id:"kahoot",mode:"jamoa",ic:"⚔️",t:"Jamolar jangi",d:"Jamoalarga bo'linadi, har to'g'ri javob jamoa baliga qo'shiladi.",ok:1},
+    {id:"estafeta",ic:"🏃",t:"Estafeta",d:"Jamoadan har kim navbatma-navbat javob beradi.",ok:0},
+    {id:"bomba",ic:"💣",t:"Bomba",d:"Savol jamoa ichida yuradi — qo'lida qolgan yonadi.",ok:0},
+    {id:"jbmz",ic:"🤝",t:"Jamoaviy blitz",d:"Jamoalar vaqt ichida qancha ko'p to'g'ri javob yig'adi.",ok:0},
+    {id:"bayroq",ic:"🚩",t:"Bayroq olish",d:"To'g'ri javob maydondagi katakni jamoangiz nomiga oladi.",ok:0},
+    {id:"zanjir",ic:"🔗",t:"Zanjir",d:"Ketma-ket to'g'ri javoblar jamoa ko'paytmasini oshiradi.",ok:0}]},
+  {cat:"Guruh vs guruh",md:"Guruh",cls:"gu",items:[
+    {id:"kahoot",mode:"guruh",ic:"🏆",t:"Guruhlar ligasi",d:"Guruhlar (261-24 vs 262-24) ball to'playdi, g'olib guruh chiqadi.",ok:1},
+    {id:"gbell",ic:"🥊",t:"Guruh bellashuvi",d:"Ikki guruh raundma-raund yuzma-yuz.",ok:0},
+    {id:"gestafeta",ic:"🏅",t:"Guruh estafetasi",d:"Har guruhdan navbat bilan — zanjirni uzmang.",ok:0}]},
+  {cat:"Hamma birga",md:"Ochiq",cls:"ha",items:[
+    {id:"rostyolgon",ic:"✅",t:"Rost yoki Yolg'on",d:"\"Javob shu variant\" — rostmi yoki yolg'on?",ok:0},
+    {id:"bellashuv",ic:"🔔",t:"Bellashuv",d:"Savol chiqadi — kim birinchi to'g'ri bossa, ball oladi.",ok:0},
+    {id:"barcha",ic:"🌐",t:"Barchaga savol",d:"Hamma javob beradi, to'g'ri foizi ekranda ko'rinadi.",ok:0},
+    {id:"oxirgi",ic:"🪑",t:"Oxirgi qoladi",d:"Xato javob — chiqib ketasiz. Oxirgi qolgan g'olib.",ok:0},
+    {id:"marafon",ic:"📊",t:"Reyting marafoni",d:"Uzoq davom etadigan reyting — kim eng ko'p ball yig'adi.",ok:0}]}
+];
+const liveMode=()=>(S.live&&S.live.mode)||"yakka";
+// Joriy rejimdagi jamoalar ro'yxati: [{id,name,c}]
+function liveTeams(){
+  const L=S.live;if(!L)return [];
+  if(L.mode==="jamoa"){const n=Math.min(4,Math.max(2,+L.teamCount||2));return TEAM_PAL.slice(0,n).map((t,i)=>({id:i,name:t.name,c:t.c}))}
+  if(L.mode==="guruh"){const g=[...new Set(S.players.map(p=>(p.group||"").trim()).filter(Boolean))].sort();
+    return g.map((name,i)=>({id:name,name,c:TEAM_PAL[i%TEAM_PAL.length].c}))}
+  return [];
+}
+const livePlayerTeam=p=>liveMode()==="jamoa"?(p.team==null?null:p.team):liveMode()==="guruh"?((p.group||"").trim()||null):null;
+// Jamoa reytingi: a'zolar bali yig'indisi
+function liveTeamBoard(){
+  const teams=liveTeams(),map={};teams.forEach(t=>map[t.id]={...t,score:0,n:0});
+  S.players.forEach(p=>{const t=livePlayerTeam(p);if(t!=null&&map[t]!=null){map[t].score+=(p.score||0);map[t].n++}});
+  return Object.values(map).sort((a,b)=>b.score-a.score||b.n-a.n);
+}
+function liveTeamBoardHtml(){
+  const b=liveTeamBoard();if(!b.length)return `<div class="empty">Jamoalar hali shakllanmagan.</div>`;
+  const mine=liveMe()?livePlayerTeam(liveMe()):null;
+  return `<ol class="live-board team">`+b.map((t,i)=>`<li class="${String(t.id)===String(mine)?"me":""}${i===0?" first":""}"><span class="lb-rank">${i+1}</span><span class="lb-dot" style="background:${t.c}"></span><span class="lb-name">${esc(t.name)} <small>${t.n} kishi</small></span><span class="lb-score">${t.score}</span></li>`).join("")+`</ol>`;
+}
 const liveUrl=pin=>location.origin+location.pathname+"?live="+pin;
 const livePin=()=>String(100000+Math.floor(Math.random()*900000));
 const liveJoined=()=>!!S.players.find(p=>p.id===S.uid);
@@ -3065,6 +3123,8 @@ async function liveGrade(){
 function liveRanking(){
   return [...S.players].sort((a,b)=>(b.score||0)-(a.score||0)||((a.joinedAt||0)-(b.joinedAt||0)));
 }
+// Rejimga qarab: jamoa rejimida jamoaviy reyting, aks holda yakka
+function liveBoardAuto(limit){return liveMode()==="yakka"?liveBoardHtml(limit):liveTeamBoardHtml()}
 function liveBoardHtml(limit){
   const r=liveRanking(),top=limit?r.slice(0,limit):r;
   if(!r.length)return `<div class="empty">Hali hech kim qo'shilmagan.</div>`;
@@ -3072,19 +3132,25 @@ function liveBoardHtml(limit){
 }
 
 // ============================ CHIEF TOMONI ============================
-async function liveOpen(){
+async function liveOpen(game,mode){
+  game=game||"kahoot";mode=mode||"yakka";
   const Q=S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2);
   if(!Q.length){toast("Avval savol qo'shing");return}
   const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),Q.length);
   const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
   try{
-    // eski ishtirokchilarni tozalaymiz
     const old=await fs.collection("players").get();
     for(const d of old.docs)await fs.doc("players/"+d.id).delete().catch(()=>{});
-    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",qids,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
-    await log("test",`Jonli test ochildi: ${n} ta savol`);
+    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",game,mode,teamCount:2,qids,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
+    await log("test",`Jonli o'yin ochildi: ${game}/${mode}, ${n} ta savol`);
   }catch(e){toast("Ochib bo'lmadi ("+(e&&e.code||e)+")")}
 }
+// Admin: jamoalar sonini o'zgartirish (jamoa rejimi)
+async function liveSetTeams(n){try{await fs.doc("config/live").update({teamCount:Math.min(4,Math.max(2,n))})}catch(e){}}
+// Admin: ishtirokchini boshqa jamoaga ko'chirish
+async function liveMovePlayer(uid,team){try{await fs.doc("players/"+uid).update({team})}catch(e){}}
+// Ishtirokchi: jamoa tanlash/almashtirish
+async function liveJoinTeam(team){if(!S.uid)return;try{await fs.doc("players/"+S.uid).update({team})}catch(e){}}
 async function liveShowQ(i){
   const L=S.live;if(!L)return;
   if(i>=L.qids.length){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
@@ -3122,6 +3188,17 @@ async function liveAuto(){
 async function liveClose(){try{await fs.doc("config/live").update({active:false,phase:"ended",q:null})}catch(e){}}
 
 let liveQR=null;
+// O'yinlar markazi (hub): sessiya ochiq bo'lsa panel, bo'lmasa o'yin panjarasi
+function renderGames(){
+  const hub=$("#games-hub");if(!hub)return;
+  if(S.live&&S.live.active){hub.innerHTML="";renderLiveAdmin();return}
+  $("#live-admin").innerHTML="";
+  hub.innerHTML=GAMES.map(g=>`<div class="g-cat"><b>${esc(g.cat)}</b><span class="g-md ${g.cls}">${esc(g.md)}</span><span class="g-ln"></span></div>
+    <div class="g-grid">${g.items.map(it=>`<button class="g-card${it.ok?"":" soon"}" type="button" ${it.ok?`data-game="${it.id}" data-mode="${it.mode}"`:"disabled"}>
+      <span class="g-badge ${it.ok?"ok":"soon"}">${it.ok?"Tayyor":"Tez orada"}</span>
+      <span class="g-ic">${it.ic}</span><span class="g-t">${esc(it.t)}</span><span class="g-d">${esc(it.d)}</span></button>`).join("")}</div>`).join("");
+  hub.querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>liveOpen(b.dataset.game,b.dataset.mode));
+}
 // Javob shakllari (arena ko'rinishi uchun)
 const LIVE_SHAPES=['<svg class="sh" viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/></svg>','<svg class="sh" viewBox="0 0 24 24"><path d="M12 2l10 10-10 10L2 12z"/></svg>','<svg class="sh" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>','<svg class="sh" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>','<svg class="sh" viewBox="0 0 24 24"><polygon points="12,3 21,9 17,20 7,20 3,9"/></svg>','<svg class="sh" viewBox="0 0 24 24"><path d="M12 3l3 6 6 .9-4.5 4.2 1 6L12 17l-5.5 3 1-6L4 9.9 10 9z"/></svg>'];
 function liveOptsArena(L,phase){
@@ -3145,9 +3222,27 @@ function renderLiveAdmin(){
   const ans=(L.q&&L.qIndex>=0)?S.players.filter(p=>(p.ans||{})[L.qIndex]!=null).length:0;
   let body="";
   if(L.phase==="lobby"){
+    const teams=liveTeams();
+    let peoplePanel;
+    if(L.mode==="jamoa"){
+      const tc=Math.min(4,Math.max(2,+L.teamCount||2));
+      const grouped=teams.map(t=>({t,ps:S.players.filter(p=>p.team===t.id)}));
+      const unset=S.players.filter(p=>p.team==null);
+      peoplePanel=`<div class="live-people">
+        <div class="btnrow" style="justify-content:space-between;align-items:center"><b>Jamoalar</b>
+          <span class="team-count">Jamoa soni: ${[2,3,4].map(n=>`<button type="button" class="tc-btn ${n===tc?"on":""}" data-tc="${n}">${n}</button>`).join("")}</span></div>
+        <div class="team-cols">${grouped.map(g=>`<div class="team-col" style="--tc:${g.t.c}"><div class="team-h"><span class="lb-dot" style="background:${g.t.c}"></span>${esc(g.t.name)} · ${g.ps.length}</div>
+          ${g.ps.map(p=>`<div class="team-p">${esc(p.name||p.login||"—")}<span class="mv">${teams.filter(x=>x.id!==g.t.id).map(x=>`<button type="button" class="mv-b" data-mv="${p.id}" data-to="${x.id}" title="${esc(x.name)}ga" style="background:${x.c}"></button>`).join("")}</span></div>`).join("")||`<div class="team-empty">—</div>`}</div>`).join("")}</div>
+        ${unset.length?`<div class="unset"><b>Jamoasiz: ${unset.length}</b> ${unset.map(p=>`<span class="chip">${esc(p.name||p.login||"—")} ${teams.map(x=>`<button type="button" class="mv-b" data-mv="${p.id}" data-to="${x.id}" style="background:${x.c}"></button>`).join("")}</span>`).join("")}</div>`:""}</div>`;
+    }else if(L.mode==="guruh"){
+      peoplePanel=`<div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Guruhlar (avtomatik)</b><span class="note">${S.players.length} ishtirokchi</span></div>
+        <div class="team-cols">${teams.length?teams.map(t=>{const ps=S.players.filter(p=>(p.group||"").trim()===t.id);return `<div class="team-col" style="--tc:${t.c}"><div class="team-h"><span class="lb-dot" style="background:${t.c}"></span>${esc(t.name)} · ${ps.length}</div>${ps.map(p=>`<div class="team-p">${esc(p.name||p.login||"—")}</div>`).join("")}</div>`}).join(""):`<span class="note">Guruhlar ishtirokchilar qo'shilgach shakllanadi.</span>`}</div></div>`;
+    }else{
+      peoplePanel=`<div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Qo'shilganlar: ${S.players.length}</b></div>
+        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${esc(p.name||p.login||"—")}${p.group?` · ${esc(p.group)}`:""}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div>`;
+    }
     body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
-      <div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Qo'shilganlar: ${S.players.length}</b></div>
-        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${esc(p.name||p.login||"—")}${p.group?` · ${esc(p.group)}`:""}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div></div>
+      ${peoplePanel}</div>
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q){
     body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Savol ${L.q.idx+1} / ${L.q.total}</b><span class="note">Javob berdi: ${ans} / ${S.players.length}</span></div>
@@ -3162,16 +3257,19 @@ function renderLiveAdmin(){
       ${co!=null?`<div class="live-correct">To'g'ri javob: ${"ABCDEF"[L.qCorrect]}) ${esc(co)} ✓</div>`:""}</div>
       <p class="note">${L.qIndex+1>=L.qids.length?"Oxirgi savol — tez orada yakunlanadi.":"Keyingi savol avtomatik ochiladi…"}</p>
       <div class="btnrow"><button class="btn" type="button" id="live-next">${L.qIndex+1>=L.qids.length?"Yakunlash":"Keyingi savolga hozir"}</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>
-      <h3 style="margin:14px 0 6px">Reyting</h3>${liveBoardHtml(10)}`;
+      <h3 style="margin:14px 0 6px">Reyting</h3>${liveBoardAuto(10)}`;
   }else{ // ended
-    body=`<div class="live-fin"><div class="live-crown">🏆</div><b>Jonli test yakunlandi</b></div>${livePodium()}${liveBoardHtml()}
+    body=`<div class="live-fin"><div class="live-crown">🏆</div><b>${liveMode()==="yakka"?"Jonli test yakunlandi":liveMode()==="guruh"?"G'olib guruh aniqlandi":"G'olib jamoa aniqlandi"}</b></div>${liveMode()==="yakka"?livePodium()+liveBoardHtml():liveTeamBoardHtml()+`<h3 style="margin:16px 0 6px">Shaxsiy reyting</h3>`+liveBoardHtml(10)}
       <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-reopen">Yangi sessiya</button><button class="btn ghost" type="button" id="live-dismiss">Yopish</button></div>`;
   }
-  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Jonli test (Kahoot usuli)</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
+  const gTitle={yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"}[L.mode]||"Jonli o'yin";
+  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
   on("live-start",liveStart);on("live-cancel",liveClose);on("live-next",liveNext);
-  on("live-finish",liveFinish);on("live-reopen",liveOpen);on("live-dismiss",liveClose);
+  on("live-finish",liveFinish);on("live-reopen",()=>liveOpen(L.game,L.mode));on("live-dismiss",liveClose);
+  box.querySelectorAll("[data-tc]").forEach(b=>b.onclick=()=>liveSetTeams(+b.dataset.tc));
+  box.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>liveMovePlayer(b.dataset.mv,isNaN(+b.dataset.to)?b.dataset.to:+b.dataset.to));
   on("live-full",()=>{const el=$("#live-admin");if(!el)return;
     if(document.fullscreenElement){document.exitFullscreen().catch(()=>{})}
     else if(el.requestFullscreen){el.requestFullscreen().catch(()=>{})}
@@ -3252,7 +3350,16 @@ function renderLiveJoin(){
   const body=$("#live-body"),top=$("#live-top-info");
   if(L.phase==="lobby"){
     if(top)top.textContent="Kutish xonasi";
-    if(body)body.innerHTML=`<div class="live-card"><h2>Tayyor turing…</h2><p>Siz qo'shildingiz. Chief testni boshlashi bilan birinchi savol shu yerda chiqadi.</p><div class="live-count">${S.players.length} ishtirokchi</div></div>`;
+    let teamUi="";
+    if(L.mode==="jamoa"){
+      const teams=liveTeams(),mine=liveMe()?liveMe().team:null;
+      teamUi=`<div class="pick-team"><p>${mine==null?"Jamoangizni tanlang:":"Jamoangiz (almashtirsa bo'ladi):"}</p>
+        <div class="team-pick">${teams.map(t=>`<button type="button" class="tp ${t.id===mine?"on":""}" data-team="${t.id}" style="--tc:${t.c}"><span class="lb-dot" style="background:${t.c}"></span>${esc(t.name)}</button>`).join("")}</div></div>`;
+    }else if(L.mode==="guruh"){
+      const me=liveMe();teamUi=`<div class="pick-team"><p>Guruhingiz: <b>${esc((me&&me.group)||"—")}</b></p><span class="note">Guruhlar avtomatik bellashadi.</span></div>`;
+    }
+    if(body)body.innerHTML=`<div class="live-card"><h2>Tayyor turing…</h2><p>Siz qo'shildingiz. Boshlanishi bilan birinchi savol shu yerda chiqadi.</p>${teamUi}<div class="live-count">${S.players.length} ishtirokchi</div></div>`;
+    body.querySelectorAll("[data-team]").forEach(b=>b.onclick=()=>liveJoinTeam(isNaN(+b.dataset.team)?b.dataset.team:+b.dataset.team));
     clearInterval(liveTick);liveTick=null;
   }else if(L.phase==="running"&&L.q){
     const me=liveMe(),answered=me&&(me.ans||{})[L.qIndex]!=null;
@@ -3279,12 +3386,12 @@ function renderLiveJoin(){
     const place=liveRanking().findIndex(p=>p.id===S.uid)+1;
     if(top)top.textContent=`Reyting · savol ${L.q?L.q.idx+1:""} / ${L.q?L.q.total:""}`;
     if(body)body.innerHTML=`<div class="live-card"><div class="live-verdict ${correct?"ok":"no"}">${myAns==null?"Javob bermadingiz":correct?"To'g'ri! ✓":"Noto'g'ri ✗"}</div>
-      <div class="live-count" style="text-align:center">O'rningiz: <b>${place||"—"}</b> · ${me&&me.score||0} ball</div><h3 style="margin-top:12px">Reyting</h3>${liveBoardHtml(10)}</div>`;
+      <div class="live-count" style="text-align:center">O'rningiz: <b>${place||"—"}</b> · ${me&&me.score||0} ball</div><h3 style="margin-top:12px">Reyting</h3>${liveBoardAuto(10)}</div>`;
   }else{ // ended
     clearInterval(liveTick);liveTick=null;
     if(top)top.textContent="Yakunlandi";
     const place=liveRanking().findIndex(p=>p.id===S.uid)+1,me=liveMe();
-    if(body)body.innerHTML=`<div class="live-card"><h2>Test tugadi!</h2><div class="live-place">${place===1?"🏆 ":""}${place||"—"}-o'rin</div><div class="live-count">${me&&me.score||0} ball</div><h3>Yakuniy reyting</h3>${liveBoardHtml(10)}<div class="btnrow" style="justify-content:center;margin-top:10px"><button class="btn ghost" type="button" id="live-exit">Yopish</button></div></div>`;
+    if(body)body.innerHTML=`<div class="live-card"><h2>Test tugadi!</h2><div class="live-place">${place===1?"🏆 ":""}${place||"—"}-o'rin</div><div class="live-count">${me&&me.score||0} ball</div><h3>Yakuniy reyting</h3>${liveBoardAuto(10)}<div class="btnrow" style="justify-content:center;margin-top:10px"><button class="btn ghost" type="button" id="live-exit">Yopish</button></div></div>`;
     const x=$("#live-exit");if(x)x.onclick=liveOverlayClose;
   }
 }
