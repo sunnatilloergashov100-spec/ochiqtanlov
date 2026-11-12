@@ -3256,19 +3256,25 @@ async function liveToVoting(){
 // Ishtirokchi ovoz beradi
 async function liveVote(game,mode){if(!S.uid)return;try{await fs.doc("players/"+S.uid).update({vote:{game,mode:(mode==="jamoa"||mode==="guruh")?mode:"yakka"}})}catch(e){}}
 function liveVoteTally(){const m={};S.players.forEach(p=>{if(p.vote&&p.vote.game){const k=p.vote.game+"|"+(p.vote.mode||"yakka");m[k]=(m[k]||0)+1}});return m}
-// G'olib o'yinni boshlash — o'yinchilar saqlanadi, faqat holati tozalanadi
-async function liveStartVoted(winKey){
+// Yangi o'yin boshlash — o'yinchilar saqlanadi, faqat holati tozalanadi
+let livePickOpen=false;
+async function liveStartGame(game,mode){
   if(!S.isChief)return;const L=S.live;if(!L)return;
-  const tally=liveVoteTally();let key=winKey;
-  if(!key){let best=-1;Object.entries(tally).forEach(([k,v])=>{if(v>best){best=v;key=k}})}
-  if(!key)key="kahoot|yakka";
-  const [game,mode]=key.split("|");
+  mode=(mode==="jamoa"||mode==="guruh")?mode:"yakka";
   const Q=liveValidQ();if(!Q.length){toast("Savol yo'q");return}
   const n=Math.min(Math.max(1,L.total||10),Q.length);
   const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
   try{const b=fs.batch();S.players.forEach(p=>b.update(fs.doc("players/"+p.id),{ans:{},score:0,out:false,wrong:0,vote:null}));await b.commit()}catch(e){}
-  liveSavedKey=null;
-  try{await fs.doc("config/live").update({game,mode:(mode==="jamoa"||mode==="guruh")?mode:"yakka",qids,total:qids.length,phase:"lobby",qIndex:-1,q:null,startedAt:Date.now(),secOverride:L.secOverride||0})}catch(e){toast("Boshlab bo'lmadi")}
+  liveSavedKey=null;livePickOpen=false;
+  try{await fs.doc("config/live").update({game,mode,qids,total:qids.length,phase:"lobby",qIndex:-1,q:null,startedAt:Date.now(),secOverride:L.secOverride||0})}catch(e){toast("Boshlab bo'lmadi")}
+}
+// G'olib o'yinni boshlash (ovoz berish natijasi)
+async function liveStartVoted(winKey){
+  const tally=liveVoteTally();let key=winKey;
+  if(!key){let best=-1;Object.entries(tally).forEach(([k,v])=>{if(v>best){best=v;key=k}})}
+  if(!key)key="kahoot|yakka";
+  const [game,mode]=key.split("|");
+  liveStartGame(game,mode);
 }
 // Chief avtomati: vaqt tugasa yoki hamma javob bersa -> reyting; reyting tugasa -> keyingi savol
 function liveCtlStart(){if(liveCtl)return;liveCtl=setInterval(liveAuto,500)}
@@ -3314,9 +3320,13 @@ async function liveLoadHist(){
   try{
     const snap=await fs.collection("gameResults").orderBy("date","desc").limit(10).get();
     if(snap.empty){box.innerHTML=`<span class="note">Hali o'yin o'tkazilmagan. O'yin tugagach natija shu yerda saqlanadi.</span>`;return}
-    box.innerHTML=snap.docs.map(d=>{const r=d.data(),top=(r.board||[])[0];
-      return `<div class="hist-row"><div class="hist-main"><b>${esc(r.title||"O'yin")}</b><small>${new Date(r.date||0).toLocaleString("uz")} · ${r.n||0} ishtirokchi</small></div><div class="hist-top">${top?`🥇 ${esc(top.name)} · ${top.score||0}`:"—"}</div><button class="btn ghost hist-more" type="button" data-id="${d.id}">Reyting</button></div>`}).join("");
+    const chief=S.isChief;
+    box.innerHTML=(chief?`<div class="btnrow" style="justify-content:flex-end;margin-bottom:4px"><button class="btn ghost" type="button" id="hist-clear" style="padding:7px 12px;font-size:13px">Tarixni tozalash</button></div>`:"")+
+      snap.docs.map(d=>{const r=d.data(),top=(r.board||[])[0];
+      return `<div class="hist-row"><div class="hist-main"><b>${esc(r.title||"O'yin")}</b><small>${new Date(r.date||0).toLocaleString("uz")} · ${r.n||0} ishtirokchi</small></div><div class="hist-top">${top?`🥇 ${esc(top.name)} · ${top.score||0}`:"—"}</div><button class="btn ghost hist-more" type="button" data-id="${d.id}">Reyting</button>${chief?`<button class="btn ghost hist-del" type="button" data-del="${d.id}" title="O'chirish">🗑</button>`:""}</div>`}).join("");
     box.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{const r=snap.docs.find(x=>x.id===b.dataset.id).data();liveShowHist(r)});
+    box.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{try{await fs.doc("gameResults/"+b.dataset.del).delete()}catch(e){}liveLoadHist()});
+    const clr=$("#hist-clear");if(clr)clr.onclick=async()=>{if(!confirm("Barcha natijalar tarixini o'chirasizmi?"))return;try{const b=fs.batch();snap.docs.forEach(d=>b.delete(d.ref));await b.commit()}catch(e){}liveLoadHist()};
   }catch(e){box.innerHTML=`<span class="note">Tarixni yuklab bo'lmadi (${e&&e.code||e}). Firestore qoidalariga gameResults qo'shing.</span>`}
 }
 function liveShowHist(r){
@@ -3400,8 +3410,11 @@ function renderLiveAdmin(){
       <div class="vote-bars">${sorted.slice(0,8).map(g=>`<div class="vb"><span class="vb-ic">${g.ic}</span><span class="vb-nm">${esc(g.t)}</span><span class="vb-tr"><i style="width:${Math.round(100*g.v/total)}%"></i></span><span class="vb-n">${g.v}</span></div>`).join("")}</div>
       <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-startvoted">G'olib o'yinni boshlash</button><button class="btn ghost" type="button" id="live-dismiss">Sessiyani yopish</button></div>`;
   }else{ // ended
+    const chooser=livePickOpen?`<div class="pick-grid">${liveReadyGames().map(g=>`<button class="pick-c" type="button" data-pick="${g.game}|${g.mode}"><span class="pi">${g.ic}</span><b>${esc(g.t)}</b></button>`).join("")}</div>`:"";
     body=`<div class="live-fin"><div class="live-crown">🏆</div><b>${liveMode()==="yakka"?"O'yin yakunlandi":liveMode()==="guruh"?"G'olib guruh aniqlandi":"G'olib jamoa aniqlandi"}</b></div>${liveMode()==="yakka"?livePodium()+liveBoardHtml():liveTeamBoardHtml()+`<h3 style="margin:16px 0 6px">Shaxsiy reyting</h3>`+liveBoardHtml(10)}
-      <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="live-tovote">🗳️ Keyingi o'yin — ovoz berish</button><button class="btn ghost" type="button" id="live-dismiss">Sessiyani yopish</button></div>`;
+      <h3 style="margin:16px 0 4px">Keyingi o'yin</h3><p class="note">O'zingiz tanlang yoki ishtirokchilar ovoz bersin.</p>
+      <div class="btnrow"><button class="btn" type="button" id="live-pick">🎮 O'yin tanlash</button><button class="btn ghost" type="button" id="live-tovote">🗳️ Ovoz berish</button><button class="btn ghost" type="button" id="live-dismiss">Sessiyani yopish</button></div>
+      ${chooser}`;
   }
   const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on"};
   let gTitle=gName[L.game];if(gTitle&&typeof gTitle==="object")gTitle=gTitle[L.mode];gTitle=gTitle||"Jonli o'yin";
@@ -3411,6 +3424,8 @@ function renderLiveAdmin(){
   on("live-start",liveStart);on("live-cancel",liveClose);on("live-next",liveNext);
   on("live-finish",liveFinish);on("live-dismiss",liveClose);
   on("live-tovote",liveToVoting);on("live-startvoted",()=>liveStartVoted());
+  on("live-pick",()=>{livePickOpen=!livePickOpen;renderLiveAdmin()});
+  box.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{const p=b.dataset.pick.split("|");liveStartGame(p[0],p[1])});
   box.querySelectorAll("[data-tc]").forEach(b=>b.onclick=()=>liveSetTeams(+b.dataset.tc));
   box.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>liveMovePlayer(b.dataset.mv,isNaN(+b.dataset.to)?b.dataset.to:+b.dataset.to));
   box.querySelectorAll("[data-cnt]").forEach(b=>b.onclick=()=>liveSetCount((L.total||10)+ +b.dataset.cnt));
