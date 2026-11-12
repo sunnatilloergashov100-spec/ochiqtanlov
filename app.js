@@ -3377,7 +3377,7 @@ async function liveAnswerText(txt){
 }
 
 // Ishtirokchi ekrani: #live overlay (kamerasiz, yengil)
-let liveTick=null;
+let liveTick=null, liveBuzzed=false, liveBuzzQ=-1;
 function liveOverlayClose(){clearInterval(liveTick);liveTick=null;liveFormOpen=false;const ov=$("#live");if(ov){ov.hidden=true;ov.dataset.mode=""}document.body.classList.remove("live-open")}
 // Anonim mehmon (ro'yxatdan o'tmagan) uchun yengil rejim: faqat jonli test ekrani
 async function liveGuestBoot(u){
@@ -3438,24 +3438,32 @@ function renderLiveJoin(){
       clearInterval(liveTick);liveTick=null;
       if(body)body.innerHTML=`<div class="live-card"><div class="live-verdict no">Chiqib ketdingiz</div><p>Siz o'yindan chiqdingiz — kuzatib boring.</p><h3>Reyting</h3>${liveBoardAuto(10)}</div>`;
     }else if(!answered){
-      const cfg=gcfg(),mode=L.q.mode||"choice";
+      const cfg=gcfg(),mode=L.q.mode||"choice",game=L.game||"kahoot";
+      // Bellashuv: har yangi savolda buzzerni tiklaymiz
+      if(liveBuzzQ!==L.qIndex){liveBuzzed=false;liveBuzzQ=L.qIndex}
+      const isBuzz=(game==="bellashuv"||game==="gbell");
       const mult=(+L.q.mult||1)>1?`<div class="live-mult">×${L.q.mult} ball!</div>`:"";
       const hearts=cfg.lives?`<div class="live-hearts">${"❤️".repeat(Math.max(0,cfg.lives-(me&&me.wrong||0)))}${"🤍".repeat(Math.min(cfg.lives,me&&me.wrong||0))}</div>`:"";
       let ansHtml,hint;
-      if(mode==="tf"){
+      if(isBuzz&&!liveBuzzed){
+        hint="Birinchi bo'lib bosing — keyin javob bering!";
+        ansHtml=`<div class="live-buzz"><button class="buzz-b" type="button" id="live-buzz">BOSING!</button></div>`;
+      }else if(mode==="tf"){
         hint="Da'vo katta ekranda. Rostmi yoki yolg'on?";
         ansHtml=`<div class="live-stmt">"${esc(L.q.stmt||"")}" — javob shumi?</div><div class="live-tf"><button class="tf-b rost" type="button" data-opt="0">✓ ROST</button><button class="tf-b yolgon" type="button" data-opt="1">✗ YOLG'ON</button></div>`;
       }else if(mode==="text"){
         hint="Savol katta ekranda. Javobni yozing.";
         ansHtml=`<div class="live-textwrap"><input id="live-text" type="text" placeholder="Javobingiz…" autocomplete="off" autocapitalize="off" maxlength="60"><button class="btn" type="button" id="live-send">Yuborish</button></div>`;
       }else{
-        hint="Savol katta ekranda. Javobingizni tanlang.";
-        ansHtml=`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
+        hint=isBuzz?"Tez tanlang — kim birinchi to'g'ri bo'lsa!":"Savol katta ekranda. Javobingizni tanlang.";
+        const ladder=game==="millioner"?`<div class="mil-head"><span>Pog'ona ${L.q.idx+1} / ${L.q.total}</span><div class="mil-bar"><i style="width:${Math.round(100*(L.q.idx+1)/L.q.total)}%"></i></div><span class="mil-tip">📈 Har pog'ona qimmatroq</span></div>`:"";
+        ansHtml=ladder+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }
       if(body)body.innerHTML=`<div class="live-card live-play"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div>${hearts}<div class="live-timer" id="live-timer"></div>${mult}
         <p class="live-hint">${hint}</p>${ansHtml}</div>`;
+      const bz=$("#live-buzz");if(bz)bz.onclick=()=>{liveBuzzed=true;renderLiveJoin()};
       body.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{body.querySelectorAll("[data-opt]").forEach(x=>x.disabled=true);b.classList.add("picked");liveAnswer(+b.dataset.opt)});
-      if(mode==="text"){const inp=$("#live-text"),snd=$("#live-send"),go=()=>{const v=(inp.value||"").trim();if(!v)return;inp.disabled=true;snd.disabled=true;liveAnswerText(v)};if(snd)snd.onclick=go;if(inp)inp.onkeydown=e=>{if(e.key==="Enter")go()};if(inp)inp.focus()}
+      if(mode==="text"&&!(isBuzz&&!liveBuzzed)){const inp=$("#live-text"),snd=$("#live-send"),go=()=>{const v=(inp.value||"").trim();if(!v)return;inp.disabled=true;snd.disabled=true;liveAnswerText(v)};if(snd)snd.onclick=go;if(inp)inp.onkeydown=e=>{if(e.key==="Enter")go()};if(inp)inp.focus()}
       clearInterval(liveTick);
       const limit=Math.max(5,+L.q.sec||60)*1000,end=(L.qStart||Date.now())+limit;
       const upd=()=>{const el=$("#live-timer");if(!el)return;const left=Math.max(0,end-Date.now());el.textContent=Math.ceil(left/1000)+"s";

@@ -987,3 +987,14 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 /* To'g'ri javob satri (tf/text/choice reveal) */
 .live-correct-line{text-align:center;margin:8px 0 4px;color:var(--muted)}
 .live-correct-line b{color:var(--accent)}
+
+/* Bellashuv — buzzer */
+.live-buzz{display:grid;place-items:center;padding:20px 0}
+.buzz-b{width:190px;height:190px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-family:var(--f-display,inherit);font-weight:800;font-size:24px;background:radial-gradient(circle at 40% 35%,#ff8a97,#E5533D);box-shadow:0 16px 34px -10px #E5533D;transition:transform .08s}
+.buzz-b:active{transform:scale(.94)}
+/* Millioner — pog'ona */
+.mil-head{margin-bottom:12px;text-align:center}
+.mil-head>span{font-weight:700;font-size:14px}
+.mil-bar{height:12px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0}
+.mil-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--gold,#C98A1A))}
+.mil-tip{font-size:12px;color:var(--muted)}
