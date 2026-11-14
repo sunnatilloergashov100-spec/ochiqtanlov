@@ -3047,24 +3047,24 @@ const GAMES=[
     {id:"millioner",mode:"yakka",ic:"💎",t:"Millioner",d:"Savollar ketma-ket, ball bosqichma-bosqich oshib boradi.",ok:1},
     {id:"blitz",mode:"yakka",ic:"🔥",t:"Tez javob blitz",d:"Qisqa vaqt — imkon qadar ko'p savolga tez javob bering.",ok:1},
     {id:"yozish",mode:"yakka",ic:"⌨️",t:"Toping-yozing",d:"Variant yo'q — javobni o'zingiz yozasiz.",ok:1},
-    {id:"juftla",ic:"🧲",t:"Juftla",d:"Savol va to'g'ri javobini bir-biriga moslang.",ok:0},
-    {id:"xotira",ic:"🃏",t:"Xotira o'yini",d:"Yopiq kartalar: savol-javob juftlarini toping.",ok:0},
+    {id:"juftla",mode:"yakka",ic:"🧲",t:"Juftla",d:"Savol va to'g'ri javobini bir-biriga moslang.",ok:1},
+    {id:"xotira",mode:"yakka",ic:"🃏",t:"Xotira o'yini",d:"Yopiq kartalar: savol-javob juftlarini toping.",ok:1},
     {id:"omad",mode:"yakka",ic:"🎡",t:"Omad g'ildiragi",d:"Har savol bali tasodifiy (×1, ×2 yoki ×3) ko'payadi.",ok:1},
     {id:"qoshhech",mode:"yakka",ic:"🎰",t:"Qo'sh yoki hech",d:"Ketma-ket to'g'ri javob ballni ikkilaydi, xato — zanjir uziladi.",ok:1},
     {id:"omonat",mode:"yakka",ic:"❤️",t:"Omonat (3 jon)",d:"3 jon bilan boshlaysiz, xato = jon ketadi.",ok:1},
-    {id:"teskari",ic:"🔄",t:"Teskari",d:"Javob beriladi — to'g'ri savolni tanlang.",ok:0},
+    {id:"teskari",mode:"yakka",ic:"🔄",t:"Teskari",d:"Javob beriladi — to'g'ri savolni tanlang.",ok:1},
     {id:"poyga",mode:"yakka",ic:"🏁",t:"Tezlik poygasi",d:"Birinchi bo'lib 10 ta to'g'ri javob bergan g'olib.",ok:1}]},
   {cat:"Jamoaviy — ichkarida jamoalar",md:"Jamoaviy",cls:"ja",items:[
     {id:"kahoot",mode:"jamoa",ic:"⚔️",t:"Jamolar jangi",d:"Jamoalarga bo'linadi, har to'g'ri javob jamoa baliga qo'shiladi.",ok:1},
-    {id:"estafeta",ic:"🏃",t:"Estafeta",d:"Jamoadan har kim navbatma-navbat javob beradi.",ok:0},
-    {id:"bomba",ic:"💣",t:"Bomba",d:"Savol jamoa ichida yuradi — qo'lida qolgan yonadi.",ok:0},
+    {id:"estafeta",mode:"jamoa",ic:"🏃",t:"Estafeta",d:"Jamoadan har kim navbatma-navbat javob beradi.",ok:1},
+    {id:"bomba",mode:"jamoa",ic:"💣",t:"Bomba",d:"Qisqa fitil! Navbatdagi o'yinchi tez va to'g'ri javob bersin — aks holda yonadi.",ok:1},
     {id:"jbmz",mode:"jamoa",ic:"🤝",t:"Jamoaviy blitz",d:"Jamoalar qisqa vaqtda qancha ko'p to'g'ri javob yig'adi.",ok:1},
-    {id:"bayroq",ic:"🚩",t:"Bayroq olish",d:"To'g'ri javob maydondagi katakni jamoangiz nomiga oladi.",ok:0},
+    {id:"bayroq",mode:"jamoa",ic:"🚩",t:"Bayroq olish",d:"To'g'ri javob maydondagi katakni jamoangiz nomiga oladi.",ok:1},
     {id:"zanjir",mode:"jamoa",ic:"🔗",t:"Zanjir",d:"Ketma-ket to'g'ri javoblar jamoa balini oshirib boradi.",ok:1}]},
   {cat:"Guruh vs guruh",md:"Guruh",cls:"gu",items:[
     {id:"kahoot",mode:"guruh",ic:"🏆",t:"Guruhlar ligasi",d:"Guruhlar (261-24 vs 262-24) ball to'playdi, g'olib guruh chiqadi.",ok:1},
     {id:"gbell",mode:"guruh",ic:"🥊",t:"Guruh bellashuvi",d:"Har savolda birinchi to'g'ri bosgan guruh ball oladi.",ok:1},
-    {id:"gestafeta",ic:"🏅",t:"Guruh estafetasi",d:"Har guruhdan navbat bilan — zanjirni uzmang.",ok:0}]},
+    {id:"gestafeta",mode:"guruh",ic:"🏅",t:"Guruh estafetasi",d:"Har guruhdan navbat bilan — zanjirni uzmang.",ok:1}]},
   {cat:"Hamma birga",md:"Ochiq",cls:"ha",items:[
     {id:"rostyolgon",mode:"yakka",ic:"✅",t:"Rost yoki Yolg'on",d:"\"Javob shu variant\" — rostmi yoki yolg'on?",ok:1},
     {id:"bellashuv",mode:"yakka",ic:"🔔",t:"Bellashuv",d:"Har savolda faqat birinchi to'g'ri javob bergan ball oladi.",ok:1},
@@ -3079,7 +3079,12 @@ const GCFG={
   bellashuv:{s:"first"}, barcha:{s:"flat"},
   qoshhech:{s:"double"}, zanjir:{s:"streak"}, jbmz:{s:"flat",sec:10},
   gbell:{s:"first"}, omonat:{s:"time",lives:3}, oxirgi:{s:"time",elim:1}, omad:{s:"omad"},
-  yozish:{s:"time",a:"text"}, rostyolgon:{s:"time",a:"tf"}
+  yozish:{s:"time",a:"text"}, rostyolgon:{s:"time",a:"tf"},
+  teskari:{s:"time",a:"rev"},
+  estafeta:{s:"flat",relay:1}, gestafeta:{s:"flat",relay:1},
+  bomba:{s:"flat",relay:1,sec:8,bomba:1},
+  bayroq:{s:"flat",capture:1},
+  juftla:{s:"self",self:"match"}, xotira:{s:"self",self:"memory"}
 };
 const gcfg=()=>GCFG[(S.live&&S.live.game)||"kahoot"]||GCFG.kahoot;
 function liveSeed(str){let h=2166136261;str=String(str);for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
@@ -3087,10 +3092,27 @@ function liveSeed(str){let h=2166136261;str=String(str);for(let i=0;i<str.length
 function liveNorm(s){return String(s==null?"":s).toLowerCase().replace(/[`'ʻʼ‘’]/g,"").replace(/[^a-zа-яё0-9 ]/gi," ").replace(/\s+/g," ").trim()}
 // Rost/Yolg'on uchun: shu savolda qaysi variant ko'rsatiladi (bir xil bo'lishi uchun qid+idx dan)
 function liveTfShown(q,idx,qid){const n=(q.o||[]).length||4;return liveSeed(qid+":"+idx)%n}
+// Teskari o'yin: to'g'ri savol variantining joyi (chief joylaydi, hamma shu seed bilan tekshiradi)
+function liveRevPos(qid){return liveSeed(qid+":rev")%4}
+// Navbatli o'yinlar (estafeta/bomba/gestafeta): shu savolda shu o'yinchi navbatdami?
+function liveRelayActive(p,idx){
+  const c=gcfg();if(!c.relay)return true;
+  const t=livePlayerTeam(p);if(t==null)return false;
+  const mates=S.players.filter(x=>String(livePlayerTeam(x))===String(t)).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
+  if(!mates.length)return false;
+  return String(mates[idx%mates.length].id)===String(p.id);
+}
+// Shu savolda shu jamoa/guruhdan navbatdagi o'yinchi
+function liveRelayWho(teamId,idx){
+  const mates=S.players.filter(x=>String(livePlayerTeam(x))===String(teamId)).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
+  return mates.length?mates[idx%mates.length]:null;
+}
 // Javob to'g'rimi? (o'yin usuliga qarab)
 function liveIsCorrect(q,key,ans,idx,qid){
-  if(ans==null||key==null)return false;
+  if(ans==null)return false;
   const c=gcfg();
+  if(c.a==="rev")return ans.i!=null&&ans.i===liveRevPos(qid);
+  if(key==null)return false;
   if(c.a==="text")return liveNorm(ans.txt)!==""&&liveNorm(ans.txt)===liveNorm((q.o||[])[key]);
   if(c.a==="tf"){const truth=liveTfShown(q,idx,qid)===key;return (ans.i===0)===truth}
   return ans.i!=null&&ans.i===key;
@@ -3103,11 +3125,24 @@ function liveIsFastest(qid,idx,uid){
 }
 function liveCorrectN(p){const L=S.live;if(!L)return 0;let n=0;(L.qids||[]).forEach((qid,idx)=>{const key=(S.qkeys[qid]||{}).a,q=S.questions.find(x=>x.id===qid);const a=(p.ans||{})[idx];if(a&&q&&liveIsCorrect(q,key,a,idx,qid))n++});return n}
 function liveWrongCount(p){const L=S.live;if(!L)return 0;let w=0;(L.qids||[]).forEach((qid,idx)=>{if(idx>(L.qIndex==null?-1:L.qIndex))return;const key=(S.qkeys[qid]||{}).a,q=S.questions.find(x=>x.id===qid);const a=(p.ans||{})[idx];if(a!=null&&q&&!liveIsCorrect(q,key,a,idx,qid))w++});return w}
-function liveIsOut(p){const c=gcfg();if(c.elim)return liveWrongCount(p)>=1;if(c.lives)return liveWrongCount(p)>=c.lives;return false}
+function liveIsOut(p){const c=gcfg();if(c.bomba)return liveBombaOut(p);if(c.elim)return liveWrongCount(p)>=1;if(c.lives)return liveWrongCount(p)>=c.lives;return false}
+// Bomba: o'z navbatida xato qilgan yoki javob bermagan (vaqt tugagan) o'yinchi yonadi
+function liveBombaOut(p){const L=S.live;if(!L)return false;
+  return (L.qids||[]).some((qid,idx)=>{
+    const over=idx<(L.qIndex==null?-1:L.qIndex)||(idx===L.qIndex&&L.phase!=="running");
+    if(!over)return false;
+    if(!liveRelayActive(p,idx))return false;
+    const key=(S.qkeys[qid]||{}).a,q=S.questions.find(x=>x.id===qid),a=(p.ans||{})[idx];
+    if(a==null)return true;
+    return q&&!liveIsCorrect(q,key,a,idx,qid);
+  });
+}
+// Tirik (yonmagan a'zosi bor) jamoalar — bomba yakunlash sharti
+function liveAliveTeams(){return liveTeams().filter(t=>S.players.some(p=>String(livePlayerTeam(p))===String(t.id)&&!liveIsOut(p)))}
 const liveMode=()=>(S.live&&S.live.mode)||"yakka";
 // O'yin nomi (global)
 function liveGameTitle(game,mode){
-  const g={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on"};
+  const g={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on",teskari:"Teskari",estafeta:"Estafeta",gestafeta:"Guruh estafetasi",bomba:"Bomba",bayroq:"Bayroq olish",juftla:"Juftla",xotira:"Xotira o'yini"};
   let t=g[game||(S.live&&S.live.game)];if(t&&typeof t==="object")t=t[mode||(S.live&&S.live.mode)];return t||"Jonli o'yin";
 }
 // Natijani saqlash (chief, o'yin tugaganda bir marta)
@@ -3155,8 +3190,11 @@ function liveBasePts(cfg,q,ans,idx,qid){
   return Math.round(LIVE_BASE*(+q.pts||1)*(1-0.5*frac)); // time
 }
 function liveTotal(player){
-  const L=S.live;if(!L||!Array.isArray(L.qids))return 0;const cfg=gcfg();let s=0,streak=0;
+  const L=S.live;if(!L||!Array.isArray(L.qids))return 0;const cfg=gcfg();
+  if(cfg.s==="self")return +player.score||0; // o'z-o'zini boshqaradigan o'yin: ball o'yinchi yuboradi
+  let s=0,streak=0;
   L.qids.forEach((qid,idx)=>{const q=S.questions.find(x=>x.id===qid);if(!q)return;
+    if(cfg.relay&&!liveRelayActive(player,idx)){streak=0;return;} // navbat emas — ball yo'q
     const key=(S.qkeys[qid]||{}).a, a=(player.ans||{})[idx];
     const ok=a&&liveIsCorrect(q,key,a,idx,qid);
     if(!ok){streak=0;return}
@@ -3174,7 +3212,8 @@ let liveGradeT=null;
 function liveGradeSoon(){clearTimeout(liveGradeT);liveGradeT=setTimeout(liveGrade,400)}
 async function liveGrade(){
   if(!S.isChief||!S.live||!S.live.active)return;
-  const cfg=gcfg(),elim=cfg.elim||cfg.lives;
+  const cfg=gcfg();if(cfg.s==="self")return; // self o'yin: ballni o'yinchi yozadi, ustiga yozmaymiz
+  const elim=cfg.elim||cfg.lives||cfg.bomba;
   for(const p of S.players){const want=liveTotal(p);const upd={};
     if((p.score||0)!==want)upd.score=want;
     if(elim){const out=liveIsOut(p);if(!!p.out!==out)upd.out=out;const wc=liveWrongCount(p);if((p.wrong||0)!==wc)upd.wrong=wc}
@@ -3221,15 +3260,34 @@ async function liveMovePlayer(uid,team){try{await fs.doc("players/"+uid).update(
 async function liveJoinTeam(team){if(!S.uid)return;try{await fs.doc("players/"+S.uid).update({team})}catch(e){}}
 async function liveShowQ(i){
   const L=S.live;if(!L)return;
+  const cfg0=gcfg();
+  // O'z-o'zini boshqaradigan o'yin (juftla/xotira): bitta "maydon" chiqariladi, savollar birma-bir emas
+  if(cfg0.s==="self"){
+    if(i>0){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
+    const Qs=L.qids.map(id=>S.questions.find(x=>x.id===id)).filter(Boolean);
+    const pairs=[];
+    for(const q of Qs){const key=(S.qkeys[q.id]||{}).a,a=(q.o||[])[key];if(a&&q.q){pairs.push({q:String(q.q),a:String(a)});}if(pairs.length>=6)break;}
+    if(pairs.length<3){toast("Bu o'yin uchun kamida 3 ta savol kerak");try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
+    const qd={mode:"self",self:cfg0.self,pairs,total:pairs.length,sec:cfg0.self==="memory"?Math.max(90,pairs.length*20):Math.max(80,pairs.length*18)};
+    try{await fs.doc("config/live").update({phase:"running",qIndex:0,qStart:Date.now(),qCorrect:null,q:qd})}catch(e){toast("Bajarib bo'lmadi")}
+    return;
+  }
   if(i>=L.qids.length){try{await fs.doc("config/live").update({phase:"ended",q:null})}catch(e){}return}
   const q=S.questions.find(x=>x.id===L.qids[i]);
   if(!q){liveShowQ(i+1);return}
-  const cfg=gcfg(), own=Math.max(5,+q.sec||60), ovr=+L.secOverride||0, base=ovr>0?ovr:own, sec=cfg.sec?Math.min(base,cfg.sec):base;
+  const cfg=cfg0, own=Math.max(5,+q.sec||60), ovr=+L.secOverride||0, base=ovr>0?ovr:own, sec=cfg.sec?Math.min(base,cfg.sec):base;
   const mult=cfg.s==="omad"?[1,2,3][liveSeed(L.qids[i])%3]:1;
   const qid=L.qids[i];
   let qd={idx:i,total:L.qids.length,sec,mult,q:q.q};
   if(cfg.a==="tf"){qd.mode="tf";qd.stmt=(q.o||[])[liveTfShown(q,i,qid)];}
   else if(cfg.a==="text"){qd.mode="text";}
+  else if(cfg.a==="rev"){
+    const key=(S.qkeys[qid]||{}).a;
+    const others=shuffle(S.questions.filter(x=>x.id!==qid&&x.q)).slice(0,3).map(x=>String(x.q));
+    const pos=Math.min(liveRevPos(qid),others.length);
+    const o=[...others];o.splice(pos,0,String(q.q));
+    qd.mode="rev";qd.stmt=(q.o||[])[key]||"";qd.o=o;qd.q="";
+  }
   else{qd.mode="choice";qd.o=q.o;}
   try{await fs.doc("config/live").update({phase:"running",qIndex:i,qStart:Date.now(),qCorrect:null,q:qd})}catch(e){toast("Bajarib bo'lmadi")}
 }
@@ -3240,6 +3298,7 @@ async function liveReveal(){
   const qid=L.qids[L.qIndex], q=S.questions.find(x=>x.id===qid), key=(S.qkeys[qid]||{}).a;
   const upd={phase:"reveal",revealAt:Date.now(),qCorrect:key==null?null:key,qAnswer:(q&&key!=null)?(q.o||[])[key]:null};
   if((L.q&&L.q.mode)==="tf")upd.qTrue=(q&&key!=null)?(liveTfShown(q,L.qIndex,qid)===key):null;
+  if((L.q&&L.q.mode)==="rev"){upd.qCorrect=liveRevPos(qid);upd.qAnswer=q?String(q.q):null;}
   try{await fs.doc("config/live").update(upd)}catch(e){}
 }
 const liveStart=()=>liveShowQ(0);
@@ -3264,7 +3323,7 @@ async function liveStartGame(game,mode){
   const Q=liveValidQ();if(!Q.length){toast("Savol yo'q");return}
   const n=Math.min(Math.max(1,L.total||10),Q.length);
   const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
-  try{const b=fs.batch();S.players.forEach(p=>b.update(fs.doc("players/"+p.id),{ans:{},score:0,out:false,wrong:0,vote:null}));await b.commit()}catch(e){}
+  try{const b=fs.batch();S.players.forEach(p=>b.update(fs.doc("players/"+p.id),{ans:{},score:0,out:false,wrong:0,vote:null,done:false,doneAt:0}));await b.commit()}catch(e){}
   liveSavedKey=null;livePickOpen=false;
   try{await fs.doc("config/live").update({game,mode,qids,total:qids.length,phase:"lobby",qIndex:-1,q:null,startedAt:Date.now(),secOverride:L.secOverride||0})}catch(e){toast("Boshlab bo'lmadi")}
 }
@@ -3282,11 +3341,18 @@ function liveCtlStop(){if(liveCtl){clearInterval(liveCtl);liveCtl=null}}
 async function liveAuto(){
   if(!S.isChief||!S.live||!S.live.active){liveCtlStop();return}
   if(liveActing)return;
-  const L=S.live;
+  const L=S.live, cfg=gcfg();
   if(L.phase==="running"&&L.q){
     const limit=Math.max(5,+L.q.sec||60)*1000;
     const timeUp=Date.now()>=(L.qStart||0)+limit;
-    const everyone=S.players.length>0&&S.players.every(p=>(p.ans||{})[L.qIndex]!=null);
+    if(cfg.s==="self"){ // juftla/xotira: hamma tugatsa yoki vaqt tugasa yakunlaymiz
+      const done=S.players.length>0&&S.players.every(p=>p.done);
+      if(timeUp||done){liveActing=true;try{await liveFinish()}finally{liveActing=false}}
+      return;
+    }
+    // navbatli o'yinlarda faqat navbatdagilar javob berishi kerak
+    const act=S.players.filter(p=>liveRelayActive(p,L.qIndex)&&!p.out);
+    const everyone=act.length>0&&act.every(p=>(p.ans||{})[L.qIndex]!=null);
     if(timeUp||everyone){liveActing=true;try{await liveReveal()}finally{liveActing=false}}
   }else if(L.phase==="reveal"){
     const cfg=gcfg(), revMs=cfg.rev||LIVE_REVEAL_MS;
@@ -3294,6 +3360,7 @@ async function liveAuto(){
       // G'olib/tugash shartlari
       if(cfg.goal&&S.players.some(p=>liveCorrectN(p)>=cfg.goal)){liveActing=true;try{await liveFinish()}finally{liveActing=false}return}
       if(cfg.elim){const alive=S.players.filter(p=>!liveIsOut(p));if(S.players.length>=2&&alive.length<=1){liveActing=true;try{await liveFinish()}finally{liveActing=false}return}}
+      if(cfg.bomba){const at=liveAliveTeams();if(liveTeams().length>=2&&at.length<=1){liveActing=true;try{await liveFinish()}finally{liveActing=false}return}}
       liveActing=true;try{await liveShowQ((L.qIndex||0)+1)}finally{liveActing=false}
     }
   }
@@ -3382,22 +3449,38 @@ function renderLiveAdmin(){
     body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
       <div class="live-people-wrap">${setPanel}${peoplePanel}</div></div>
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
+  }else if(L.phase==="running"&&L.q&&L.q.mode==="self"){
+    const done=S.players.filter(p=>p.done).length;
+    body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>${L.q.self==="memory"?"🃏 Xotira o'yini":"🧲 Juftla"}</b><span class="note">${L.q.total} juftlik</span></div>
+      <p class="note" style="text-align:center">Har bir ishtirokchi o'z telefonida ${L.q.self==="memory"?"yopiq kartalardan juft savol-javobni topmoqda":"savol va to'g'ri javobni moslashtirmoqda"}. Tez va kam xato — ko'proq ball.</p>
+      <div class="live-analysis"><div class="an-row"><span>Tugatdi</span><b class="ok">${done} / ${S.players.length}</b></div></div>
+      <div class="btnrow"><button class="btn" type="button" id="live-finish">Yakunlash</button></div>
+      <h3 style="margin:12px 0 6px">Jonli reyting</h3>${liveBoardHtml(10)}`;
   }else if(L.phase==="running"&&L.q){
-    const sub=L.q.mode==="tf"?`<div class="live-stmt big">"${esc(L.q.stmt||"")}" — rostmi?</div>`:L.q.mode==="text"?`<p class="note" style="text-align:center">Ishtirokchilar javobni telefonda yozishadi.</p>`:`<p class="note" style="text-align:center">Javob variantlari ishtirokchilar telefonida. Ekranga qarab javob belgilashadi.</p>`;
-    // Jarayon tahlili (admin): kim to'g'ri topdi, kim birinchi
+    const cfg=gcfg(), isRev=L.q.mode==="rev";
+    const sub=L.q.mode==="tf"?`<div class="live-stmt big">"${esc(L.q.stmt||"")}" — rostmi?</div>`
+      :isRev?`<div class="live-stmt big">Javob: ${esc(L.q.stmt||"")}</div><p class="note" style="text-align:center">Qaysi savolga to'g'ri keladi? Variantlar ishtirokchilar telefonida.</p>`
+      :L.q.mode==="text"?`<p class="note" style="text-align:center">Ishtirokchilar javobni telefonda yozishadi.</p>`
+      :`<p class="note" style="text-align:center">Javob variantlari ishtirokchilar telefonida. Ekranga qarab javob belgilashadi.</p>`;
     const aqid=L.qids[L.qIndex],aq=S.questions.find(x=>x.id===aqid),akey=(S.qkeys[aqid]||{}).a;
     let corr=0,fp=null,ft=null;S.players.forEach(p=>{const a=(p.ans||{})[L.qIndex];if(a&&aq&&liveIsCorrect(aq,akey,a,L.qIndex,aqid)){corr++;const t=+a.t||0;if(ft==null||t<ft){ft=t;fp=p}}});
+    const relayLine=cfg.relay?`<div class="relay-turn">${cfg.bomba?"💣 Bomba kimda: ":"🏃 Navbat: "}${liveTeams().map(t=>{const w=liveRelayWho(t.id,L.qIndex);return `<span class="rt"><span class="lb-dot" style="background:${t.c}"></span>${esc(t.name)}: <b>${w?esc(w.name||w.login||"—"):"—"}</b></span>`}).join("")}</div>`:"";
     const analysis=`<div class="live-analysis"><div class="an-row"><span>Javob berdi</span><b>${ans} / ${S.players.length}</b></div><div class="an-row"><span>To'g'ri topdi</span><b class="ok">${corr}</b></div><div class="an-row"><span>Birinchi to'g'ri</span><b>${fp?esc(fp.name||fp.login||"—"):"—"}</b></div></div>`;
+    const headQ=isRev?"":`<div class="live-q big">${esc(L.q.q||"")}</div>`;
     body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Savol ${L.q.idx+1} / ${L.q.total}</b><span class="note">Jarayon tahlili</span></div>
-      <div class="live-q big">${esc(L.q.q)}</div>${sub}</div>
-      ${analysis}
+      ${headQ}${sub}</div>
+      ${relayLine}${analysis}
+      ${cfg.capture?`<h3 style="margin:12px 0 6px">Maydon</h3>${liveBayroqBoardHtml()}`:""}
       <div class="btnrow"><button class="btn" type="button" id="live-next">Reytingni hozir ochish</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>
       <h3 style="margin:12px 0 6px">Jonli reyting</h3>${liveBoardAuto(6)}`;
   }else if(L.phase==="reveal"&&L.q){
-    const corr=L.q.mode==="tf"?(L.qTrue?"ROST":"YOLG'ON"):L.q.mode==="text"?L.qAnswer:(L.qAnswer!=null?`${"ABCDEF"[L.qCorrect]}) ${L.qAnswer}`:null);
+    const cfg=gcfg();
+    const corr=L.q.mode==="tf"?(L.qTrue?"ROST":"YOLG'ON"):L.q.mode==="text"?L.qAnswer:L.q.mode==="rev"?L.qAnswer:(L.qAnswer!=null?`${"ABCDEF"[L.qCorrect]}) ${L.qAnswer}`:null);
+    const corrLbl=L.q.mode==="rev"?"To'g'ri savol":"To'g'ri javob";
     body=`<div class="live-run"><div class="btnrow" style="justify-content:space-between"><b>Natija · savol ${L.q.idx+1} / ${L.q.total}</b><span class="pill res">Reyting</span></div>
-      <div class="live-q big">${esc(L.q.q)}</div>
-      ${corr!=null?`<div class="live-correct">To'g'ri javob: ${esc(corr)} ✓</div>`:""}</div>
+      ${L.q.mode==="rev"?`<div class="live-stmt big">Javob: ${esc(L.q.stmt||"")}</div>`:`<div class="live-q big">${esc(L.q.q||"")}</div>`}
+      ${corr!=null?`<div class="live-correct">${corrLbl}: ${esc(corr)} ✓</div>`:""}</div>
+      ${cfg.capture?`<h3 style="margin:12px 0 6px">Maydon</h3>${liveBayroqBoardHtml()}`:""}
       <p class="note">${L.qIndex+1>=L.qids.length?"Oxirgi savol — tez orada yakunlanadi.":"Keyingi savol avtomatik ochiladi…"}</p>
       <div class="btnrow"><button class="btn" type="button" id="live-next">${L.qIndex+1>=L.qids.length?"Yakunlash":"Keyingi savolga hozir"}</button><button class="btn ghost" type="button" id="live-finish">To'xtatish</button></div>
       <h3 style="margin:14px 0 6px">Reyting</h3>${liveBoardAuto(10)}`;
@@ -3416,7 +3499,7 @@ function renderLiveAdmin(){
       <div class="btnrow"><button class="btn" type="button" id="live-pick">🎮 O'yin tanlash</button><button class="btn ghost" type="button" id="live-tovote">🗳️ Ovoz berish</button><button class="btn ghost" type="button" id="live-dismiss">Sessiyani yopish</button></div>
       ${chooser}`;
   }
-  const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on"};
+  const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on",teskari:"Teskari",estafeta:"Estafeta",gestafeta:"Guruh estafetasi",bomba:"Bomba",bayroq:"Bayroq olish",juftla:"Juftla",xotira:"Xotira o'yini"};
   let gTitle=gName[L.game];if(gTitle&&typeof gTitle==="object")gTitle=gTitle[L.mode];gTitle=gTitle||"Jonli o'yin";
   box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
@@ -3475,7 +3558,7 @@ async function liveAnswerText(txt){
 }
 
 // Ishtirokchi ekrani: #live overlay (kamerasiz, yengil)
-let liveTick=null, liveBuzzed=false, liveBuzzQ=-1;
+let liveTick=null, liveBuzzed=false, liveBuzzQ=-1, liveSelfKey=null;
 function liveOverlayClose(){clearInterval(liveTick);liveTick=null;liveFormOpen=false;const ov=$("#live");if(ov){ov.hidden=true;ov.dataset.mode=""}document.body.classList.remove("live-open")}
 // Anonim mehmon (ro'yxatdan o'tmagan) uchun yengil rejim: faqat jonli test ekrani
 async function liveGuestBoot(u){
@@ -3530,11 +3613,20 @@ function renderLiveJoin(){
     body.querySelectorAll("[data-team]").forEach(b=>b.onclick=()=>liveJoinTeam(isNaN(+b.dataset.team)?b.dataset.team:+b.dataset.team));
     clearInterval(liveTick);liveTick=null;
   }else if(L.phase==="running"&&L.q){
+    // O'z-o'zini boshqaradigan o'yin (juftla/xotira)
+    if(L.q.mode==="self"){liveRenderSelf(body,top,L);return;}
     const me=liveMe(),answered=me&&(me.ans||{})[L.qIndex]!=null;
+    const cfgR=gcfg();
     if(top)top.textContent=`Savol ${L.q.idx+1} / ${L.q.total}`;
-    if(me&&me.out){ // chiqib ketgan (omonat/oxirgi)
+    if(me&&me.out){ // chiqib ketgan (omonat/oxirgi/bomba)
       clearInterval(liveTick);liveTick=null;
-      if(body)body.innerHTML=`<div class="live-card"><div class="live-verdict no">Chiqib ketdingiz</div><p>Siz o'yindan chiqdingiz — kuzatib boring.</p><h3>Reyting</h3>${liveBoardAuto(10)}</div>`;
+      const burn=cfgR.bomba?`<div class="live-verdict no">💥 Yondingiz!</div><p>Bombangiz portladi — endi kuzatib boring.</p>`:`<div class="live-verdict no">Chiqib ketdingiz</div><p>Siz o'yindan chiqdingiz — kuzatib boring.</p>`;
+      if(body)body.innerHTML=`<div class="live-card">${burn}<h3>Reyting</h3>${liveBoardAuto(10)}</div>`;
+    }else if(cfgR.relay&&me&&!liveRelayActive(me,L.qIndex)){ // navbat emas
+      clearInterval(liveTick);liveTick=null;
+      const who=liveRelayWho(livePlayerTeam(me),L.qIndex);
+      const fuse=cfgR.bomba?`<div class="bomb-wait">💣</div>`:`<div class="relay-wait">🏃</div>`;
+      if(body)body.innerHTML=`<div class="live-card live-play">${fuse}<h2>Navbat sizda emas</h2><p>Hozir <b>${esc((who&&(who.name||who.login))||"jamoadoshingiz")}</b> javob beryapti.${cfgR.bomba?" Bomba unda — to'g'ri javob bersin!":" Tayyor turing, keyingi savol sizniki bo'lishi mumkin."}</p></div>`;
     }else if(!answered){
       const cfg=gcfg(),mode=L.q.mode||"choice",game=L.game||"kahoot";
       // Bellashuv: har yangi savolda buzzerni tiklaymiz
@@ -3552,6 +3644,9 @@ function renderLiveJoin(){
       }else if(mode==="text"){
         hint="Savol katta ekranda. Javobni yozing.";
         ansHtml=`<div class="live-textwrap"><input id="live-text" type="text" placeholder="Javobingiz…" autocomplete="off" autocapitalize="off" maxlength="60"><button class="btn" type="button" id="live-send">Yuborish</button></div>`;
+      }else if(mode==="rev"){
+        hint="Javob berilgan — qaysi savolga to'g'ri keladi?";
+        ansHtml=`<div class="live-rev-ans">Javob: <b>${esc(L.q.stmt||"")}</b></div><div class="live-opts rev">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j} rev" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }else{
         const showQ=game!=="kahoot"; // Kahoot savoli faqat monitorda; qolganlarida telefonda ham
         hint=isBuzz?"Tez tanlang — kim birinchi to'g'ri bo'lsa!":showQ?"Javob bering:":"Savol katta ekranda. Javobingizni tanlang.";
@@ -3559,7 +3654,8 @@ function renderLiveJoin(){
         const pq=showQ?`<div class="live-pq">${esc(L.q.q||"")}</div>`:"";
         ansHtml=ladder+pq+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }
-      if(body)body.innerHTML=`<div class="live-card live-play"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div>${hearts}<div class="live-timer" id="live-timer"></div>${mult}
+      const bombBan=cfg.bomba?`<div class="bomb-ban">💣 Bomba sizda! Tez va to'g'ri javob bering — aks holda yonasiz!</div>`:"";
+      if(body)body.innerHTML=`<div class="live-card live-play${cfg.bomba?" bomb":""}"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div>${hearts}${bombBan}<div class="live-timer${cfg.bomba?" fuse":""}" id="live-timer"></div>${mult}
         <p class="live-hint">${hint}</p>${ansHtml}</div>`;
       const bz=$("#live-buzz");if(bz)bz.onclick=()=>{liveBuzzed=true;renderLiveJoin()};
       body.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{body.querySelectorAll("[data-opt]").forEach(x=>x.disabled=true);b.classList.add("picked");liveAnswer(+b.dataset.opt)});
@@ -3584,6 +3680,7 @@ function renderLiveJoin(){
     const place=liveRanking().findIndex(p=>p.id===S.uid)+1;
     const ansLine=mode==="tf"?`<div class="live-correct-line">To'g'ri javob: <b>${L.qTrue?"ROST":"YOLG'ON"}</b></div>`
       :mode==="text"?`<div class="live-correct-line">To'g'ri javob: <b>${esc(L.qAnswer||"")}</b></div>`
+      :mode==="rev"?`<div class="live-correct-line">To'g'ri savol: <b>${esc(L.qAnswer||"")}</b></div>`
       :(L.qAnswer!=null?`<div class="live-correct-line">To'g'ri: <b>${"ABCDEF"[L.qCorrect]}) ${esc(L.qAnswer)}</b></div>`:"");
     if(top)top.textContent=`Reyting · savol ${L.q?L.q.idx+1:""} / ${L.q?L.q.total:""}`;
     if(body)body.innerHTML=`<div class="live-card"><div class="live-verdict ${correct?"ok":"no"}">${myAns==null?"Javob bermadingiz":correct?"To'g'ri! ✓":"Noto'g'ri ✗"}</div>${ansLine}
@@ -3598,11 +3695,98 @@ function renderLiveJoin(){
       ${myk?`<p class="note" style="text-align:center;margin-top:10px">Ovozingiz qabul qilindi. Almashtirishingiz mumkin.</p>`:""}</div>`;
     body.querySelectorAll("[data-vote]").forEach(b=>b.onclick=()=>{const p=b.dataset.vote.split("|");liveVote(p[0],p[1])});
   }else{ // ended
-    clearInterval(liveTick);liveTick=null;
+    clearInterval(liveTick);liveTick=null;liveSelfKey=null;
     if(top)top.textContent="Yakunlandi";
     const place=liveRanking().findIndex(p=>p.id===S.uid)+1,me=liveMe();
     if(body)body.innerHTML=`<div class="live-card"><h2>O'yin tugadi!</h2><div class="live-place">${place===1?"🏆 ":""}${place||"—"}-o'rin</div><div class="live-count">${me&&me.score||0} ball</div><p class="note" style="margin-top:8px">Keyingi o'yin ovoz berish orqali tanlanadi — kuting.</p><h3>Yakuniy reyting</h3>${liveBoardAuto(10)}</div>`;
   }
+}
+
+// ===== Bayroq olish: egallangan kataklar maydoni =====
+function liveBayroqBoardHtml(){
+  const teams=liveTeams();if(!teams.length)return `<div class="empty">Jamoalar hali shakllanmagan.</div>`;
+  const caps=teams.map(t=>{let cnt=0;S.players.forEach(p=>{if(String(livePlayerTeam(p))===String(t.id))cnt+=liveCorrectN(p)});return {name:t.name,color:t.c,cnt}});
+  const got=caps.reduce((s,x)=>s+x.cnt,0);
+  const totalCells=Math.max(got,Math.min(30,+(S.live&&S.live.total)||12));
+  let cells="";caps.forEach(t=>{for(let i=0;i<t.cnt;i++)cells+=`<span class="bq-cell" style="background:${t.color}" title="${esc(t.name)}"></span>`});
+  for(let i=got;i<totalCells;i++)cells+=`<span class="bq-cell empty"></span>`;
+  const legend=caps.map(t=>`<span class="bq-leg"><span class="lb-dot" style="background:${t.color}"></span>${esc(t.name)}: <b>${t.cnt}</b></span>`).join("");
+  return `<div class="bq-board">${cells}</div><div class="bq-legend">${legend}</div>`;
+}
+
+// ===== O'z-o'zini boshqaradigan o'yinlar (juftla / xotira) =====
+async function liveSubmitSelf(score){
+  const L=S.live;if(!L||L.phase!=="running"||!L.q||L.q.mode!=="self")return;
+  const me=liveMe();if(me&&me.done)return;
+  try{await fs.doc("players/"+S.uid).update({score:Math.max(0,Math.round(score)),done:true,doneAt:Date.now()})}catch(e){}
+}
+function liveRenderSelf(body,top,L){
+  if(top)top.textContent=L.q.self==="memory"?"Xotira o'yini":"Juftla";
+  const me=liveMe();
+  if(me&&me.done){ // tugatgan — natija kutish
+    clearInterval(liveTick);liveTick=null;liveSelfKey=null;
+    const place=liveRanking().findIndex(p=>p.id===S.uid)+1;
+    if(body)body.innerHTML=`<div class="live-card"><div class="live-check">✓</div><h2>Tugatdingiz!</h2><div class="live-count">${me.score||0} ball · ${place||"—"}-o'rin</div><p class="note" style="margin-top:8px">Boshqalar tugatguncha kuting.</p><h3>Reyting</h3>${liveBoardAuto(10)}</div>`;
+    return;
+  }
+  const key=(L.qStart||0)+"|"+L.q.self;
+  if(liveSelfKey===key&&body&&body.querySelector(".self-game"))return; // qurilgan — snapshotda qayta qurmaymiz
+  liveSelfKey=key;
+  if(L.q.self==="memory")liveBuildMemory(body,L);else liveBuildMatch(body,L);
+}
+function liveBuildMatch(body,L){
+  const pairs=(L.q.pairs||[]).slice();
+  const order=pairs.map((p,i)=>i);
+  const rights=shuffle(pairs.map((p,i)=>({i,a:p.a})));
+  let selL=null,selR=null,wrong=0,finished=false;const matched={};
+  const span=Math.max(30,+L.q.sec||90)*1000,end=(L.qStart||Date.now())+span;
+  body.innerHTML=`<div class="live-card self-game match"><div class="live-top-q">🧲 Juftla — moslang</div><div class="self-timer" id="self-timer"></div>
+    <p class="live-hint">Chapdagi savolni o'ngdagi to'g'ri javobga ulang.</p>
+    <div class="match-wrap"><div class="match-col">${order.map(i=>`<button class="match-c q" type="button" data-l="${i}">${esc(pairs[i].q)}</button>`).join("")}</div>
+    <div class="match-col">${rights.map(r=>`<button class="match-c a" type="button" data-r="${r.i}">${esc(r.a)}</button>`).join("")}</div></div>
+    <div class="match-prog" id="match-prog">0 / ${pairs.length}</div></div>`;
+  function finish(){if(finished)return;finished=true;clearInterval(liveTick);liveTick=null;
+    const left=Math.max(0,end-Date.now()),speed=Math.round(300*(left/span));
+    liveSubmitSelf(Math.max(100,pairs.length*180-wrong*40+speed));}
+  function tryMatch(){if(selL==null||selR==null)return;
+    const lb=body.querySelector(`[data-l="${selL}"]`),rb=body.querySelector(`[data-r="${selR}"]`);
+    if(selL===selR){matched[selL]=1;if(lb){lb.classList.add("ok");lb.disabled=true}if(rb){rb.classList.add("ok");rb.disabled=true}
+      selL=selR=null;const pr=$("#match-prog"),n=Object.keys(matched).length;if(pr)pr.textContent=n+" / "+pairs.length;if(n>=pairs.length)finish();}
+    else{wrong++;const a=lb,b2=rb;if(a)a.classList.add("bad");if(b2)b2.classList.add("bad");setTimeout(()=>{if(a)a.classList.remove("bad","sel");if(b2)b2.classList.remove("bad","sel")},450);selL=selR=null;}
+  }
+  body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.disabled)return;body.querySelectorAll("[data-l]").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");selL=+b.dataset.l;tryMatch()});
+  body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{if(b.disabled)return;body.querySelectorAll("[data-r]").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");selR=+b.dataset.r;tryMatch()});
+  clearInterval(liveTick);
+  const upd=()=>{const el=$("#self-timer"),left=Math.max(0,end-Date.now());if(el)el.textContent=Math.ceil(left/1000)+"s";if(left<=0){clearInterval(liveTick);liveTick=null;finish()}};
+  upd();liveTick=setInterval(upd,250);
+}
+function liveBuildMemory(body,L){
+  const pairs=(L.q.pairs||[]).slice();
+  let cards=[];pairs.forEach((p,i)=>{cards.push({i,side:"q",txt:p.q});cards.push({i,side:"a",txt:p.a})});
+  cards=shuffle(cards);
+  let open=[],moves=0,lock=false,finished=false;const found={};
+  const span=Math.max(60,+L.q.sec||120)*1000,end=(L.qStart||Date.now())+span;
+  body.innerHTML=`<div class="live-card self-game memory"><div class="live-top-q">🃏 Xotira — juftlarni toping</div><div class="self-timer" id="self-timer"></div>
+    <p class="live-hint">Ikkita kartani oching: savolni to'g'ri javobi bilan juftlang.</p>
+    <div class="mem-grid">${cards.map((c,idx)=>`<button class="mem-c ${c.side}" type="button" data-c="${idx}"><span class="mem-face">${esc(c.txt)}</span><span class="mem-back">?</span></button>`).join("")}</div>
+    <div class="match-prog" id="mem-prog">0 / ${pairs.length}</div></div>`;
+  function finish(){if(finished)return;finished=true;clearInterval(liveTick);liveTick=null;
+    const left=Math.max(0,end-Date.now()),speed=Math.round(300*(left/span));
+    liveSubmitSelf(Math.max(100,pairs.length*180-Math.max(0,moves-pairs.length)*12+speed));}
+  function setOpen(idx,on){const b=body.querySelector(`[data-c="${idx}"]`);if(b)b.classList.toggle("open",on)}
+  body.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{
+    if(lock)return;const idx=+b.dataset.c;if(found[idx]||open.includes(idx))return;
+    b.classList.add("open");open.push(idx);
+    if(open.length===2){moves++;lock=true;const a=open[0],b2=open[1],ca=cards[a],cb=cards[b2];
+      if(ca.i===cb.i&&ca.side!==cb.side){found[a]=found[b2]=1;open=[];lock=false;
+        const ea=body.querySelector(`[data-c="${a}"]`),eb=body.querySelector(`[data-c="${b2}"]`);if(ea)ea.classList.add("match");if(eb)eb.classList.add("match");
+        const n=Object.keys(found).length/2,pr=$("#mem-prog");if(pr)pr.textContent=n+" / "+pairs.length;if(n>=pairs.length)finish();}
+      else{setTimeout(()=>{setOpen(a,false);setOpen(b2,false);open=[];lock=false},750);}
+    }
+  });
+  clearInterval(liveTick);
+  const upd=()=>{const el=$("#self-timer"),left=Math.max(0,end-Date.now());if(el)el.textContent=Math.ceil(left/1000)+"s";if(left<=0){clearInterval(liveTick);liveTick=null;finish()}};
+  upd();liveTick=setInterval(upd,250);
 }
 
 })();

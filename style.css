@@ -1052,3 +1052,57 @@ body.live-guest #main,body.live-guest #hdr{display:none}
 .pick-c b{font-size:12px;text-align:center;line-height:1.2}
 /* Tarix o'chirish tugmasi */
 .hist-del{padding:7px 10px!important;font-size:14px}
+
+/* ============ Yangi o'yinlar: teskari, navbat, bomba, bayroq, juftla, xotira ============ */
+/* Teskari: javob yuqorida, savol variantlari */
+.live-rev-ans{background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);padding:12px 14px;font-size:17px;color:var(--ink);text-align:center;margin-bottom:12px}
+.live-opts.rev{grid-template-columns:1fr}
+button.live-opt.rev{background:#334155;font-size:15px;line-height:1.3;align-items:flex-start}
+button.live-opt.rev .ok-k{background:rgba(255,255,255,.22)}
+
+/* Navbat (estafeta/gestafeta) va bomba kutish */
+.relay-wait,.bomb-wait{font-size:54px;text-align:center;margin:6px 0 2px}
+.bomb-wait{animation:bombShake .7s infinite}
+@keyframes bombShake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-3px) rotate(-6deg)}75%{transform:translateX(3px) rotate(6deg)}}
+.relay-turn{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin:4px 0 10px;font-size:14px;color:var(--la-ink,#E6EEF1)}
+.relay-turn .rt{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid var(--la-line,#28383F);border-radius:999px;padding:5px 12px}
+.relay-turn .rt b{color:var(--la-ink,#E6EEF1)}
+
+/* Bomba: fitil banner va qizil taymer */
+.bomb-ban{background:var(--bad-soft);border:1px solid var(--bad);color:var(--bad);border-radius:var(--r);padding:9px 12px;font-weight:700;font-size:14px;text-align:center;margin-bottom:8px}
+.live-timer.fuse{color:var(--bad);animation:fusePulse .6s infinite}
+@keyframes fusePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.live-card.bomb{outline:2px solid var(--bad);outline-offset:-2px}
+
+/* Bayroq: egallangan kataklar maydoni (arenada) */
+.bq-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(26px,1fr));gap:5px;margin:4px 0 8px}
+.bq-cell{aspect-ratio:1;border-radius:6px;background:#2BE0B8;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);transition:background .3s}
+.bq-cell.empty{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--la-line,#28383F)}
+.bq-legend{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;font-size:14px;color:var(--la-ink,#E6EEF1)}
+.bq-leg{display:inline-flex;align-items:center;gap:6px}
+.bq-leg b{color:var(--la-ink,#E6EEF1)}
+
+/* Juftla (moslashtirish) */
+.self-timer{font-family:var(--f-mono);font-size:26px;font-weight:800;color:var(--accent);text-align:center;margin-bottom:6px}
+.match-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.match-col{display:flex;flex-direction:column;gap:8px}
+button.match-c{font:inherit;text-align:left;padding:12px;border:1.5px solid var(--line);border-radius:var(--r-sm);background:var(--card);color:var(--ink);font-weight:600;font-size:14px;line-height:1.25;cursor:pointer;transition:transform .08s,border-color .15s,background .15s}
+button.match-c:active{transform:scale(.98)}
+button.match-c.sel{border-color:var(--accent);background:var(--accent-soft)}
+button.match-c.ok{border-color:var(--accent);background:var(--accent-soft);opacity:.7;cursor:default}
+button.match-c.bad{border-color:var(--bad);background:var(--bad-soft);animation:badShake .35s}
+@keyframes badShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.match-prog{text-align:center;font-weight:700;color:var(--muted);margin-top:10px}
+
+/* Xotira (yopiq kartalar) */
+.mem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:380px){.mem-grid{grid-template-columns:repeat(2,1fr)}}
+button.mem-c{position:relative;aspect-ratio:3/4;border:none;border-radius:var(--r-sm);cursor:pointer;padding:0;background:transparent;perspective:600px}
+.mem-c .mem-face,.mem-c .mem-back{position:absolute;inset:0;display:grid;place-items:center;border-radius:var(--r-sm);padding:6px;backface-visibility:hidden;font-weight:700}
+.mem-c .mem-back{background:linear-gradient(135deg,var(--accent),#0a5f4d);color:#fff;font-size:26px}
+.mem-c .mem-face{background:var(--card);border:1.5px solid var(--line);color:var(--ink);font-size:12px;line-height:1.2;text-align:center;transform:rotateY(180deg);overflow:hidden}
+.mem-c.open .mem-face{transform:rotateY(0)}
+.mem-c.open .mem-back{transform:rotateY(180deg)}
+.mem-c.match .mem-face{border-color:var(--accent);background:var(--accent-soft)}
+.mem-c.q .mem-face{font-weight:700}
+.mem-c.a .mem-face{font-style:italic}
