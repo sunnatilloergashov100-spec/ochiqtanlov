@@ -3258,17 +3258,17 @@ function liveBoardHtml(limit){
 // Yaroqli savollar bankidan (barcha o'yin uchun yagona)
 // topics: tanlangan mavzular ro'yxati (bo'sh yoki yo'q = barcha mavzular)
 const liveValidQ=topics=>{topics=topics===undefined?((S.live&&S.live.active&&S.live.topics)||[]):(topics||[]);return S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2&&(!topics.length||topics.includes(qTopic(q))))};
-async function liveOpen(game,mode){
-  game=game||"kahoot";mode=(mode==="jamoa"||mode==="guruh")?mode:"yakka";
-  const Q=liveValidQ([]);
-  if(!Q.length){toast("Avval savol qo'shing");return}
+async function liveOpen(game,mode,topics){
+  game=game||"kahoot";mode=(mode==="jamoa"||mode==="guruh")?mode:"yakka";topics=Array.isArray(topics)?topics:[];
+  const Q=liveValidQ(topics);
+  if(!Q.length){toast(topics.length?"Bu mavzuda savol yo'q":"Avval savol qo'shing");return}
   const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),Q.length);
   const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
   try{
     const old=await fs.collection("players").get();
     for(const d of old.docs)await fs.doc("players/"+d.id).delete().catch(()=>{});
-    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",game,mode,teamCount:2,qids,topics:[],want:n,secOverride:0,poolSize:Q.length,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
-    await log("test",`Jonli o'yin ochildi: ${game}/${mode}, ${n} ta savol`);
+    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",game,mode,teamCount:2,qids,topics,want:n,secOverride:0,poolSize:Q.length,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
+    await log("test",`Jonli o'yin ochildi: ${game}/${mode}, ${n} ta savol${topics.length?", mavzu: "+topics.map(topicName).join(", "):""}`);
   }catch(e){toast("Ochib bo'lmadi ("+(e&&e.code||e)+")")}
 }
 // Admin: savollar sonini o'zgartirish (bankdan qayta tanlanadi)
@@ -3443,10 +3443,30 @@ function renderGames(){
     <div class="g-grid">${g.items.map(it=>`<button class="g-card${it.ok?"":" soon"}" type="button" ${it.ok?`data-game="${it.id}" data-mode="${it.mode}"`:"disabled"}>
       <span class="g-badge ${it.ok?"ok":"soon"}">${it.ok?"Tayyor":"Tez orada"}</span>
       <span class="g-ic">${it.ic}</span><span class="g-t">${esc(it.t)}</span><span class="g-d">${esc(it.d)}</span></button>`).join("")}</div>`).join("");
-  hub.querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>liveOpen(b.dataset.game,b.dataset.mode||"yakka"));
+  hub.querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>liveTopicPick(b.dataset.game,b.dataset.mode||"yakka"));
   // Natijalar tarixi
   hub.insertAdjacentHTML("beforeend",`<div class="g-cat" style="margin-top:28px"><b>Natijalar tarixi</b><span class="g-ln"></span></div><div id="game-hist"><span class="note">Yuklanmoqda…</span></div>`);
   liveLoadHist();
+}
+// O'yin kartasi bosilganda: avval mavzu tanlanadi, so'ng o'yin ochiladi
+function liveTopicPick(game,mode){
+  const all=liveValidQ([]);if(!all.length){toast("Avval savol qo'shing");return}
+  const TL=topicList(all);let sel=[];
+  const old=document.querySelector(".topic-modal");if(old)old.remove();
+  const m=document.createElement("div");m.className="hist-modal topic-modal";document.body.appendChild(m);
+  const draw=()=>{
+    const n=sel.length?all.filter(q=>sel.includes(qTopic(q))).length:all.length;
+    m.innerHTML=`<div class="hist-card"><div class="btnrow" style="justify-content:space-between"><h3 style="margin:0">${esc(liveGameTitle(game,mode))}</h3><button class="btn ghost" type="button" data-x>✕</button></div>
+      <p class="note">Mavzuni tanlang — savollar faqat shu mavzudan olinadi. Bir nechtasini belgilash mumkin.</p>
+      <div class="chips topic-pick"><button class="chip" type="button" aria-pressed="${!sel.length}" data-t="__all">Hammasi · ${all.length}</button>${TL.map(x=>`<button class="chip" type="button" aria-pressed="${sel.includes(x.t)}" data-t="${esc(x.t)}">${esc(topicName(x.t))} · ${x.n}</button>`).join("")}</div>
+      ${TL.length<2?`<p class="note">Hozircha bitta mavzu bor. Yangi mavzular Test bo'limida savol qo'shganda yaratiladi.</p>`:""}
+      <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" data-go>O'yinni ochish · ${n} ta savol</button><button class="btn ghost" type="button" data-x>Bekor qilish</button></div></div>`;
+    m.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const t=b.dataset.t;if(t==="__all")sel=[];else{const i=sel.indexOf(t);if(i>=0)sel.splice(i,1);else sel.push(t);if(sel.length===TL.length)sel=[]}draw()});
+    m.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>m.remove());
+    m.querySelector("[data-go]").onclick=()=>{const t=[...sel];m.remove();liveOpen(game,mode,t)};
+  };
+  m.onclick=e=>{if(e.target===m)m.remove()};
+  draw();
 }
 async function liveLoadHist(){
   const box=$("#game-hist");if(!box)return;
@@ -3513,7 +3533,7 @@ function renderLiveAdmin(){
     }
     const secLbl=(+L.secOverride||0)>0?(L.secOverride+"s"):"savolniki";
     const allT=topicList(liveValidQ([])),selT=L.topics||[];
-    const topicRow=allT.length>1?`<div class="set-row topics"><span>Mavzu</span><div class="tp-chips"><button type="button" class="tpc${selT.length?"":" on"}" data-topic="__all">Hammasi</button>${allT.map(x=>`<button type="button" class="tpc${selT.includes(x.t)?" on":""}" data-topic="${esc(x.t)}">${esc(topicName(x.t))} · ${x.n}</button>`).join("")}</div><small>${selT.length?"savollar faqat tanlangan mavzudan olinadi":"savollar barcha mavzulardan olinadi"}</small></div>`:"";
+    const topicRow=allT.length?`<div class="set-row topics"><span>Mavzu</span><div class="tp-chips"><button type="button" class="tpc${selT.length?"":" on"}" data-topic="__all">Hammasi</button>${allT.map(x=>`<button type="button" class="tpc${selT.includes(x.t)?" on":""}" data-topic="${esc(x.t)}">${esc(topicName(x.t))} · ${x.n}</button>`).join("")}</div><small>${selT.length?"savollar faqat tanlangan mavzudan olinadi":"savollar barcha mavzulardan olinadi"}</small></div>`:"";
     const hintN=S.players.filter(liveHasHint).length;
     const setPanel=`<div class="live-set">${topicRow}<div class="set-row"><span>Savollar soni</span><span class="stepper"><button type="button" data-cnt="-5">−</button><b>${L.total}</b><button type="button" data-cnt="5">+</button></span><small>bankda ${L.poolSize||liveValidQ().length} ta</small></div>
       <div class="set-row"><span>Har savol vaqti</span><span class="stepper"><button type="button" data-sec="-5">−</button><b>${secLbl}</b><button type="button" data-sec="5">+</button></span><small>${(+L.secOverride||0)>0?"barchasiga bir xil":"har savolning o'z vaqti"}</small></div></div>`;

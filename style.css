@@ -1121,3 +1121,5 @@ button.mem-c{position:relative;aspect-ratio:3/4;border:none;border-radius:var(--
 .live-hintkey{text-align:center;font-size:14px;margin:0 0 12px;padding:8px 10px;border-radius:10px;border:1px dashed #FFD54A;background:rgba(255,213,74,.12)}
 .live-opt.hint-ok,.tf-b.hint-ok{outline:3px solid #FFD54A;outline-offset:2px;position:relative}
 .live-opt.hint-ok::after,.tf-b.hint-ok::after{content:"✓";position:absolute;top:6px;right:10px;font-weight:800;color:#FFD54A}
+.topic-pick{margin:10px 0 4px}
+.topic-pick .chip{padding:7px 13px;font-size:14px}
