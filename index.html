@@ -529,6 +529,8 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
       </form>
       <form class="panel stack" id="tqform">
         <h2 id="tq-title">Yangi savol</h2>
+        <label for="tq-topic">Mavzu<input id="tq-topic" list="tq-topics" maxlength="60" placeholder="Masalan: Informatika (bo'sh qolsa — Mavzusiz)" autocomplete="off"></label>
+        <datalist id="tq-topics"></datalist>
         <label for="tq-q">Savol<textarea id="tq-q" rows="3" maxlength="600" required></textarea></label>
         <div class="stack" id="tq-opts"></div>
         <p class="note">To'g'ri javob yonidagi doirachani belgilang. Bo'sh qoldirilgan variantlar hisobga olinmaydi.</p>
@@ -540,7 +542,7 @@ if (location.protocol === "file:" && window.OT_APP_URL && navigator.onLine !== f
     </div>
     <details class="panel stack">
       <summary style="cursor:pointer;font-weight:600">Savollarni ommaviy yuklash (matn yoki .txt fayl)</summary>
-      <p class="note" style="margin-top:10px">Har bir savol bo'sh qator bilan ajratiladi. To'g'ri javob oxiriga <b>*</b> qo'yiladi. "Vaqt:" va "Ball:" qatorlari ixtiyoriy — yozilmasa, standart vaqt va ball olinadi.</p>
+      <p class="note" style="margin-top:10px">Har bir savol bo'sh qator bilan ajratiladi. To'g'ri javob oxiriga <b>*</b> qo'yiladi. "Vaqt:" va "Ball:" qatorlari ixtiyoriy — yozilmasa, standart vaqt va ball olinadi. Mavzuni pastdagi "Mavzu" maydoniga yozing — barcha savollar shu mavzuga yuklanadi. Bir matnda bir nechta mavzu bo'lsa, savollar oldidan alohida qatorda <b>Mavzu: nomi</b> deb yozing.</p>
       <pre class="formula">2 000 000 so'mning 15 foizi qancha?
 A) 150 000
 B) 300 000 *
@@ -553,6 +555,7 @@ Fuqarodan shikoyat kelsa, birinchi qadam qaysi?
 A) Shikoyatni tinglab, mazmunini aniqlash *
 B) E'tibor bermaslik
 C) Boshqa bo'limga yo'naltirish</pre>
+      <label for="tb-topic">Mavzu (yuklanayotgan barcha savollar uchun)<input id="tb-topic" list="tq-topics" maxlength="60" placeholder="Masalan: Informatika" autocomplete="off"></label>
       <label for="tb-text">Savollar matni<textarea id="tb-text" rows="8" class="mono"></textarea></label>
       <div class="row3"><label for="tb-file">Yoki .txt fayl tanlang<input id="tb-file" type="file" accept=".txt,text/plain"></label><label for="tb-sec">Standart vaqt (soniya)<input id="tb-sec" type="number" min="5" max="600" value="60"></label><label for="tb-pts">Standart ball (har savolga)<input id="tb-pts" type="number" min="0.5" max="100" step="0.5" value="1"></label></div>
       <p class="err" id="tb-err" hidden></p>
@@ -560,6 +563,7 @@ C) Boshqa bo'limga yo'naltirish</pre>
     </details>
     <div class="panel stack">
       <div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Savollar banki</h2><span class="note" id="tq-count"></span></div>
+      <div id="tq-topicbar"></div>
       <div id="tq-list"></div>
     </div>
     <div class="panel stack">

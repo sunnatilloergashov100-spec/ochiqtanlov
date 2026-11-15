@@ -1415,11 +1415,16 @@ function tqOptsRender(vals,correct){
   const m=$("#tq-more");if(m)m.onclick=()=>{const cur=[...document.querySelectorAll(".tq-o")].map(x=>x.value),c=document.querySelector('input[name=tq-ok]:checked');tqOptsRender([...cur,""],c?+c.value:null)};
 }
 tqOptsRender();
+// --- Mavzular: har savol "topic" maydoniga ega (bo'sh = Mavzusiz) ---
+const qTopic=q=>String((q&&q.topic)||"").trim();
+const topicName=t=>t||"Mavzusiz";
+function topicList(Q){const m={};(Q||S.questions).forEach(q=>{const t=qTopic(q);m[t]=(m[t]||0)+1});return Object.keys(m).sort((a,b)=>a===""?1:b===""?-1:a.localeCompare(b)).map(t=>({t,n:m[t]}))}
+let tqFilter="__all";
 function tqReset(){tqEdit=null;$("#tq-q").value="";$("#tq-sec").value=60;$("#tq-pts").value=1;tqOptsRender();$("#tq-title").textContent="Yangi savol";$("#tq-btn").textContent="Savolni qo'shish";$("#tq-cancel").hidden=true;$("#tq-err").hidden=true}
 $("#tq-cancel").onclick=tqReset;
 $("#tqform").addEventListener("submit",async e=>{
   e.preventDefault();const err=$("#tq-err"),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;
-  const q=$("#tq-q").value.trim(),raw=[...document.querySelectorAll(".tq-o")].map(x=>x.value.trim()),c=document.querySelector('input[name=tq-ok]:checked'),sec=+$("#tq-sec").value,pts=+$("#tq-pts").value;
+  const q=$("#tq-q").value.trim(),raw=[...document.querySelectorAll(".tq-o")].map(x=>x.value.trim()),c=document.querySelector('input[name=tq-ok]:checked'),sec=+$("#tq-sec").value,pts=+$("#tq-pts").value,topic=($("#tq-topic").value||"").trim().slice(0,60);
   if(!q)return fail("Savol matnini yozing.");
   if(!(pts>0&&pts<=100))return fail("Ball 0 dan katta va 100 dan oshmasin.");
   const idx=raw.map((v,j)=>v?j:-1).filter(j=>j>=0);if(idx.length<2)return fail("Kamida 2 ta variant yozing.");
@@ -1427,7 +1432,7 @@ $("#tqform").addEventListener("submit",async e=>{
   if(!(sec>=5&&sec<=600))return fail("Vaqt 5 dan 600 soniyagacha bo'lsin.");
   const o=idx.map(j=>raw[j]),a=idx.indexOf(+c.value);
   const id=tqEdit||("q"+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
-  try{await fs.doc("questions/"+id).set({q,o,sec,pts,at:Date.now()});await fs.doc("qkeys/"+id).set({a});toast(tqEdit?"Savol yangilandi":"Savol qo'shildi");tqReset()}
+  try{await fs.doc("questions/"+id).set({q,o,sec,pts,topic,at:Date.now()});await fs.doc("qkeys/"+id).set({a});toast(tqEdit?"Savol yangilandi":"Savol qo'shildi");tqReset()}
   catch(e2){fail("Saqlab bo'lmadi: Firestore qoidalarini yangilang.")}
 });
 $("#tcfg").addEventListener("submit",async e=>{
@@ -1437,12 +1442,17 @@ $("#tcfg").addEventListener("submit",async e=>{
   try{await fs.doc("config/test").set({enabled:$("#tc-on").checked,count:Math.max(1,Math.min(100,+$("#tc-n").value||10)),startAt:fr,endAt:to,at:Date.now()});
     await log("test",`Test sozlamalari: ${$("#tc-on").checked?"ochiq":"yopiq"}, ${$("#tc-n").value} ta savol${fr?", "+dt(fr):""}${to?" — "+dt(to):""}`);$("#tc-saved").textContent="Saqlandi";setTimeout(()=>$("#tc-saved").textContent="",2500)}catch(e2){toast("Saqlab bo'lmadi")}
 });
-function parseBulk(text,defSec,defPts){defPts=defPts||1;
+function parseBulk(text,defSec,defPts,defTopic){defPts=defPts||1;defTopic=(defTopic||"").trim();
   const blocks=text.replace(/\r/g,"").split(/\n\s*\n/).map(b=>b.split("\n").map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
   const out=[],errs=[];
+  const topicRe=/^(mavzu|topic|тема)\s*[:=]\s*(.*)$/i;
   blocks.forEach((b,bi)=>{
-    let sec=defSec,pts=defPts,q=[],o=[],a=-1;
-    b.forEach(l=>{const t=l.match(/^(vaqt|time|время)\s*[:=]?\s*(\d+)/i);
+    // Faqat "Mavzu: ..." qatoridan iborat blok — keyingi barcha savollar shu mavzuga yoziladi
+    if(b.length===1&&topicRe.test(b[0])){defTopic=b[0].match(topicRe)[2].trim().slice(0,60);return}
+    let sec=defSec,pts=defPts,q=[],o=[],a=-1,topic=defTopic;
+    b.forEach(l=>{const tm=l.match(topicRe);
+      if(tm){topic=tm[2].trim().slice(0,60);return}
+      const t=l.match(/^(vaqt|time|время)\s*[:=]?\s*(\d+)/i);
       if(t){sec=+t[2];return}
       const pb=l.match(/^(ball|bal|ochko|points?|балл)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
       if(pb){pts=+pb[2].replace(",",".");return}
@@ -1452,17 +1462,17 @@ function parseBulk(text,defSec,defPts){defPts=defPts||1;
     const qt=q.join(" ").trim();
     if(!qt)errs.push(`${bi+1}-savol: savol matni yo'q`);else if(o.length<2)errs.push(`${bi+1}-savol: kamida 2 ta variant kerak`);else if(a<0)errs.push(`${bi+1}-savol: to'g'ri javob (*) belgilanmagan`);else if(!(sec>=5&&sec<=600))errs.push(`${bi+1}-savol: vaqt 5–600 soniya bo'lsin`);
     else if(!(pts>0&&pts<=100))errs.push(`${bi+1}-savol: ball 0 dan katta va 100 dan oshmasin`);
-    else out.push({q:qt,o,a,sec,pts});
+    else out.push({q:qt,o,a,sec,pts,topic});
   });
   return {out,errs};
 }
 $("#tb-file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("#tb-text").value=String(r.result||"")};r.readAsText(f,"utf-8")});
 $("#tb-btn").onclick=async()=>{
-  const err=$("#tb-err");err.hidden=true;const {out,errs}=parseBulk($("#tb-text").value,+$("#tb-sec").value||60,+$("#tb-pts").value||1);
+  const err=$("#tb-err");err.hidden=true;const {out,errs}=parseBulk($("#tb-text").value,+$("#tb-sec").value||60,+$("#tb-pts").value||1,($("#tb-topic")||{}).value||"");
   if(errs.length){err.textContent=errs.slice(0,6).join("; ")+(errs.length>6?" …":"");err.hidden=false;return}
   if(!out.length){err.textContent="Matn bo'sh.";err.hidden=false;return}
   const b=$("#tb-btn");b.disabled=true;let n=0;
-  try{for(const x of out){const id="q"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);await fs.doc("questions/"+id).set({q:x.q,o:x.o,sec:x.sec,pts:x.pts,at:Date.now()});await fs.doc("qkeys/"+id).set({a:x.a});n++;$("#tb-info").textContent=n+" / "+out.length}
+  try{for(const x of out){const id="q"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);await fs.doc("questions/"+id).set({q:x.q,o:x.o,sec:x.sec,pts:x.pts,topic:x.topic||"",at:Date.now()});await fs.doc("qkeys/"+id).set({a:x.a});n++;$("#tb-info").textContent=n+" / "+out.length}
     await log("test",`${n} ta savol yuklandi`);toast(n+" ta savol yuklandi");$("#tb-text").value="";$("#tb-file").value=""}
   catch(e){err.textContent=`${n} ta yuklandi, keyingisida xato: Firestore qoidalarini tekshiring.`;err.hidden=false}
   b.disabled=false;
@@ -1567,20 +1577,32 @@ async function exportTestXlsx(btn){
   }catch(e){console.warn(e);toast("Excel faylni yaratib bo'lmadi")}
 }
 function renderTestAdmin(){
-  const cfg=S.testCfg||{},Q=[...S.questions].sort((a,b)=>(a.at||0)-(b.at||0));
+  const cfg=S.testCfg||{},QA=[...S.questions].sort((a,b)=>(a.at||0)-(b.at||0));
+  const TL=topicList(QA);if(tqFilter!=="__all"&&!TL.some(x=>x.t===tqFilter))tqFilter="__all";
+  const Q=tqFilter==="__all"?QA:QA.filter(q=>qTopic(q)===tqFilter);
+  const dl=$("#tq-topics");if(dl)dl.innerHTML=TL.filter(x=>x.t).map(x=>`<option value="${esc(x.t)}"></option>`).join("");
+  const tbar=$("#tq-topicbar");
+  if(tbar&&!(document.activeElement&&document.activeElement.id==="tq-moveto")){
+    tbar.innerHTML=QA.length?`<div class="chips">${[{t:"__all",n:QA.length,l:"Hammasi"},...TL.map(x=>({...x,l:topicName(x.t)}))].map(x=>`<button class="chip" type="button" aria-pressed="${tqFilter===x.t}" data-tqf="${esc(x.t)}">${esc(x.l)} · ${x.n}</button>`).join("")}</div>`+
+      (tqFilter!=="__all"?`<div class="inline" style="margin-top:8px"><input id="tq-moveto" list="tq-topics" maxlength="60" placeholder="Yangi mavzu nomi" style="max-width:240px"><button class="btn ghost" type="button" id="tq-movebtn">Shu ${Q.length} ta savolni mavzuga o'tkazish</button></div>`:""):"";
+    tbar.querySelectorAll("[data-tqf]").forEach(b=>b.onclick=()=>{tqFilter=b.dataset.tqf;renderTestAdmin()});
+    const mb=$("#tq-movebtn");if(mb)mb.onclick=async()=>{const to=($("#tq-moveto").value||"").trim().slice(0,60);if(!to){toast("Mavzu nomini yozing");return}
+      mb.disabled=true;try{const ids=Q.map(q=>q.id);for(let i=0;i<ids.length;i+=400){const b=fs.batch();ids.slice(i,i+400).forEach(id=>b.update(fs.doc("questions/"+id),{topic:to}));await b.commit()}
+        tqFilter=to;toast(ids.length+" ta savol «"+to+"» mavzusiga o'tkazildi")}catch(e){toast("Bajarib bo'lmadi");mb.disabled=false}};
+  }
   if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest("#tcfg")){$("#tc-on").checked=!!cfg.enabled;$("#tc-n").value=cfg.count||10;$("#tc-from").value=toLocalInput(cfg.startAt);$("#tc-to").value=toLocalInput(cfg.endAt)}
   renderTestReqs();
   const A=S.attempts,done=A.filter(a=>a.status!=="running"),res=Object.values(S.results).filter(r=>typeof r.test==="number");
   const avg=res.length?Math.round(res.reduce((s,r)=>s+r.test,0)/res.length):"—";
-  $("#t-kpis").innerHTML=`<div class="kpi"><span>Test holati</span><b style="color:${testWindow().ok?"var(--accent)":"var(--muted)"}">${testWindow().ok?"Ochiq":testWindow().why==="early"?"Kutilmoqda":testWindow().why==="late"?"Tugagan":"Yopiq"}</b>${cfg.startAt||cfg.endAt?`<small class="note">${cfg.startAt?dt(cfg.startAt):"…"} — ${cfg.endAt?dt(cfg.endAt):"…"}</small>`:""}</div><div class="kpi"><span>Savollar bankida</span><b>${Q.length}</b></div><div class="kpi"><span>Har kimga savol</span><b>${Math.min(cfg.count||10,Q.length)}</b></div><div class="kpi"><span>Topshirganlar</span><b>${done.length}</b></div><div class="kpi"><span>Hozir topshiryapti</span><b>${A.filter(a=>a.status==="running").length}</b></div><div class="kpi"><span>To'xtatilgan</span><b style="color:${A.some(a=>a.status==="terminated")?"var(--bad)":"inherit"}">${A.filter(a=>a.status==="terminated").length}</b></div><div class="kpi"><span>O'rtacha ball</span><b>${avg}</b></div>`;
+  $("#t-kpis").innerHTML=`<div class="kpi"><span>Test holati</span><b style="color:${testWindow().ok?"var(--accent)":"var(--muted)"}">${testWindow().ok?"Ochiq":testWindow().why==="early"?"Kutilmoqda":testWindow().why==="late"?"Tugagan":"Yopiq"}</b>${cfg.startAt||cfg.endAt?`<small class="note">${cfg.startAt?dt(cfg.startAt):"…"} — ${cfg.endAt?dt(cfg.endAt):"…"}</small>`:""}</div><div class="kpi"><span>Savollar bankida</span><b>${QA.length}</b></div><div class="kpi"><span>Har kimga savol</span><b>${Math.min(cfg.count||10,QA.length)}</b></div><div class="kpi"><span>Topshirganlar</span><b>${done.length}</b></div><div class="kpi"><span>Hozir topshiryapti</span><b>${A.filter(a=>a.status==="running").length}</b></div><div class="kpi"><span>To'xtatilgan</span><b style="color:${A.some(a=>a.status==="terminated")?"var(--bad)":"inherit"}">${A.filter(a=>a.status==="terminated").length}</b></div><div class="kpi"><span>O'rtacha ball</span><b>${avg}</b></div>`;
   $("#tq-count").textContent=Q.length+" ta savol · jami vaqt "+Math.round(Q.reduce((s,q)=>s+(+q.sec||60),0)/60)+" daqiqa · jami ball "+(Math.round(Q.reduce((s,q)=>s+(+q.pts||1),0)*10)/10);
   $("#tq-list").innerHTML=Q.length?`<div class="tablebox"><table class="wide"><thead><tr><th>#</th><th>Savol va variantlar</th><th>Vaqt (s) · Ball</th><th></th></tr></thead><tbody>`+Q.map((q,i)=>{const k=S.qkeys[q.id];
-    return `<tr><td class="num">${i+1}</td><td><b>${esc(q.q)}</b><div class="opts-mini">${(q.o||[]).map((o,j)=>`<span class="${k&&k.a===j?"ok":""}">${"ABCDEF"[j]}) ${esc(o)}${k&&k.a===j?" ✓":""}</span>`).join("")}</div>${k?"":`<div class="why">To'g'ri javob kaliti topilmadi</div>`}</td>
+    return `<tr><td class="num">${i+1}</td><td><span class="q-topic${qTopic(q)?"":" none"}">${esc(topicName(qTopic(q)))}</span><b>${esc(q.q)}</b><div class="opts-mini">${(q.o||[]).map((o,j)=>`<span class="${k&&k.a===j?"ok":""}">${"ABCDEF"[j]}) ${esc(o)}${k&&k.a===j?" ✓":""}</span>`).join("")}</div>${k?"":`<div class="why">To'g'ri javob kaliti topilmadi</div>`}</td>
       <td><div class="inline"><input type="number" min="5" max="600" value="${+q.sec||60}" data-sec="${esc(q.id)}" style="width:80px" title="Vaqt, soniya" aria-label="Vaqt, soniya"><input type="number" min="0.5" max="100" step="0.5" value="${+q.pts||1}" data-pts="${esc(q.id)}" style="width:70px" title="Ball" aria-label="Ball"><button class="btn ghost" type="button" data-secsave="${esc(q.id)}">Saqlash</button></div></td>
       <td><span class="btnrow"><button class="btn ghost" type="button" data-qed="${esc(q.id)}">Tahrirlash</button><button class="btn ghost" type="button" data-qdel="${esc(q.id)}">O'chirish</button></span></td></tr>`}).join("")+`</tbody></table></div>`:`<div class="empty">Savollar banki bo'sh. Yuqoridagi shakl orqali savol qo'shing yoki ommaviy yuklang.</div>`;
   const L=$("#tq-list");
   L.querySelectorAll("[data-secsave]").forEach(b=>b.onclick=async()=>{const id=b.dataset.secsave,v=+L.querySelector(`[data-sec="${id}"]`).value,pt=+L.querySelector(`[data-pts="${id}"]`).value;if(!(v>=5&&v<=600)){toast("Vaqt 5–600 soniya");return}if(!(pt>0&&pt<=100)){toast("Ball 0 dan katta, 100 gacha");return}try{await fs.doc("questions/"+id).update({sec:v,pts:pt});toast(`Saqlandi: ${v} s, ${pt} ball`)}catch(e){toast("Bajarib bo'lmadi")}});
-  L.querySelectorAll("[data-qed]").forEach(b=>b.onclick=()=>{const q=S.questions.find(x=>x.id===b.dataset.qed),k=S.qkeys[q.id];tqEdit=q.id;$("#tq-q").value=q.q;$("#tq-sec").value=q.sec||60;$("#tq-pts").value=q.pts||1;tqOptsRender([...q.o],k?k.a:null);$("#tq-title").textContent="Savolni tahrirlash";$("#tq-btn").textContent="O'zgarishlarni saqlash";$("#tq-cancel").hidden=false;$("#tqform").scrollIntoView({behavior:"smooth",block:"start"})});
+  L.querySelectorAll("[data-qed]").forEach(b=>b.onclick=()=>{const q=S.questions.find(x=>x.id===b.dataset.qed),k=S.qkeys[q.id];tqEdit=q.id;$("#tq-topic").value=qTopic(q);$("#tq-q").value=q.q;$("#tq-sec").value=q.sec||60;$("#tq-pts").value=q.pts||1;tqOptsRender([...q.o],k?k.a:null);$("#tq-title").textContent="Savolni tahrirlash";$("#tq-btn").textContent="O'zgarishlarni saqlash";$("#tq-cancel").hidden=false;$("#tqform").scrollIntoView({behavior:"smooth",block:"start"})});
   L.querySelectorAll("[data-qdel]").forEach(b=>b.onclick=()=>{const id=b.dataset.qdel,cell=b.parentElement;
     cell.innerHTML=`<span class="confirm">O'chirilsinmi? <button class="btn danger" type="button" data-yes>Ha</button><button class="btn ghost" type="button" data-no>Yo'q</button></span>`;
     cell.querySelector("[data-no]").onclick=()=>renderTestAdmin();
@@ -3234,22 +3256,64 @@ function liveBoardHtml(limit){
 
 // ============================ CHIEF TOMONI ============================
 // Yaroqli savollar bankidan (barcha o'yin uchun yagona)
-const liveValidQ=()=>S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2);
+// topics: tanlangan mavzular ro'yxati (bo'sh yoki yo'q = barcha mavzular)
+const liveValidQ=topics=>{topics=topics===undefined?((S.live&&S.live.active&&S.live.topics)||[]):(topics||[]);return S.questions.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length>=2&&(!topics.length||topics.includes(qTopic(q))))};
 async function liveOpen(game,mode){
   game=game||"kahoot";mode=(mode==="jamoa"||mode==="guruh")?mode:"yakka";
-  const Q=liveValidQ();
+  const Q=liveValidQ([]);
   if(!Q.length){toast("Avval savol qo'shing");return}
   const n=Math.min(Math.max(1,+((S.testCfg||{}).count)||10),Q.length);
   const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
   try{
     const old=await fs.collection("players").get();
     for(const d of old.docs)await fs.doc("players/"+d.id).delete().catch(()=>{});
-    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",game,mode,teamCount:2,qids,secOverride:0,poolSize:Q.length,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
+    await fs.doc("config/live").set({active:true,pin:livePin(),phase:"lobby",game,mode,teamCount:2,qids,topics:[],want:n,secOverride:0,poolSize:Q.length,qIndex:-1,q:null,qStart:0,total:qids.length,startedBy:S.uid,startedAt:Date.now()});
     await log("test",`Jonli o'yin ochildi: ${game}/${mode}, ${n} ta savol`);
   }catch(e){toast("Ochib bo'lmadi ("+(e&&e.code||e)+")")}
 }
 // Admin: savollar sonini o'zgartirish (bankdan qayta tanlanadi)
-async function liveSetCount(n){const Q=liveValidQ();n=Math.min(Math.max(1,n),Q.length);const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);try{await fs.doc("config/live").update({qids,total:qids.length,poolSize:Q.length})}catch(e){}}
+async function liveSetCount(n){const Q=liveValidQ();n=Math.min(Math.max(1,n),Q.length);const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);try{await fs.doc("config/live").update({qids,total:qids.length,want:n,poolSize:Q.length})}catch(e){}}
+// Admin: o'yin mavzusini tanlash (bir nechta bo'lishi mumkin; bo'sh = barcha mavzular) — savollar shu mavzulardan qayta tanlanadi
+async function liveSetTopics(topics){
+  const L=S.live;if(!L)return;topics=[...new Set(topics||[])];
+  const Q=liveValidQ(topics);if(!Q.length){toast("Bu mavzuda savol yo'q");return}
+  const n=Math.min(Math.max(1,+L.want||+L.total||10),Q.length);
+  const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
+  try{await fs.doc("config/live").update({topics,qids,total:qids.length,poolSize:Q.length})}catch(e){toast("Bajarib bo'lmadi")}
+}
+function liveToggleTopic(t){
+  const L=S.live;if(!L)return;if(t==="__all"){liveSetTopics([]);return}
+  const cur=[...(L.topics||[])],i=cur.indexOf(t);if(i>=0)cur.splice(i,1);else cur.push(t);
+  liveSetTopics(cur.length===topicList(liveValidQ([])).length?[]:cur);
+}
+// ---- Huquq: admin tanlagan o'yinchiga savol bilan birga to'g'ri javob ko'rinadi ----
+// Huquqlilar ro'yxati config/live.hints ichida turadi (uni faqat admin yozadi) — o'yinchi o'ziga o'zi huquq bera olmaydi
+const liveHasHint=p=>!!(p&&S.live&&(S.live.hints||[]).includes(p.id));
+async function liveToggleHint(uid){
+  if(!S.isChief||!S.live)return;const p=S.players.find(x=>x.id===uid);if(!p)return;
+  const had=liveHasHint(p),hints=(S.live.hints||[]).filter(x=>x!==uid);if(!had)hints.push(uid);
+  try{await fs.doc("config/live").update({hints});if(had)fs.doc("players/"+uid).update({hk:null}).catch(()=>{});
+    toast((p.name||p.login||"O'yinchi")+(had?": huquq olib tashlandi":": huquq berildi — to'g'ri javob ko'rinadi"))}catch(e){toast("Bajarib bo'lmadi")}
+}
+const liveHintEnc=o=>{try{return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).split("").reverse().join("")}catch(e){return ""}};
+const liveHintDec=s=>{try{return JSON.parse(decodeURIComponent(escape(atob(String(s).split("").reverse().join("")))))}catch(e){return null}};
+// Chief: savol ochilishidan oldin huquqli o'yinchilarga shu savol kalitini yuboradi
+async function liveSendHints(i,qid,q,mode){
+  const hs=S.players.filter(liveHasHint);if(!hs.length)return;
+  const key=(S.qkeys[qid]||{}).a;if(key==null)return;
+  const h={m:mode};
+  if(mode==="tf")h.tf=liveTfShown(q,i,qid)===key;
+  else if(mode==="text")h.txt=String((q.o||[])[key]||"");
+  else if(mode==="rev")h.k=liveRevPos(qid);
+  else h.k=key;
+  const v=liveHintEnc(h);
+  await Promise.all(hs.map(p=>fs.doc("players/"+p.id).update({hk:{i,v}}).catch(()=>{})));
+}
+// O'yinchi: joriy savol uchun menga yuborilgan kalit (huquq bo'lmasa null)
+function liveMyHint(){
+  const L=S.live,me=liveMe();if(!L||!me||!liveHasHint(me)||!me.hk||me.hk.i!==L.qIndex)return null;
+  return liveHintDec(me.hk.v);
+}
 // Admin: har savol vaqti (0 = savolning o'z vaqti)
 async function liveSetSec(s){try{await fs.doc("config/live").update({secOverride:Math.max(0,Math.min(120,s))})}catch(e){}}
 // Admin: jamoalar sonini o'zgartirish (jamoa rejimi)
@@ -3283,12 +3347,14 @@ async function liveShowQ(i){
   else if(cfg.a==="text"){qd.mode="text";}
   else if(cfg.a==="rev"){
     const key=(S.qkeys[qid]||{}).a;
-    const others=shuffle(S.questions.filter(x=>x.id!==qid&&x.q)).slice(0,3).map(x=>String(x.q));
+    let opool=liveValidQ().filter(x=>x.id!==qid&&x.q);if(opool.length<3)opool=S.questions.filter(x=>x.id!==qid&&x.q);
+    const others=shuffle(opool).slice(0,3).map(x=>String(x.q));
     const pos=Math.min(liveRevPos(qid),others.length);
     const o=[...others];o.splice(pos,0,String(q.q));
     qd.mode="rev";qd.stmt=(q.o||[])[key]||"";qd.o=o;qd.q="";
   }
   else{qd.mode="choice";qd.o=q.o;}
+  try{await liveSendHints(i,qid,q,qd.mode)}catch(e){}
   try{await fs.doc("config/live").update({phase:"running",qIndex:i,qStart:Date.now(),qCorrect:null,q:qd})}catch(e){toast("Bajarib bo'lmadi")}
 }
 // Natijani ochish: ballarni yozamiz, to'g'ri javobni ko'rsatamiz (savol tugagani uchun xavfsiz)
@@ -3323,7 +3389,7 @@ async function liveStartGame(game,mode){
   const Q=liveValidQ();if(!Q.length){toast("Savol yo'q");return}
   const n=Math.min(Math.max(1,L.total||10),Q.length);
   const qids=shuffle([...Q]).slice(0,n).map(q=>q.id);
-  try{const b=fs.batch();S.players.forEach(p=>b.update(fs.doc("players/"+p.id),{ans:{},score:0,out:false,wrong:0,vote:null,done:false,doneAt:0}));await b.commit()}catch(e){}
+  try{const b=fs.batch();S.players.forEach(p=>b.update(fs.doc("players/"+p.id),{ans:{},score:0,out:false,wrong:0,vote:null,done:false,doneAt:0,hk:null}));await b.commit()}catch(e){}
   liveSavedKey=null;livePickOpen=false;
   try{await fs.doc("config/live").update({game,mode,qids,total:qids.length,phase:"lobby",qIndex:-1,q:null,startedAt:Date.now(),secOverride:L.secOverride||0})}catch(e){toast("Boshlab bo'lmadi")}
 }
@@ -3425,6 +3491,8 @@ function renderLiveAdmin(){
   let body="";
   if(L.phase==="lobby"){
     const teams=liveTeams();
+    // O'yinchi nomi — bosilsa huquq beriladi/olinadi
+    const hintBtn=(p,extra)=>`<button type="button" class="pl-hint${liveHasHint(p)?" on":""}" data-hint="${esc(p.id)}" title="${liveHasHint(p)?"Huquqni olib tashlash":"Huquq berish: to'g'ri javob ko'rinadi"}">${liveHasHint(p)?"👁 ":""}${esc(p.name||p.login||"—")}${extra||""}</button>`;
     let peoplePanel;
     if(L.mode==="jamoa"){
       const tc=Math.min(4,Math.max(2,+L.teamCount||2));
@@ -3434,20 +3502,23 @@ function renderLiveAdmin(){
         <div class="btnrow" style="justify-content:space-between;align-items:center"><b>Jamoalar</b>
           <span class="team-count">Jamoa soni: ${[2,3,4].map(n=>`<button type="button" class="tc-btn ${n===tc?"on":""}" data-tc="${n}">${n}</button>`).join("")}</span></div>
         <div class="team-cols">${grouped.map(g=>`<div class="team-col" style="--tc:${g.t.c}"><div class="team-h"><span class="lb-dot" style="background:${g.t.c}"></span>${esc(g.t.name)} · ${g.ps.length}</div>
-          ${g.ps.map(p=>`<div class="team-p">${esc(p.name||p.login||"—")}<span class="mv">${teams.filter(x=>x.id!==g.t.id).map(x=>`<button type="button" class="mv-b" data-mv="${p.id}" data-to="${x.id}" title="${esc(x.name)}ga" style="background:${x.c}"></button>`).join("")}</span></div>`).join("")||`<div class="team-empty">—</div>`}</div>`).join("")}</div>
-        ${unset.length?`<div class="unset"><b>Jamoasiz: ${unset.length}</b> ${unset.map(p=>`<span class="chip">${esc(p.name||p.login||"—")} ${teams.map(x=>`<button type="button" class="mv-b" data-mv="${p.id}" data-to="${x.id}" style="background:${x.c}"></button>`).join("")}</span>`).join("")}</div>`:""}</div>`;
+          ${g.ps.map(p=>`<div class="team-p">${hintBtn(p)}<span class="mv">${teams.filter(x=>x.id!==g.t.id).map(x=>`<button type="button" class="mv-b" data-mv="${p.id}" data-to="${x.id}" title="${esc(x.name)}ga" style="background:${x.c}"></button>`).join("")}</span></div>`).join("")||`<div class="team-empty">—</div>`}</div>`).join("")}</div>
+        ${unset.length?`<div class="unset"><b>Jamoasiz: ${unset.length}</b> ${unset.map(p=>`<span class="chip">${hintBtn(p)} ${teams.map(x=>`<button type="button" class="mv-b" data-mv="${p.id}" data-to="${x.id}" style="background:${x.c}"></button>`).join("")}</span>`).join("")}</div>`:""}</div>`;
     }else if(L.mode==="guruh"){
       peoplePanel=`<div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Guruhlar (avtomatik)</b><span class="note">${S.players.length} ishtirokchi</span></div>
-        <div class="team-cols">${teams.length?teams.map(t=>{const ps=S.players.filter(p=>(p.group||"").trim()===t.id);return `<div class="team-col" style="--tc:${t.c}"><div class="team-h"><span class="lb-dot" style="background:${t.c}"></span>${esc(t.name)} · ${ps.length}</div>${ps.map(p=>`<div class="team-p">${esc(p.name||p.login||"—")}</div>`).join("")}</div>`}).join(""):`<span class="note">Guruhlar ishtirokchilar qo'shilgach shakllanadi.</span>`}</div></div>`;
+        <div class="team-cols">${teams.length?teams.map(t=>{const ps=S.players.filter(p=>(p.group||"").trim()===t.id);return `<div class="team-col" style="--tc:${t.c}"><div class="team-h"><span class="lb-dot" style="background:${t.c}"></span>${esc(t.name)} · ${ps.length}</div>${ps.map(p=>`<div class="team-p">${hintBtn(p)}</div>`).join("")}</div>`}).join(""):`<span class="note">Guruhlar ishtirokchilar qo'shilgach shakllanadi.</span>`}</div></div>`;
     }else{
       peoplePanel=`<div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Qo'shilganlar: ${S.players.length}</b></div>
-        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${esc(p.name||p.login||"—")}${p.group?` · ${esc(p.group)}`:""}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div>`;
+        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip${liveHasHint(p)?" hinted":""}">${hintBtn(p,p.group?` · ${esc(p.group)}`:"")}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div>`;
     }
     const secLbl=(+L.secOverride||0)>0?(L.secOverride+"s"):"savolniki";
-    const setPanel=`<div class="live-set"><div class="set-row"><span>Savollar soni</span><span class="stepper"><button type="button" data-cnt="-5">−</button><b>${L.total}</b><button type="button" data-cnt="5">+</button></span><small>bankda ${L.poolSize||liveValidQ().length} ta</small></div>
+    const allT=topicList(liveValidQ([])),selT=L.topics||[];
+    const topicRow=allT.length>1?`<div class="set-row topics"><span>Mavzu</span><div class="tp-chips"><button type="button" class="tpc${selT.length?"":" on"}" data-topic="__all">Hammasi</button>${allT.map(x=>`<button type="button" class="tpc${selT.includes(x.t)?" on":""}" data-topic="${esc(x.t)}">${esc(topicName(x.t))} · ${x.n}</button>`).join("")}</div><small>${selT.length?"savollar faqat tanlangan mavzudan olinadi":"savollar barcha mavzulardan olinadi"}</small></div>`:"";
+    const hintN=S.players.filter(liveHasHint).length;
+    const setPanel=`<div class="live-set">${topicRow}<div class="set-row"><span>Savollar soni</span><span class="stepper"><button type="button" data-cnt="-5">−</button><b>${L.total}</b><button type="button" data-cnt="5">+</button></span><small>bankda ${L.poolSize||liveValidQ().length} ta</small></div>
       <div class="set-row"><span>Har savol vaqti</span><span class="stepper"><button type="button" data-sec="-5">−</button><b>${secLbl}</b><button type="button" data-sec="5">+</button></span><small>${(+L.secOverride||0)>0?"barchasiga bir xil":"har savolning o'z vaqti"}</small></div></div>`;
     body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
-      <div class="live-people-wrap">${setPanel}${peoplePanel}</div></div>
+      <div class="live-people-wrap">${setPanel}${peoplePanel}<p class="note hint-note">${S.players.length?`O'yinchi ismiga bosing — unga huquq beriladi: savol bilan birga to'g'ri javob ham ko'rinadi.${hintN?` Huquq berilgan: <b>${hintN}</b>`:""}`:""}</p></div></div>
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q&&L.q.mode==="self"){
     const done=S.players.filter(p=>p.done).length;
@@ -3511,6 +3582,8 @@ function renderLiveAdmin(){
   box.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{const p=b.dataset.pick.split("|");liveStartGame(p[0],p[1])});
   box.querySelectorAll("[data-tc]").forEach(b=>b.onclick=()=>liveSetTeams(+b.dataset.tc));
   box.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>liveMovePlayer(b.dataset.mv,isNaN(+b.dataset.to)?b.dataset.to:+b.dataset.to));
+  box.querySelectorAll("[data-topic]").forEach(b=>b.onclick=()=>liveToggleTopic(b.dataset.topic));
+  box.querySelectorAll("[data-hint]").forEach(b=>b.onclick=e=>{e.stopPropagation();liveToggleHint(b.dataset.hint)});
   box.querySelectorAll("[data-cnt]").forEach(b=>b.onclick=()=>liveSetCount((L.total||10)+ +b.dataset.cnt));
   box.querySelectorAll("[data-sec]").forEach(b=>b.onclick=()=>liveSetSec((+L.secOverride||0)+ +b.dataset.sec));
   on("live-full",()=>{const el=$("#live-admin");if(!el)return;
@@ -3635,28 +3708,31 @@ function renderLiveJoin(){
       const mult=(+L.q.mult||1)>1?`<div class="live-mult">×${L.q.mult} ball!</div>`:"";
       const hearts=cfg.lives?`<div class="live-hearts">${"❤️".repeat(Math.max(0,cfg.lives-(me&&me.wrong||0)))}${"🤍".repeat(Math.min(cfg.lives,me&&me.wrong||0))}</div>`:"";
       let ansHtml,hint;
+      const hk=liveMyHint(),hOk=j=>(hk&&hk.k===j)?" hint-ok":"";
+      const hkTxt=!hk?null:mode==="tf"?(hk.tf?"ROST":"YOLG'ON"):mode==="text"?hk.txt:(hk.k!=null&&(L.q.o||[])[hk.k]!=null?`${"ABCDEF"[hk.k]}) ${(L.q.o||[])[hk.k]}`:null);
+      const hkLine=hkTxt!=null?`<div class="live-hintkey">👁 To'g'ri javob: <b>${esc(hkTxt)}</b></div>`:"";
       if(isBuzz&&!liveBuzzed){
         hint="Birinchi bo'lib bosing — keyin javob bering!";
         ansHtml=`<div class="live-buzz"><button class="buzz-b" type="button" id="live-buzz">BOSING!</button></div>`;
       }else if(mode==="tf"){
         hint="Da'vo katta ekranda. Rostmi yoki yolg'on?";
-        ansHtml=`<div class="live-stmt">"${esc(L.q.stmt||"")}" — javob shumi?</div><div class="live-tf"><button class="tf-b rost" type="button" data-opt="0">✓ ROST</button><button class="tf-b yolgon" type="button" data-opt="1">✗ YOLG'ON</button></div>`;
+        ansHtml=`<div class="live-stmt">"${esc(L.q.stmt||"")}" — javob shumi?</div><div class="live-tf"><button class="tf-b rost${hk&&hk.tf===true?" hint-ok":""}" type="button" data-opt="0">✓ ROST</button><button class="tf-b yolgon${hk&&hk.tf===false?" hint-ok":""}" type="button" data-opt="1">✗ YOLG'ON</button></div>`;
       }else if(mode==="text"){
         hint="Savol katta ekranda. Javobni yozing.";
         ansHtml=`<div class="live-textwrap"><input id="live-text" type="text" placeholder="Javobingiz…" autocomplete="off" autocapitalize="off" maxlength="60"><button class="btn" type="button" id="live-send">Yuborish</button></div>`;
       }else if(mode==="rev"){
         hint="Javob berilgan — qaysi savolga to'g'ri keladi?";
-        ansHtml=`<div class="live-rev-ans">Javob: <b>${esc(L.q.stmt||"")}</b></div><div class="live-opts rev">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j} rev" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
+        ansHtml=`<div class="live-rev-ans">Javob: <b>${esc(L.q.stmt||"")}</b></div><div class="live-opts rev">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j} rev${hOk(j)}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }else{
         const showQ=game!=="kahoot"; // Kahoot savoli faqat monitorda; qolganlarida telefonda ham
         hint=isBuzz?"Tez tanlang — kim birinchi to'g'ri bo'lsa!":showQ?"Javob bering:":"Savol katta ekranda. Javobingizni tanlang.";
         const ladder=game==="millioner"?`<div class="mil-head"><span>Pog'ona ${L.q.idx+1} / ${L.q.total}</span><div class="mil-bar"><i style="width:${Math.round(100*(L.q.idx+1)/L.q.total)}%"></i></div><span class="mil-tip">📈 Har pog'ona qimmatroq</span></div>`:"";
         const pq=showQ?`<div class="live-pq">${esc(L.q.q||"")}</div>`:"";
-        ansHtml=ladder+pq+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
+        ansHtml=ladder+pq+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}${hOk(j)}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }
       const bombBan=cfg.bomba?`<div class="bomb-ban">💣 Bomba sizda! Tez va to'g'ri javob bering — aks holda yonasiz!</div>`:"";
       if(body)body.innerHTML=`<div class="live-card live-play${cfg.bomba?" bomb":""}"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div>${hearts}${bombBan}<div class="live-timer${cfg.bomba?" fuse":""}" id="live-timer"></div>${mult}
-        <p class="live-hint">${hint}</p>${ansHtml}</div>`;
+        <p class="live-hint">${hint}</p>${hkLine}${ansHtml}</div>`;
       const bz=$("#live-buzz");if(bz)bz.onclick=()=>{liveBuzzed=true;renderLiveJoin()};
       body.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{body.querySelectorAll("[data-opt]").forEach(x=>x.disabled=true);b.classList.add("picked");liveAnswer(+b.dataset.opt)});
       if(mode==="text"&&!(isBuzz&&!liveBuzzed)){const inp=$("#live-text"),snd=$("#live-send"),go=()=>{const v=(inp.value||"").trim();if(!v)return;inp.disabled=true;snd.disabled=true;liveAnswerText(v)};if(snd)snd.onclick=go;if(inp)inp.onkeydown=e=>{if(e.key==="Enter")go()};if(inp)inp.focus()}
