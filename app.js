@@ -3664,7 +3664,7 @@ function renderLiveAdmin(){
   if(L.phase==="lobby"){
     const teams=liveTeams();
     // O'yinchi nomi — bosilsa huquq beriladi/olinadi
-    const hintBtn=(p,extra)=>`<button type="button" class="pl-hint${liveHasHint(p)?" on":""}" data-hint="${esc(p.id)}" title="${liveHasHint(p)?"Huquqni olib tashlash":"Huquq berish: to'g'ri javob ko'rinadi"}">${liveHasHint(p)?"👁 ":""}${esc(p.name||p.login||"—")}${extra||""}</button>`;
+    const hintBtn=(p,extra)=>`<button type="button" class="pl-hint" data-hint="${esc(p.id)}">${esc(p.name||p.login||"—")}${extra||""}</button>`;
     let peoplePanel;
     if(L.mode==="jamoa"){
       const tc=Math.min(4,Math.max(2,+L.teamCount||2));
@@ -3681,7 +3681,7 @@ function renderLiveAdmin(){
         <div class="team-cols">${teams.length?teams.map(t=>{const ps=S.players.filter(p=>(p.group||"").trim()===t.id);return `<div class="team-col" style="--tc:${t.c}"><div class="team-h"><span class="lb-dot" style="background:${t.c}"></span>${esc(t.name)} · ${ps.length}</div>${ps.map(p=>`<div class="team-p">${hintBtn(p)}</div>`).join("")}</div>`}).join(""):`<span class="note">Guruhlar ishtirokchilar qo'shilgach shakllanadi.</span>`}</div></div>`;
     }else{
       peoplePanel=`<div class="live-people"><div class="btnrow" style="justify-content:space-between"><b>Qo'shilganlar: ${S.players.length}</b></div>
-        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip${liveHasHint(p)?" hinted":""}">${hintBtn(p,p.group?` · ${esc(p.group)}`:"")}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div>`;
+        <div class="chips-wrap">${S.players.length?S.players.map(p=>`<span class="chip">${hintBtn(p,p.group?` · ${esc(p.group)}`:"")}</span>`).join(""):`<span class="note">Hali hech kim yo'q…</span>`}</div></div>`;
     }
     const secLbl=(+L.secOverride||0)>0?(L.secOverride+"s"):"savolniki";
     const allT=topicList(liveValidQ([])),selT=L.topics||[];
@@ -3690,7 +3690,7 @@ function renderLiveAdmin(){
     const setPanel=`<div class="live-set">${topicRow}<div class="set-row"><span>Savollar soni</span><span class="stepper"><button type="button" data-cnt="-5">−</button><b>${L.total}</b><button type="button" data-cnt="5">+</button></span><small>bankda ${L.poolSize||liveValidQ().length} ta</small></div>
       <div class="set-row"><span>Har savol vaqti</span><span class="stepper"><button type="button" data-sec="-5">−</button><b>${secLbl}</b><button type="button" data-sec="5">+</button></span><small>${(+L.secOverride||0)>0?"barchasiga bir xil":"har savolning o'z vaqti"}</small></div></div>`;
     body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
-      <div class="live-people-wrap">${setPanel}${peoplePanel}<p class="note hint-note">${S.players.length?`O'yinchi ismiga bosing — huquq beriladi. Tur, chegara va avtomatik huquq — «👁 Huquqlar» tugmasida.${hintN?` Huquq berilgan: <b>${hintN}</b>`:""}`:""}</p></div></div>
+      <div class="live-people-wrap">${setPanel}${peoplePanel}</div></div>
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q&&L.q.mode==="self"){
     const done=S.players.filter(p=>p.done).length;
@@ -3744,7 +3744,7 @@ function renderLiveAdmin(){
   }
   const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on",teskari:"Teskari",estafeta:"Estafeta",gestafeta:"Guruh estafetasi",bomba:"Bomba",bayroq:"Bayroq olish",juftla:"Juftla",xotira:"Xotira o'yini"};
   let gTitle=gName[L.game];if(gTitle&&typeof gTitle==="object")gTitle=gTitle[L.mode];gTitle=gTitle||"Jonli o'yin";
-  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost" type="button" id="live-hints">👁 Huquqlar</button><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
+  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
   on("live-hints",()=>{liveHintOpen=!liveHintOpen;liveHintModal()});
@@ -3757,7 +3757,6 @@ function renderLiveAdmin(){
   box.querySelectorAll("[data-tc]").forEach(b=>b.onclick=()=>liveSetTeams(+b.dataset.tc));
   box.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>liveMovePlayer(b.dataset.mv,isNaN(+b.dataset.to)?b.dataset.to:+b.dataset.to));
   box.querySelectorAll("[data-topic]").forEach(b=>b.onclick=()=>liveToggleTopic(b.dataset.topic));
-  box.querySelectorAll("[data-hint]").forEach(b=>b.onclick=e=>{e.stopPropagation();liveToggleHint(b.dataset.hint)});
   box.querySelectorAll("[data-cnt]").forEach(b=>b.onclick=()=>liveSetCount((L.total||10)+ +b.dataset.cnt));
   box.querySelectorAll("[data-sec]").forEach(b=>b.onclick=()=>liveSetSec((+L.secOverride||0)+ +b.dataset.sec));
   on("live-full",()=>{const el=$("#live-admin");if(!el)return;
