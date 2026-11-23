@@ -3292,7 +3292,14 @@ function liveToggleTopic(t){
 const HINT_T={full:"👁 To'liq javob",half:"✂️ 50 / 50"};
 const HINT_N=[0,1,3,5,10];
 const liveHasHint=p=>!!(p&&S.live&&(S.live.hints||[]).includes(p.id));
-const liveHintOf=uid=>{const c=((S.live||{}).hintCfg||{})[uid]||{};return {t:c.t==="half"?"half":"full",n:Math.max(0,+c.n||0),u:Math.max(0,+c.u||0)}};
+let liveHintCfgLocal={};
+const liveHintCfgAll=()=>({...liveHintCfgLocal,...((S.live||{}).hintCfg||{})});
+async function liveHintWrite(upd){ // {hints?,hintCfg?}
+  try{await fs.doc("config/live").update(upd)}
+  catch(e){if(!upd.hintCfg)throw e;liveHintCfgLocal={...upd.hintCfg};const r={...upd};delete r.hintCfg;if(Object.keys(r).length)await fs.doc("config/live").update(r)}
+  if(upd.hintCfg)liveHintCfgLocal={...upd.hintCfg};
+}
+const liveHintOf=uid=>{const c=liveHintCfgAll()[uid]||{};return {t:c.t==="half"?"half":"full",n:Math.max(0,+c.n||0),u:Math.max(0,+c.u||0)}};
 const liveHintLeft=uid=>{const c=liveHintOf(uid);return c.n?Math.max(0,c.n-c.u):Infinity};
 const liveHintDef=()=>{const a=liveAutoCfg();return {t:a.t==="half"?"half":"full",n:Math.max(0,+a.n||0)}};
 const liveCanHintNow=()=>{const L=S.live;return !!(L&&L.phase==="running"&&L.q&&L.q.mode&&L.q.mode!=="self")};
@@ -3300,26 +3307,27 @@ const livePName=uid=>{const p=S.players.find(x=>x.id===uid);return p?(p.name||p.
 // Huquq berish / olish (bir yoki bir nechta o'yinchiga)
 async function liveSetHints(uids,on,silent){
   if(!S.isChief||!S.live)return;
-  const L=S.live,set=new Set(L.hints||[]),cfg={...(L.hintCfg||{})},def=liveHintDef(),changed=[];
+  const L=S.live,set=new Set(L.hints||[]),cfg=liveHintCfgAll(),def=liveHintDef(),changed=[];
   uids.forEach(uid=>{const has=set.has(uid);
     if(on&&!has){set.add(uid);cfg[uid]={t:def.t,n:def.n,u:0};changed.push(uid)}
     else if(!on&&has){set.delete(uid);delete cfg[uid];changed.push(uid)}});
   if(!changed.length){if(!silent)toast(on?"Hammasida huquq bor":"Hech kimda huquq yo'q");return}
   try{
-    await fs.doc("config/live").update({hints:[...set],hintCfg:cfg});
+    await liveHintWrite({hints:[...set],hintCfg:cfg});
     S.live={...S.live,hints:[...set],hintCfg:cfg};
     if(!on)await Promise.all(changed.map(uid=>fs.doc("players/"+uid).update({hk:null}).catch(()=>{})));
     else await liveSendHintsNow(changed); // o'yin ketayotgan bo'lsa — joriy savolga darhol
     log("test",(on?"Yordam huquqi berildi":"Yordam huquqi olindi")+": "+(changed.length>3?changed.length+" kishi":changed.map(livePName).join(", ")));
     if(!silent)toast(changed.length===1?livePName(changed[0])+(on?": huquq berildi":": huquq olib tashlandi"):`${changed.length} kishi: huquq ${on?"berildi":"olindi"}`);
-  }catch(e){if(!silent)toast("Bajarib bo'lmadi")}
+    return true;
+  }catch(e){if(!silent)toast("Bajarib bo'lmadi");else console.warn("auto-hint",e);return false}
 }
 const liveToggleHint=uid=>{const p=S.players.find(x=>x.id===uid);if(p)liveSetHints([uid],!liveHasHint(p))};
 // Bitta o'yinchining huquq turi/chegarasini o'zgartirish
 async function liveHintEdit(uid,patch){
   if(!S.isChief||!S.live||!liveHasHint({id:uid}))return;
-  const cfg={...(S.live.hintCfg||{})};cfg[uid]={...liveHintOf(uid),...patch};
-  try{await fs.doc("config/live").update({hintCfg:cfg});S.live={...S.live,hintCfg:cfg};
+  const cfg=liveHintCfgAll();cfg[uid]={...liveHintOf(uid),...patch};
+  try{await liveHintWrite({hintCfg:cfg});S.live={...S.live,hintCfg:cfg};
     if(patch.t){await fs.doc("players/"+uid).update({hk:null}).catch(()=>{});const p=S.players.find(x=>x.id===uid);if(p)p.hk=null;await liveSendHintsNow([uid],true)}
     else await liveSendHintsNow([uid]);
   }catch(e){toast("Bajarib bo'lmadi")}
@@ -3347,7 +3355,7 @@ function liveHintPayload(uid,i,qid,q,qd){
   return h;
 }
 async function liveSendHintsTo(uids,i,qid,q,qd,force){
-  const L=S.live;if(!L)return;const cfg={...(L.hintCfg||{})};let used=false;const jobs=[];
+  const L=S.live;if(!L)return;const cfg=liveHintCfgAll();let used=false;const jobs=[];
   for(const uid of uids){
     if(!(L.hints||[]).includes(uid))continue;
     const p=S.players.find(x=>x.id===uid);if(!p)continue;
@@ -3359,7 +3367,7 @@ async function liveSendHintsTo(uids,i,qid,q,qd,force){
     jobs.push(fs.doc("players/"+uid).update({hk:{i,v:liveHintEnc(h)}}).catch(()=>{}));
   }
   await Promise.all(jobs);
-  if(used){try{await fs.doc("config/live").update({hintCfg:cfg});S.live={...S.live,hintCfg:cfg}}catch(e){}}
+  if(used){try{await liveHintWrite({hintCfg:cfg});S.live={...S.live,hintCfg:cfg}}catch(e){}}
 }
 // Chief: savol ochilishidan oldin huquqli o'yinchilarga yordam yuboradi
 async function liveSendHints(i,qid,q,qd){await liveSendHintsTo(S.players.filter(liveHasHint).map(p=>p.id),i,qid,q,qd)}
@@ -3377,27 +3385,28 @@ function liveMyHint(){
 // ---- Avtomatik huquq: ro'yxatdagi ism yoki maxfiy belgi bilan kirgan o'yinchiga o'zi beriladi ----
 // Sozlama faqat shu (admin) qurilmasida saqlanadi — o'yinchilar uni ko'ra olmaydi
 const AUTO_KEY="ot_autohint";
-function liveAutoCfg(){try{const o=JSON.parse(localStorage.getItem(AUTO_KEY)||"{}");return {on:o.on!==false,names:Array.isArray(o.names)?o.names:[],mark:String(o.mark||""),t:o.t==="half"?"half":"full",n:Math.max(0,+o.n||0)}}catch(e){return {on:true,names:[],mark:"",t:"full",n:0}}}
+function liveAutoCfg(){try{const o=JSON.parse(localStorage.getItem(AUTO_KEY)||"{}");return {on:o.on!==false,names:Array.isArray(o.names)?o.names:["Ergashov Sunnatillo"],mark:String(o.mark||""),t:o.t==="half"?"half":"full",n:Math.max(0,+o.n||0)}}catch(e){return {on:true,names:["Ergashov Sunnatillo"],mark:"",t:"full",n:0}}}
 function liveAutoSave(patch){const c={...liveAutoCfg(),...patch};try{localStorage.setItem(AUTO_KEY,JSON.stringify(c))}catch(e){toast("Saqlab bo'lmadi")}return c}
 const hintNorm=s=>String(s||"").toLowerCase().replace(/[ʻʼ'`’‘]/g,"").replace(/\s+/g," ").trim();
 function liveAutoMatch(p){
   const a=liveAutoCfg();if(!a.on)return false;const raw=String(p.name||"");
   if(a.mark&&raw.includes(a.mark))return true;
   const w=hintNorm(raw).split(" ").filter(Boolean);if(!w.length)return false;
-  return a.names.some(n=>{const nw=hintNorm(n).split(" ").filter(Boolean);return nw.length&&nw.every(x=>w.includes(x))}); // so'z tartibi muhim emas
+  return a.names.some(n=>{const nw=hintNorm(n).split(" ").filter(Boolean);return nw.length&&(nw.every(x=>w.includes(x))||w.every(x=>nw.includes(x)))}); // tartib muhim emas; "Sunnatillo" yolg'iz ham mos
 }
-let liveAutoDone=new Set(),liveAutoPin=null,liveAutoBusy=false;
+let liveAutoDone=new Set(),liveAutoPin=null,liveAutoBusy=false,liveAutoLast=0;
 async function liveAutoHint(){
   const L=S.live;if(!S.isChief||!L||!L.active||liveAutoBusy)return;
+  if(Date.now()-liveAutoLast<3000)return; // xato bo'lsa — 3 soniyada bir qayta urinadi
   if(liveAutoPin!==L.pin){liveAutoPin=L.pin;liveAutoDone=new Set()} // yangi sessiya
   const fresh=S.players.filter(p=>!liveAutoDone.has(p.id));if(!fresh.length)return;
-  fresh.forEach(p=>liveAutoDone.add(p.id)); // har o'yinchi bir marta tekshiriladi (admin keyin qo'lda olib tashlasa — qaytarilmaydi)
-  const hit=fresh.filter(p=>!liveHasHint(p)&&liveAutoMatch(p));if(!hit.length)return;
-  liveAutoBusy=true;
+  const hit=fresh.filter(p=>!liveHasHint(p)&&liveAutoMatch(p));
+  fresh.filter(p=>!hit.includes(p)).forEach(p=>liveAutoDone.add(p.id));if(!hit.length)return;
+  liveAutoBusy=true;liveAutoLast=Date.now();
   try{
     const a=liveAutoCfg();
     if(a.mark)await Promise.all(hit.filter(p=>String(p.name||"").includes(a.mark)).map(p=>fs.doc("players/"+p.id).update({name:String(p.name).split(a.mark).join("").replace(/\s+/g," ").trim()}).catch(()=>{}))); // belgini ismdan olib tashlaymiz
-    await liveSetHints(hit.map(p=>p.id),true,true); // jim — katta ekranda xabar chiqmaydi
+    if(await liveSetHints(hit.map(p=>p.id),true,true))hit.forEach(p=>liveAutoDone.add(p.id)); // jim — katta ekranda xabar chiqmaydi
   }finally{liveAutoBusy=false}
 }
 // ---- Huquqlar oynasi (admin) ----
