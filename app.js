@@ -3286,33 +3286,175 @@ function liveToggleTopic(t){
   const cur=[...(L.topics||[])],i=cur.indexOf(t);if(i>=0)cur.splice(i,1);else cur.push(t);
   liveSetTopics(cur.length===topicList(liveValidQ([])).length?[]:cur);
 }
-// ---- Huquq: admin tanlagan o'yinchiga savol bilan birga to'g'ri javob ko'rinadi ----
-// Huquqlilar ro'yxati config/live.hints ichida turadi (uni faqat admin yozadi) — o'yinchi o'ziga o'zi huquq bera olmaydi
+// ---- Huquq (yordam): admin tanlagan o'yinchiga savol bilan birga yordam ko'rinadi ----
+// config/live.hints — huquqli uid'lar (faqat admin yozadi, o'yinchi o'ziga bera olmaydi)
+// config/live.hintCfg — {uid:{t:"full"|"half", n:chegara (0=cheksiz), u:ishlatilgan}}
+const HINT_T={full:"👁 To'liq javob",half:"✂️ 50 / 50"};
+const HINT_N=[0,1,3,5,10];
 const liveHasHint=p=>!!(p&&S.live&&(S.live.hints||[]).includes(p.id));
-async function liveToggleHint(uid){
-  if(!S.isChief||!S.live)return;const p=S.players.find(x=>x.id===uid);if(!p)return;
-  const had=liveHasHint(p),hints=(S.live.hints||[]).filter(x=>x!==uid);if(!had)hints.push(uid);
-  try{await fs.doc("config/live").update({hints});if(had)fs.doc("players/"+uid).update({hk:null}).catch(()=>{});
-    toast((p.name||p.login||"O'yinchi")+(had?": huquq olib tashlandi":": huquq berildi — to'g'ri javob ko'rinadi"))}catch(e){toast("Bajarib bo'lmadi")}
+const liveHintOf=uid=>{const c=((S.live||{}).hintCfg||{})[uid]||{};return {t:c.t==="half"?"half":"full",n:Math.max(0,+c.n||0),u:Math.max(0,+c.u||0)}};
+const liveHintLeft=uid=>{const c=liveHintOf(uid);return c.n?Math.max(0,c.n-c.u):Infinity};
+const liveHintDef=()=>{const a=liveAutoCfg();return {t:a.t==="half"?"half":"full",n:Math.max(0,+a.n||0)}};
+const liveCanHintNow=()=>{const L=S.live;return !!(L&&L.phase==="running"&&L.q&&L.q.mode&&L.q.mode!=="self")};
+const livePName=uid=>{const p=S.players.find(x=>x.id===uid);return p?(p.name||p.login||"—"):"—"};
+// Huquq berish / olish (bir yoki bir nechta o'yinchiga)
+async function liveSetHints(uids,on,silent){
+  if(!S.isChief||!S.live)return;
+  const L=S.live,set=new Set(L.hints||[]),cfg={...(L.hintCfg||{})},def=liveHintDef(),changed=[];
+  uids.forEach(uid=>{const has=set.has(uid);
+    if(on&&!has){set.add(uid);cfg[uid]={t:def.t,n:def.n,u:0};changed.push(uid)}
+    else if(!on&&has){set.delete(uid);delete cfg[uid];changed.push(uid)}});
+  if(!changed.length){if(!silent)toast(on?"Hammasida huquq bor":"Hech kimda huquq yo'q");return}
+  try{
+    await fs.doc("config/live").update({hints:[...set],hintCfg:cfg});
+    S.live={...S.live,hints:[...set],hintCfg:cfg};
+    if(!on)await Promise.all(changed.map(uid=>fs.doc("players/"+uid).update({hk:null}).catch(()=>{})));
+    else await liveSendHintsNow(changed); // o'yin ketayotgan bo'lsa — joriy savolga darhol
+    log("test",(on?"Yordam huquqi berildi":"Yordam huquqi olindi")+": "+(changed.length>3?changed.length+" kishi":changed.map(livePName).join(", ")));
+    if(!silent)toast(changed.length===1?livePName(changed[0])+(on?": huquq berildi":": huquq olib tashlandi"):`${changed.length} kishi: huquq ${on?"berildi":"olindi"}`);
+  }catch(e){if(!silent)toast("Bajarib bo'lmadi")}
+}
+const liveToggleHint=uid=>{const p=S.players.find(x=>x.id===uid);if(p)liveSetHints([uid],!liveHasHint(p))};
+// Bitta o'yinchining huquq turi/chegarasini o'zgartirish
+async function liveHintEdit(uid,patch){
+  if(!S.isChief||!S.live||!liveHasHint({id:uid}))return;
+  const cfg={...(S.live.hintCfg||{})};cfg[uid]={...liveHintOf(uid),...patch};
+  try{await fs.doc("config/live").update({hintCfg:cfg});S.live={...S.live,hintCfg:cfg};
+    if(patch.t){await fs.doc("players/"+uid).update({hk:null}).catch(()=>{});const p=S.players.find(x=>x.id===uid);if(p)p.hk=null;await liveSendHintsNow([uid],true)}
+    else await liveSendHintsNow([uid]);
+  }catch(e){toast("Bajarib bo'lmadi")}
 }
 const liveHintEnc=o=>{try{return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).split("").reverse().join("")}catch(e){return ""}};
 const liveHintDec=s=>{try{return JSON.parse(decodeURIComponent(escape(atob(String(s).split("").reverse().join("")))))}catch(e){return null}};
-// Chief: savol ochilishidan oldin huquqli o'yinchilarga shu savol kalitini yuboradi
-async function liveSendHints(i,qid,q,mode){
-  const hs=S.players.filter(liveHasHint);if(!hs.length)return;
-  const key=(S.qkeys[qid]||{}).a;if(key==null)return;
-  const h={m:mode};
-  if(mode==="tf")h.tf=liveTfShown(q,i,qid)===key;
-  else if(mode==="text")h.txt=String((q.o||[])[key]||"");
-  else if(mode==="rev")h.k=liveRevPos(qid);
-  else h.k=key;
-  const v=liveHintEnc(h);
-  await Promise.all(hs.map(p=>fs.doc("players/"+p.id).update({hk:{i,v}}).catch(()=>{})));
+// Yordam mazmuni: to'liq — to'g'ri javob; 50/50 — noto'g'ri variantlarning yarmi o'chadi, yozma javobda birinchi harflar
+function liveHintPayload(uid,i,qid,q,qd){
+  const key=(S.qkeys[qid]||{}).a;if(key==null||!q||!qd)return null;
+  const c=liveHintOf(uid),mode=qd.mode,h={m:mode,t:c.t};
+  if(c.t==="half"){
+    if(mode==="choice"||mode==="rev"){
+      const k=mode==="rev"?liveRevPos(qid):key,cnt=(qd.o||[]).length;if(cnt<3)return null;
+      const wrong=shuffle([...Array(cnt).keys()].filter(j=>j!==k));h.x=wrong.slice(0,Math.ceil(wrong.length/2));
+    }else if(mode==="text"){
+      const a=String((q.o||[])[key]||"").trim();if(!a)return null;
+      h.mask=a.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+" _".repeat(Math.max(0,w.length-1))).join("   ");
+    }else return null; // Rost/Yolg'on — 50/50 ma'nosiz
+  }else{
+    if(mode==="tf")h.tf=liveTfShown(q,i,qid)===key;
+    else if(mode==="text")h.txt=String((q.o||[])[key]||"");
+    else if(mode==="rev")h.k=liveRevPos(qid);
+    else h.k=key;
+  }
+  return h;
 }
-// O'yinchi: joriy savol uchun menga yuborilgan kalit (huquq bo'lmasa null)
+async function liveSendHintsTo(uids,i,qid,q,qd,force){
+  const L=S.live;if(!L)return;const cfg={...(L.hintCfg||{})};let used=false;const jobs=[];
+  for(const uid of uids){
+    if(!(L.hints||[]).includes(uid))continue;
+    const p=S.players.find(x=>x.id===uid);if(!p)continue;
+    const again=p.hk&&p.hk.i===i;if(again&&!force)continue; // bu savolga allaqachon yuborilgan
+    if(!again&&liveHintLeft(uid)<=0)continue;                 // chegara tugagan
+    const h=liveHintPayload(uid,i,qid,q,qd);if(!h)continue;
+    const c=liveHintOf(uid);if(!again){c.u++;cfg[uid]=c;used=true}
+    h.r=c.n?Math.max(0,c.n-c.u):null;
+    jobs.push(fs.doc("players/"+uid).update({hk:{i,v:liveHintEnc(h)}}).catch(()=>{}));
+  }
+  await Promise.all(jobs);
+  if(used){try{await fs.doc("config/live").update({hintCfg:cfg});S.live={...S.live,hintCfg:cfg}}catch(e){}}
+}
+// Chief: savol ochilishidan oldin huquqli o'yinchilarga yordam yuboradi
+async function liveSendHints(i,qid,q,qd){await liveSendHintsTo(S.players.filter(liveHasHint).map(p=>p.id),i,qid,q,qd)}
+// Chief: o'yin ketayotganda huquq berilsa — joriy savolga darhol
+async function liveSendHintsNow(uids,force){
+  const L=S.live;if(!liveCanHintNow())return;
+  const i=L.qIndex,qid=L.qids[i],q=S.questions.find(x=>x.id===qid);
+  await liveSendHintsTo(uids,i,qid,q,L.q,force);
+}
+// O'yinchi: joriy savol uchun menga yuborilgan yordam (huquq bo'lmasa null)
 function liveMyHint(){
   const L=S.live,me=liveMe();if(!L||!me||!liveHasHint(me)||!me.hk||me.hk.i!==L.qIndex)return null;
   return liveHintDec(me.hk.v);
+}
+// ---- Avtomatik huquq: ro'yxatdagi ism yoki maxfiy belgi bilan kirgan o'yinchiga o'zi beriladi ----
+// Sozlama faqat shu (admin) qurilmasida saqlanadi — o'yinchilar uni ko'ra olmaydi
+const AUTO_KEY="ot_autohint";
+function liveAutoCfg(){try{const o=JSON.parse(localStorage.getItem(AUTO_KEY)||"{}");return {on:o.on!==false,names:Array.isArray(o.names)?o.names:[],mark:String(o.mark||""),t:o.t==="half"?"half":"full",n:Math.max(0,+o.n||0)}}catch(e){return {on:true,names:[],mark:"",t:"full",n:0}}}
+function liveAutoSave(patch){const c={...liveAutoCfg(),...patch};try{localStorage.setItem(AUTO_KEY,JSON.stringify(c))}catch(e){toast("Saqlab bo'lmadi")}return c}
+const hintNorm=s=>String(s||"").toLowerCase().replace(/[ʻʼ'`’‘]/g,"").replace(/\s+/g," ").trim();
+function liveAutoMatch(p){
+  const a=liveAutoCfg();if(!a.on)return false;const raw=String(p.name||"");
+  if(a.mark&&raw.includes(a.mark))return true;
+  const w=hintNorm(raw).split(" ").filter(Boolean);if(!w.length)return false;
+  return a.names.some(n=>{const nw=hintNorm(n).split(" ").filter(Boolean);return nw.length&&nw.every(x=>w.includes(x))}); // so'z tartibi muhim emas
+}
+let liveAutoDone=new Set(),liveAutoPin=null,liveAutoBusy=false;
+async function liveAutoHint(){
+  const L=S.live;if(!S.isChief||!L||!L.active||liveAutoBusy)return;
+  if(liveAutoPin!==L.pin){liveAutoPin=L.pin;liveAutoDone=new Set()} // yangi sessiya
+  const fresh=S.players.filter(p=>!liveAutoDone.has(p.id));if(!fresh.length)return;
+  fresh.forEach(p=>liveAutoDone.add(p.id)); // har o'yinchi bir marta tekshiriladi (admin keyin qo'lda olib tashlasa — qaytarilmaydi)
+  const hit=fresh.filter(p=>!liveHasHint(p)&&liveAutoMatch(p));if(!hit.length)return;
+  liveAutoBusy=true;
+  try{
+    const a=liveAutoCfg();
+    if(a.mark)await Promise.all(hit.filter(p=>String(p.name||"").includes(a.mark)).map(p=>fs.doc("players/"+p.id).update({name:String(p.name).split(a.mark).join("").replace(/\s+/g," ").trim()}).catch(()=>{}))); // belgini ismdan olib tashlaymiz
+    await liveSetHints(hit.map(p=>p.id),true,true); // jim — katta ekranda xabar chiqmaydi
+  }finally{liveAutoBusy=false}
+}
+// ---- Huquqlar oynasi (admin) ----
+let liveHintOpen=false,liveHintQ="";
+window.addEventListener("hashchange",()=>{if(liveHintOpen){liveHintOpen=false;liveHintModal()}});
+function liveHintModal(){
+  let m=document.getElementById("hint-modal");const L=S.live;
+  if(!liveHintOpen||!L||!L.active||!S.isChief||!document.getElementById("live-admin")){if(m)m.remove();liveHintOpen=false;return}
+  if(!m){
+    m=document.createElement("div");m.id="hint-modal";m.className="hist-modal";
+    m.innerHTML=`<div class="hist-card hm-card"><div class="btnrow" style="justify-content:space-between;align-items:center"><h3 style="margin:0">👁 Yordam huquqlari</h3><button class="btn ghost" type="button" data-hm="close">✕</button></div><div id="hm-top"></div><input id="hm-q" class="hm-q" type="search" placeholder="Ism yoki guruh bo'yicha qidirish…"><div id="hm-list"></div><details class="hm-auto"><summary>⚙️ Avtomatik huquq</summary><div id="hm-auto"></div></details></div>`;
+    document.body.appendChild(m);
+    m.addEventListener("click",e=>{
+      if(e.target===m){liveHintOpen=false;liveHintModal();return}
+      const b=e.target.closest("[data-hm]");if(!b)return;const v=b.dataset.hm,id=b.dataset.id;
+      if(v==="close"){liveHintOpen=false;liveHintModal()}
+      else if(v==="tg")liveToggleHint(id);
+      else if(v==="all")liveSetHints(S.players.map(p=>p.id),true);
+      else if(v==="none")liveSetHints(S.players.map(p=>p.id),false);
+      else if(v==="team-on"||v==="team-off"){const ids=S.players.filter(p=>String(livePlayerTeam(p))===id).map(p=>p.id);liveSetHints(ids,v==="team-on")}
+      else if(v==="reset")liveHintEdit(id,{u:0});
+      else if(v==="deft"){liveAutoSave({t:id});liveHintModal()}
+      else if(v==="defn"){liveAutoSave({n:+id});liveHintModal()}
+      else if(v==="auto-on"){liveAutoSave({on:!liveAutoCfg().on});liveHintModal()}
+      else if(v==="auto-save"){const nm=$("#hm-names"),mk=$("#hm-mark");liveAutoSave({names:(nm.value||"").split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean),mark:(mk.value||"").trim()});liveAutoDone=new Set();toast("Saqlandi");liveAutoHint();liveHintModal()}
+    });
+    m.addEventListener("change",e=>{const t=e.target;if(t.dataset.hmt)liveHintEdit(t.dataset.hmt,{t:t.value});else if(t.dataset.hmn)liveHintEdit(t.dataset.hmn,{n:+t.value})});
+    m.querySelector("#hm-q").addEventListener("input",e=>{liveHintQ=e.target.value;liveHintModal()});
+    m.querySelector("#hm-auto").innerHTML="";
+  }
+  // Ochiq select yoki yozilayotgan maydon bo'lsa — qayta chizmaymiz (aks holda yopilib qoladi)
+  const ae=document.activeElement;if(ae&&m.contains(ae)&&(ae.tagName==="SELECT"||ae.tagName==="TEXTAREA"||(ae.tagName==="INPUT"&&ae.id!=="hm-q")))return;
+  const def=liveHintDef(),n=S.players.filter(liveHasHint).length;
+  const phaseNote=!L.q||L.phase==="lobby"?"Huquq o'yin boshlangach har savolda ishlaydi.":L.q.mode==="self"?"⚠️ Bu o'yinda (Juftla / Xotira) yordam ishlamaydi.":L.q.mode==="tf"?"Rost/Yolg'on'da 50/50 ishlamaydi — faqat to'liq javob.":"O'yin ketyapti — huquq berilsa, joriy savoldayoq ishlaydi.";
+  $("#hm-top").innerHTML=`<p class="note" style="margin:6px 0">${phaseNote} Huquq berilgan: <b>${n}</b> / ${S.players.length}</p>
+    <div class="hm-set"><span>Yangi huquq turi</span>${Object.entries(HINT_T).map(([k,v])=>`<button type="button" class="tpc${def.t===k?" on":""}" data-hm="deft" data-id="${k}">${v}</button>`).join("")}</div>
+    <div class="hm-set"><span>Chegara</span>${HINT_N.map(x=>`<button type="button" class="tpc${def.n===x?" on":""}" data-hm="defn" data-id="${x}">${x?x+" savol":"Cheksiz"}</button>`).join("")}</div>
+    <div class="btnrow"><button class="btn" type="button" data-hm="all" ${S.players.length?"":"disabled"}>Hammaga berish</button><button class="btn ghost" type="button" data-hm="none" ${n?"":"disabled"}>Hammadan olish</button></div>`;
+  const q=hintNorm(liveHintQ);
+  const ps=S.players.filter(p=>!q||hintNorm((p.name||p.login||"")+" "+(p.group||"")).includes(q));
+  const row=p=>{const on=liveHasHint(p),c=liveHintOf(p.id),left=liveHintLeft(p.id);
+    return `<div class="hm-row${on?" on":""}"><button type="button" class="hm-sw${on?" on":""}" data-hm="tg" data-id="${esc(p.id)}" title="${on?"Huquqni olish":"Huquq berish"}"><i></i></button>
+      <span class="hm-nm">${esc(p.name||p.login||"—")}${p.group?` <small>${esc(p.group)}</small>`:""}</span>
+      ${on?`<span class="hm-opts"><select data-hmt="${esc(p.id)}">${Object.entries(HINT_T).map(([k,v])=>`<option value="${k}"${c.t===k?" selected":""}>${v}</option>`).join("")}</select><select data-hmn="${esc(p.id)}">${[...new Set([...HINT_N,c.n])].sort((a,b)=>a-b).map(x=>`<option value="${x}"${c.n===x?" selected":""}>${x?x+" savol":"Cheksiz"}</option>`).join("")}</select>${c.n?(left?`<small class="hm-left">qoldi ${left}</small>`:`<button type="button" class="hm-left end" data-hm="reset" data-id="${esc(p.id)}" title="Hisobni yangilash">tugadi ↺</button>`):`<small class="hm-left">${c.u} marta</small>`}</span>`:""}</div>`};
+  let list;
+  if(L.mode==="jamoa"||L.mode==="guruh"){
+    const teams=liveTeams(),gs=teams.map(t=>({t,ps:ps.filter(p=>String(livePlayerTeam(p))===String(t.id))})),un=ps.filter(p=>livePlayerTeam(p)==null);
+    list=gs.map(g=>`<div class="hm-grp"><div class="hm-gh"><span class="lb-dot" style="background:${g.t.c}"></span><b>${esc(g.t.name)}</b> · ${g.ps.length}<span class="hm-gb"><button type="button" class="tpc" data-hm="team-on" data-id="${esc(String(g.t.id))}">Hammasiga</button><button type="button" class="tpc" data-hm="team-off" data-id="${esc(String(g.t.id))}">Olish</button></span></div>${g.ps.map(row).join("")||`<div class="note">—</div>`}</div>`).join("")
+      +(un.length?`<div class="hm-grp"><div class="hm-gh"><b>Jamoasiz</b> · ${un.length}</div>${un.map(row).join("")}</div>`:"");
+  }else list=ps.map(row).join("");
+  $("#hm-list").innerHTML=list||`<p class="note">${S.players.length?"Topilmadi.":"Hali hech kim qo'shilmagan."}</p>`;
+  const a=liveAutoCfg();
+  $("#hm-auto").innerHTML=`<p class="note">Ro'yxatdagi ism bilan yoki ismiga maxfiy belgi qo'shib kirgan o'yinchiga huquq <b>o'zi beriladi</b> — bosish shart emas. Belgi ismdan avtomatik olib tashlanadi. Sozlama faqat shu qurilmada saqlanadi.</p>
+    <div class="hm-set"><span>Holat</span><button type="button" class="tpc${a.on?" on":""}" data-hm="auto-on">${a.on?"✓ Yoqilgan":"O'chirilgan"}</button></div>
+    <label class="hm-lbl">Ismlar (har qatorda bittasi; so'z tartibi muhim emas)<textarea id="hm-names" rows="3" placeholder="Ergashov Sunnatillo">${esc(a.names.join("\n"))}</textarea></label>
+    <label class="hm-lbl">Maxfiy belgi (ixtiyoriy, masalan: <code>.</code> yoki <code>~</code>)<input id="hm-mark" type="text" maxlength="6" value="${esc(a.mark)}" placeholder="~"></label>
+    <div class="btnrow"><button class="btn" type="button" data-hm="auto-save">Saqlash</button></div>`;
 }
 // Admin: har savol vaqti (0 = savolning o'z vaqti)
 async function liveSetSec(s){try{await fs.doc("config/live").update({secOverride:Math.max(0,Math.min(120,s))})}catch(e){}}
@@ -3354,7 +3496,7 @@ async function liveShowQ(i){
     qd.mode="rev";qd.stmt=(q.o||[])[key]||"";qd.o=o;qd.q="";
   }
   else{qd.mode="choice";qd.o=q.o;}
-  try{await liveSendHints(i,qid,q,qd.mode)}catch(e){}
+  try{await liveSendHints(i,qid,q,qd)}catch(e){}
   try{await fs.doc("config/live").update({phase:"running",qIndex:i,qStart:Date.now(),qCorrect:null,q:qd})}catch(e){toast("Bajarib bo'lmadi")}
 }
 // Natijani ochish: ballarni yozamiz, to'g'ri javobni ko'rsatamiz (savol tugagani uchun xavfsiz)
@@ -3499,13 +3641,14 @@ function livePodium(){
   return `<div class="live-podium">`+vis.map(x=>x.p?`<div class="pcol ${x.c}"><div class="pwho">${esc(x.p.name||x.p.login||"—")}</div><div class="pbar">${x.n}</div><div class="psc">${x.p.score||0}</div></div>`:`<div class="pcol ${x.c}"></div>`).join("")+`</div>`;
 }
 function renderLiveAdmin(){
-  const box=$("#live-admin");if(!box)return;
+  const box=$("#live-admin");if(!box){liveHintModal();return}
   const L=S.live;
+  liveAutoHint();
   if(!L||!L.active){
     box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between"><h2 style="margin:0">Jonli test (Kahoot usuli)</h2></div>
       <p class="note">Hamma bir vaqtda, bitta ekranda. Siz ochasiz — ishtirokchilar PIN yoki QR orqali kiradi — "Boshlash"ni bosasiz — savollar birma-bir chiqadi. Tez va to'g'ri javob bergan ko'proq ball oladi.</p>
       <div><button class="btn" type="button" id="live-open">Jonli sessiyani ochish</button></div></div>`;
-    const b=$("#live-open");if(b)b.onclick=liveOpen;liveQR=null;return;
+    const b=$("#live-open");if(b)b.onclick=liveOpen;liveQR=null;liveHintModal();return;
   }
   const ans=(L.q&&L.qIndex>=0)?S.players.filter(p=>(p.ans||{})[L.qIndex]!=null).length:0;
   let body="";
@@ -3538,7 +3681,7 @@ function renderLiveAdmin(){
     const setPanel=`<div class="live-set">${topicRow}<div class="set-row"><span>Savollar soni</span><span class="stepper"><button type="button" data-cnt="-5">−</button><b>${L.total}</b><button type="button" data-cnt="5">+</button></span><small>bankda ${L.poolSize||liveValidQ().length} ta</small></div>
       <div class="set-row"><span>Har savol vaqti</span><span class="stepper"><button type="button" data-sec="-5">−</button><b>${secLbl}</b><button type="button" data-sec="5">+</button></span><small>${(+L.secOverride||0)>0?"barchasiga bir xil":"har savolning o'z vaqti"}</small></div></div>`;
     body=`<div class="live-lobby"><div class="live-pin"><span class="note">Kirish PIN</span><div class="pin-big">${esc(L.pin)}</div><div id="live-qr" class="live-qr"></div><span class="note">${esc(liveUrl(L.pin))}</span></div>
-      <div class="live-people-wrap">${setPanel}${peoplePanel}<p class="note hint-note">${S.players.length?`O'yinchi ismiga bosing — unga huquq beriladi: savol bilan birga to'g'ri javob ham ko'rinadi.${hintN?` Huquq berilgan: <b>${hintN}</b>`:""}`:""}</p></div></div>
+      <div class="live-people-wrap">${setPanel}${peoplePanel}<p class="note hint-note">${S.players.length?`O'yinchi ismiga bosing — huquq beriladi. Tur, chegara va avtomatik huquq — «👁 Huquqlar» tugmasida.${hintN?` Huquq berilgan: <b>${hintN}</b>`:""}`:""}</p></div></div>
       <div class="btnrow"><button class="btn" type="button" id="live-start" ${S.players.length?"":"disabled"}>Boshlash</button><button class="btn ghost" type="button" id="live-cancel">Bekor qilish</button></div>`;
   }else if(L.phase==="running"&&L.q&&L.q.mode==="self"){
     const done=S.players.filter(p=>p.done).length;
@@ -3592,9 +3735,11 @@ function renderLiveAdmin(){
   }
   const gName={kahoot:{yakka:"Kahoot test",jamoa:"Jamolar jangi",guruh:"Guruhlar ligasi"},millioner:"Millioner",blitz:"Tez javob blitz",marafon:"Reyting marafoni",poyga:"Tezlik poygasi",bellashuv:"Bellashuv",barcha:"Barchaga savol",qoshhech:"Qo'sh yoki hech",zanjir:"Zanjir",jbmz:"Jamoaviy blitz",gbell:"Guruh bellashuvi",omonat:"Omonat (3 jon)",oxirgi:"Oxirgi qoladi",omad:"Omad g'ildiragi",yozish:"Toping-yozing",rostyolgon:"Rost yoki Yolg'on",teskari:"Teskari",estafeta:"Estafeta",gestafeta:"Guruh estafetasi",bomba:"Bomba",bayroq:"Bayroq olish",juftla:"Juftla",xotira:"Xotira o'yini"};
   let gTitle=gName[L.game];if(gTitle&&typeof gTitle==="object")gTitle=gTitle[L.mode];gTitle=gTitle||"Jonli o'yin";
-  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
+  box.innerHTML=`<div class="panel stack live-arena"><div class="btnrow" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(gTitle)}</h2><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost" type="button" id="live-hints">👁 Huquqlar</button><button class="btn ghost live-fsbtn" type="button" id="live-full">⛶ To'liq ekran</button><span class="pill ${L.phase==="running"?"open":L.phase==="ended"?"closed":"res"}">${L.phase==="lobby"?"Kutish xonasi":L.phase==="running"?"Ketyapti":L.phase==="reveal"?"Reyting":"Yakunlandi"}</span></div></div>${body}</div>`;
   if(L.phase==="lobby"){const qd=$("#live-qr");if(qd&&window.QRCode){qd.innerHTML="";try{liveQR=new QRCode(qd,{text:liveUrl(L.pin),width:160,height:160,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}else if(qd){qd.innerHTML=`<span class="note">QR yuklanmadi — PIN'dan foydalaning</span>`}}
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
+  on("live-hints",()=>{liveHintOpen=!liveHintOpen;liveHintModal()});
+  liveHintModal();
   on("live-start",liveStart);on("live-cancel",liveClose);on("live-next",liveNext);
   on("live-finish",liveFinish);on("live-dismiss",liveClose);
   on("live-tovote",liveToVoting);on("live-startvoted",()=>liveStartVoted());
@@ -3728,9 +3873,16 @@ function renderLiveJoin(){
       const mult=(+L.q.mult||1)>1?`<div class="live-mult">×${L.q.mult} ball!</div>`:"";
       const hearts=cfg.lives?`<div class="live-hearts">${"❤️".repeat(Math.max(0,cfg.lives-(me&&me.wrong||0)))}${"🤍".repeat(Math.min(cfg.lives,me&&me.wrong||0))}</div>`:"";
       let ansHtml,hint;
-      const hk=liveMyHint(),hOk=j=>(hk&&hk.k===j)?" hint-ok":"";
-      const hkTxt=!hk?null:mode==="tf"?(hk.tf?"ROST":"YOLG'ON"):mode==="text"?hk.txt:(hk.k!=null&&(L.q.o||[])[hk.k]!=null?`${"ABCDEF"[hk.k]}) ${(L.q.o||[])[hk.k]}`:null);
-      const hkLine=hkTxt!=null?`<div class="live-hintkey">👁 To'g'ri javob: <b>${esc(hkTxt)}</b></div>`:"";
+      const hk=liveMyHint(),hOk=j=>(hk&&hk.k===j)?" hint-ok":"",hOff=j=>(hk&&Array.isArray(hk.x)&&hk.x.includes(j))?" hint-off":"";
+      const hkLeft=hk&&hk.r!=null?` <small>· yana ${hk.r} ta savolga</small>`:"";
+      let hkLine="";
+      if(hk&&hk.t==="half"){
+        if(hk.mask)hkLine=`<div class="live-hintkey">💡 Yordam: <b class="hk-mask">${esc(hk.mask)}</b>${hkLeft}</div>`;
+        else if(hk.x)hkLine=`<div class="live-hintkey">✂️ 50/50: ${hk.x.length} ta noto'g'ri javob olib tashlandi${hkLeft}</div>`;
+      }else{
+        const hkTxt=!hk?null:mode==="tf"?(hk.tf?"ROST":"YOLG'ON"):mode==="text"?hk.txt:(hk.k!=null&&(L.q.o||[])[hk.k]!=null?`${"ABCDEF"[hk.k]}) ${(L.q.o||[])[hk.k]}`:null);
+        if(hkTxt!=null)hkLine=`<div class="live-hintkey">👁 To'g'ri javob: <b>${esc(hkTxt)}</b>${hkLeft}</div>`;
+      }
       if(isBuzz&&!liveBuzzed){
         hint="Birinchi bo'lib bosing — keyin javob bering!";
         ansHtml=`<div class="live-buzz"><button class="buzz-b" type="button" id="live-buzz">BOSING!</button></div>`;
@@ -3742,13 +3894,13 @@ function renderLiveJoin(){
         ansHtml=`<div class="live-textwrap"><input id="live-text" type="text" placeholder="Javobingiz…" autocomplete="off" autocapitalize="off" maxlength="60"><button class="btn" type="button" id="live-send">Yuborish</button></div>`;
       }else if(mode==="rev"){
         hint="Javob berilgan — qaysi savolga to'g'ri keladi?";
-        ansHtml=`<div class="live-rev-ans">Javob: <b>${esc(L.q.stmt||"")}</b></div><div class="live-opts rev">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j} rev${hOk(j)}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
+        ansHtml=`<div class="live-rev-ans">Javob: <b>${esc(L.q.stmt||"")}</b></div><div class="live-opts rev">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j} rev${hOk(j)}${hOff(j)}" type="button" data-opt="${j}"${hOff(j)?" disabled":""}><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }else{
         const showQ=game!=="kahoot"; // Kahoot savoli faqat monitorda; qolganlarida telefonda ham
         hint=isBuzz?"Tez tanlang — kim birinchi to'g'ri bo'lsa!":showQ?"Javob bering:":"Savol katta ekranda. Javobingizni tanlang.";
         const ladder=game==="millioner"?`<div class="mil-head"><span>Pog'ona ${L.q.idx+1} / ${L.q.total}</span><div class="mil-bar"><i style="width:${Math.round(100*(L.q.idx+1)/L.q.total)}%"></i></div><span class="mil-tip">📈 Har pog'ona qimmatroq</span></div>`:"";
         const pq=showQ?`<div class="live-pq">${esc(L.q.q||"")}</div>`:"";
-        ansHtml=ladder+pq+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}${hOk(j)}" type="button" data-opt="${j}"><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
+        ansHtml=ladder+pq+`<div class="live-opts">${(L.q.o||[]).map((o,j)=>`<button class="live-opt opt-${j}${hOk(j)}${hOff(j)}" type="button" data-opt="${j}"${hOff(j)?" disabled":""}><span class="ok-k">${"ABCDEF"[j]}</span><span>${esc(o)}</span></button>`).join("")}</div>`;
       }
       const bombBan=cfg.bomba?`<div class="bomb-ban">💣 Bomba sizda! Tez va to'g'ri javob bering — aks holda yonasiz!</div>`:"";
       if(body)body.innerHTML=`<div class="live-card live-play${cfg.bomba?" bomb":""}"><div class="live-top-q">Savol ${L.q.idx+1} / ${L.q.total}</div>${hearts}${bombBan}<div class="live-timer${cfg.bomba?" fuse":""}" id="live-timer"></div>${mult}
